@@ -1182,6 +1182,7 @@
     }
 
     function saveToCloud(doClear) {
+        toggleSync(true, 'Guardando en la nube...');
         if (doClear === undefined) doClear = true;
         var items = [];
         var prods = Object.keys(relData);
@@ -1215,8 +1216,10 @@
         }
 
         setSyncStatus('pending');
+        toggleSync(true, 'Guardando en la nube...');
         google.script.run
             .withSuccessHandler(function () {
+                toggleSync(false);
                 HIST.unshift(entry);
                 toast("✓ ¡Sincronizado!");
                 if (doClear) {
@@ -1228,6 +1231,7 @@
                 processOfflineQueue(); // Verificar si hay más
             })
             .withFailureHandler(function (err) {
+                toggleSync(false);
                 enqueueEntry(entry);
                 if (doClear) {
                     relData = {};
@@ -1891,7 +1895,7 @@
             var newList = [];
             for (var i = 0; i < filtered.length; i++) {
                 var h = filtered[i];
-                var m = (h.mode || 'stock').toLowerCase();
+                var m = (h.modo || h.mode || 'stock').toLowerCase();
                 var match = false;
                 if (modeToFilter === 'recepcion') match = (m === 'recepcion' || m === 'entrante');
                 else match = (m === modeToFilter);
@@ -1921,6 +1925,24 @@
         }
 
         // 3. Filtrar por Búsqueda (Soporta producto o categoría)
+        if (histFilters.query) {
+            var q = histFilters.query.toLowerCase();
+            var newList = [];
+            for (var i = 0; i < filtered.length; i++) {
+                var h = filtered[i];
+                var match = false;
+                var items = h.items || [];
+                for (var j = 0; j < items.length; j++) {
+                    if (items[j].prod.toLowerCase().indexOf(q) !== -1 || (items[j].cat && items[j].cat.toLowerCase().indexOf(q) !== -1)) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (match) newList.push(h);
+            }
+            filtered = newList;
+        }
+
         var totalFound = filtered.length;
         var visible = filtered.slice(0, histLimit);
 
@@ -1934,7 +1956,7 @@
         for (var i = 0; i < visible.length; i++) {
             var h = visible[i];
             var items = Array.isArray(h.items) ? h.items : [];
-            var _m = (h.mode || 'stock').toLowerCase();
+            var _m = (h.modo || h.mode || 'stock').toLowerCase();
             var _ms;
             if (_m === 'pedido') {
                 _ms = { color: 'var(--orange)', bg: 'var(--bg-alt)', border: 'var(--orange)', label: '🟠 PEDIDO' };
