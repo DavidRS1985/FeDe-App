@@ -804,6 +804,22 @@
 
     </div> <!-- FIN CONTENEDOR APP -->
 
+    <!-- MODAL DE CONFIRMACIÓN ESTÉTICO -->
+    <div id="confirm-modal" class="confirm-overlay">
+        <div class="confirm-modal">
+            <div class="confirm-icon-wrap">
+                <i data-lucide="alert-triangle" style="width:32px; height:32px;"></i>
+            </div>
+            <h3 class="confirm-title" id="confirm-title">¿Estás seguro?</h3>
+            <p class="confirm-desc" id="confirm-msg">Esta acción no se puede deshacer y los datos se eliminarán
+                permanentemente.</p>
+            <div class="confirm-actions">
+                <button class="confirm-btn-danger" id="confirm-ok">SÍ, ELIMINAR</button>
+                <button class="confirm-btn-cancel" id="confirm-cancel">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ACTION SHEET: DECIDIR DÓNDE CARGAR EL PRODUCTO -->
     <div id="global-action-sheet" class="action-sheet-overlay" onclick="closeActionSheet(event)">
         <div class="action-sheet" onclick="event.stopPropagation()">
@@ -813,16 +829,14 @@
                 </p>
             </div>
 
-            <p
-                style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; margin-bottom:10px; text-align:center;">
+            <p style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; margin-bottom:10px; text-align:center;">
                 ¿Dónde deseas cargar este producto?</p>
 
             <button class="as-btn as-btn-pedido" onclick="confirmGlobalLoad('pedido')">
                 <i data-lucide="package" style="width:16px;"></i> <span id="as-lbl-pedido">Nuevo Pedido</span>
             </button>
             <button class="as-btn as-btn-stock" onclick="confirmGlobalLoad('stock')">
-                <i data-lucide="shelving-unit" style="width:16px;"></i> <span id="as-lbl-stock">Nuevo Control de
-                    Stock</span>
+                <i data-lucide="shelving-unit" style="width:16px;"></i> <span id="as-lbl-stock">Nuevo Control de Stock</span>
             </button>
 
             <button class="wa-btn" onclick="closeActionSheet({target: document.getElementById('global-action-sheet')})"

@@ -98,6 +98,53 @@
         _loaderPerc = p;
     }
 
+    /* ── SISTEMA DE CONFIRMACIÓN ESTÉTICO ── */
+    var confirmCallback = null;
+    function fConfirm(config, onConfirm) {
+        var modal = document.getElementById('confirm-modal');
+        var title = document.getElementById('confirm-title');
+        var msg = document.getElementById('confirm-msg');
+        var btnOk = document.getElementById('confirm-ok');
+        var btnCancel = document.getElementById('confirm-cancel');
+
+        if (!modal) {
+            if (confirm(config.message)) onConfirm();
+            return;
+        }
+
+        title.textContent = config.title || "¿Estás seguro?";
+        msg.textContent = config.message || "Esta acción no puede deshacerse.";
+        btnOk.textContent = config.okText || "SÍ, ELIMINAR";
+        
+        // Estilo condicional del botón OK
+        if (config.type === 'info') {
+            btnOk.style.background = 'var(--primary)';
+            btnOk.style.color = 'var(--bg)';
+            btnOk.style.boxShadow = '0 4px 20px rgba(255, 255, 255, 0.2)';
+        } else {
+            btnOk.style.background = 'var(--red)';
+            btnOk.style.color = 'white';
+            btnOk.style.boxShadow = '0 4px 20px rgba(224, 82, 82, 0.3)';
+        }
+
+        confirmCallback = onConfirm;
+        modal.classList.add('open');
+
+        btnOk.onclick = function() {
+            modal.classList.remove('open');
+            if (confirmCallback) {
+                var cb = confirmCallback;
+                confirmCallback = null;
+                cb();
+            }
+        };
+
+        btnCancel.onclick = function() {
+            modal.classList.remove('open');
+            confirmCallback = null;
+        };
+    }
+
     function startInertiaProgress() {
         if (_loaderInterval) clearInterval(_loaderInterval);
         _loaderInterval = setInterval(function() {
@@ -534,7 +581,14 @@
         if (hasDraft) {
             if (actH) {
                 actH.classList.remove('hidden');
-                actH.onclick = function () { if (confirm("¿Reanudar trabajo pendiente?")) restoreDraft(); };
+                actH.onclick = function () {
+                    fConfirm({
+                        title: 'Restaurar Trabajo',
+                        message: '¿Deseas reanudar lo que estabas haciendo?',
+                        okText: 'REANUDAR',
+                        type: 'info'
+                    }, restoreDraft);
+                };
                 actH.style.cursor = 'pointer';
                 actH.title = "Continuar trabajo pendiente";
             }
@@ -1789,7 +1843,17 @@
             renderFAB();
         }
     }
-    function discardDraft() { if (confirm("¿Borrar definitivamente?")) { localStorage.removeItem('fede_draft'); checkDraft(); updateActivityIndicators(); } }
+    function discardDraft() { 
+        fConfirm({
+            title: 'Borrar Borrador',
+            message: '¿Estás seguro de querer borrar el trabajo actual definitivamente?',
+            okText: 'BORRAR'
+        }, function() { 
+            localStorage.removeItem('fede_draft'); 
+            checkDraft(); 
+            updateActivityIndicators(); 
+        });
+    }
 
     /* ── HISTORIAL ── */
     var histFilters = { mode: 'all', from: '', to: '', query: '' };
@@ -1944,21 +2008,25 @@
     }
 
     function deleteHistEntryManual(id) {
-        if (!confirm("¿Eliminar este registro permanentemente?")) return;
-
-        google.script.run
-            .withSuccessHandler(function (r) {
-                if (r && r.success) {
-                    var newHist = [];
-                    for (var i = 0; i < HIST.length; i++) { if (HIST[i].id != id) newHist.push(HIST[i]); }
-                    HIST = newHist;
-                    renderHistory();
-                    toast("✓ Registro eliminado del historial");
-                } else {
-                    toast("❌ Error al eliminar");
-                }
-            })
-            .deleteHistoryEntry(id, activeSheetId);
+        fConfirm({
+            title: 'Eliminar Registro',
+            message: '¿Estás seguro de querer borrar este reporte permanentemente de la base de datos?',
+            okText: 'ELIMINAR'
+        }, function() {
+            google.script.run
+                .withSuccessHandler(function (r) {
+                    if (r && r.success) {
+                        var newHist = [];
+                        for (var i = 0; i < HIST.length; i++) { if (HIST[i].id != id) newHist.push(HIST[i]); }
+                        HIST = newHist;
+                        renderHistory();
+                        toast("✓ Registro eliminado del historial");
+                    } else {
+                        toast("❌ Error al eliminar");
+                    }
+                })
+                .deleteHistoryEntry(id, activeSheetId);
+        });
     }
 
     var editingHistId = null, editingHistItems = [], editingHistMode = 'stock';
@@ -2206,23 +2274,27 @@
     function updateDBLabel() { }
 
     function clearCurrentRel() {
-        if (!confirm("¿Seguro que quieres borrar todo el relevamiento actual? Esta acción no se puede deshacer.")) return;
+        fConfirm({
+            title: 'Limpiar Todo',
+            message: '¿Seguro que quieres borrar todo el relevamiento actual? Esta acción no se puede deshacer.',
+            okText: 'SÍ, BORRAR TODO'
+        }, function() {
+            toast("🗑️ Borrando datos locales...");
 
-        toast("🗑️ Borrando datos locales...");
+            setTimeout(function () {
+                relData = {};
+                localStorage.removeItem('fede_draft');
 
-        setTimeout(function () {
-            relData = {};
-            localStorage.removeItem('fede_draft');
+                closeResumen();
+                goHome();
 
-            closeResumen();
-            goHome();
+                if (typeof renderProducts === 'function') renderProducts();
+                if (typeof renderFAB === 'function') renderFAB();
 
-            if (typeof renderProducts === 'function') renderProducts();
-            if (typeof renderFAB === 'function') renderFAB();
-
-            toast("✓ Relevamiento borrado correctamente");
-            updateActivityIndicators();
-        }, 600);
+                toast("✓ Relevamiento borrado correctamente");
+                updateActivityIndicators();
+            }, 600);
+        });
     }
 
     /**
