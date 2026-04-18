@@ -1,0 +1,277 @@
+<script>
+  /**
+   * FERIADOS ARGENTINA E ITALIA — Base de datos y Lógica de Negocio
+   */
+
+  var HOLIDAYS_DB = {
+    // Global / Coincidentes
+    '01-01': { name: 'Año Nuevo', desc: 'ITA: Cotechino con Lenticchie para atraer suerte. ARG: Vitel Toné, piononos y asado frío en familia.', type: 'national' },
+    '05-01': { name: 'Día del Trabajador', desc: 'ITA: Panino con la Porchetta o parrilladas de carne. ARG: Locro tradicional, asado o empanadas compartidas.', type: 'national' },
+    '12-08': { name: 'Inmaculada Concepción', desc: 'ITA: Pettole y bacalao frito. ARG: Día de armar el arbolito navideño, mates y tortas fritas.', type: 'national' },
+    '12-25': { name: 'Navidad', desc: 'ITA: Tortellini en caldo, asados, Panettone y Pandoro. ARG: Vitel Toné, ensalada rusa, asado, turrones y sidra.', type: 'national' },
+
+    // Argentina
+    '02-17': { name: 'Carnaval', desc: 'ARG: Fiestas populares con murgas. Se suelen comer choripanes, empanadas y comida callejera.', type: 'national' },
+    '03-24': { name: 'Día de la Memoria', desc: 'ARG: recuerda a las víctimas de la última dictadura cívico-militar (1976-1983), promoviendo la reflexión, la defensa de la democracia, los derechos humanos y el "Nunca Más" al terrorismo de Estado.', type: 'national' },
+    '04-02': { name: 'Día de Malvinas', desc: 'ARG: Conmemoración solemne. Tradicionalmente guisos o comidas de bodegón patrio.', type: 'national' },
+    '05-25': { name: 'Revolución de Mayo', desc: 'ARG: Gran celebración patria. Imposible faltar el locro pampa, pastelitos de membrillo y churros.', type: 'national' },
+    '06-17': { name: 'Paso a la Inmortalidad de Güemes', desc: 'ARG: Feriado salteño extendido. Empanadas salteñas, tamales y humitas.', type: 'national' },
+    '06-20': { name: 'Día de la Bandera', desc: 'ARG: Creación de la insignia. Clásico día de asado dominguero o pastas en familia.', type: 'national' },
+    '07-09': { name: 'Día de la Independencia', desc: 'ARG: Fiestas de la independencia nacional. Empanadas de carne cortada a cuchillo, locro y vino tinto.', type: 'national' },
+    '08-17': { name: 'Paso a la Inmortalidad de San Martín', desc: 'ARG: Conmemoración del Padre de la Patria. Costumbres de asado, mate y pastelitos.', type: 'national' },
+    '10-12': { name: 'Día de la Diversidad Cultural', desc: 'ARG: Integración de culturas. Fusión gastronómica, asados y paellas.', type: 'national' },
+    '11-23': { name: 'Día de la Soberanía Nacional', desc: 'ARG: Recuerdo de la Vuelta de Obligado. Día de choripán, asado a la cruz u olla popular.', type: 'national' },
+
+    // Italia
+    '01-06': { name: 'Epifanía (La Befana)', desc: 'ITA: Conmemoración de la visita de los Reyes Magos. Se acostumbra comer Fugassa d\'la Befana y dulces variados.', type: 'national' },
+    '04-25': { name: 'Día de la Liberación', desc: 'ITA: Fin de la ocupación nazi. Se suelen comer Fave e Pecorino y embutidos durante excursiones al campo.', type: 'national' },
+    '06-02': { name: 'Festa della Repubblica', desc: 'ITA: Nacimiento de la República. Almuerzos con Lasagna y platos que lleven colores de la bandera (caprese).', type: 'national' },
+    '08-15': { name: 'Ferragosto', desc: 'ITA: Fiesta del verano. Platos frescos como Pollo con i peperoni, ensaladas de arroz y Anguria (sandía).', type: 'national' },
+    '11-01': { name: 'Día de Todos los Santos', desc: 'ITA: Recuerdo de los difuntos. Preparaciones como el Pane dei Morti y platos a base de calabaza o castañas.', type: 'national' },
+    '12-26': { name: 'San Esteban', desc: 'ITA: Continuación de la Navidad. Se consumen  caldos ligeros o las sobras del día anterior.', type: 'national' }
+  };
+
+  function calculateEaster(year) {
+    var a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4,
+      f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30,
+      i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7,
+      m = Math.floor((a + 11 * h + 22 * l) / 451), month = Math.floor((h + l - 7 * m + 114) / 31),
+      day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+  }
+
+  function formatMMDD(date) {
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d);
+  }
+
+  function getHolidaysForYear(year) {
+    var easter = calculateEaster(year);
+    var movable = {};
+    var vSanto = new Date(easter); vSanto.setDate(easter.getDate() - 2);
+    var jSanto = new Date(easter); jSanto.setDate(easter.getDate() - 3);
+    var lPascua = new Date(easter); lPascua.setDate(easter.getDate() + 1);
+
+    movable[formatMMDD(jSanto)] = { name: 'Jueves Santo', desc: 'ARG: Día de recogimiento. Vigilia: Empanadas de vigilia, tarta de atún y rosca de pascua.', type: 'observance' };
+    movable[formatMMDD(vSanto)] = { name: 'Viernes Santo', desc: 'ARG: Ayuno de carnes rojas. Platos de pescado, bacalao o empanadas de verdura.', type: 'national' };
+    movable[formatMMDD(easter)] = { name: 'Domingo de Pascua', desc: 'ITA: Agnello al forno, Torta Pasqualina y Colomba Pasquale. ARG: Asado, huevos de chocolate.', type: 'national' };
+    movable[formatMMDD(lPascua)] = { name: 'Lunes de Pascua (Pasquetta)', desc: 'ITA: Tradición de picnic con amigos. Se consumen Casatiello, frittatas y parrilladas.', type: 'national' };
+
+    var result = {};
+    for (var k in HOLIDAYS_DB) result[k] = HOLIDAYS_DB[k];
+    for (var k in movable) result[k] = movable[k];
+    return result;
+  }
+
+  function getUpcomingHolidays(days, fromDate) {
+    if (days === undefined) days = 14;
+    if (fromDate === undefined) fromDate = new Date();
+    var holidays = getHolidaysForYear(fromDate.getFullYear());
+    var upcoming = [];
+    var today = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0);
+
+    for (var i = 0; i <= days; i++) {
+      var d = new Date(today); d.setDate(today.getDate() + i);
+      var key = formatMMDD(d);
+      if (holidays[key]) {
+        var h = holidays[key];
+        var item = { date: d, dateString: key, name: h.name, desc: h.desc, type: h.type, daysFromNow: i };
+        upcoming.push(item);
+      }
+    }
+    return upcoming;
+  }
+
+  function HolidayAlert(options) {
+    this.options = options || {};
+    this.options.cacheKey = this.options.cacheKey || 'fede_holiday_dismissed';
+    try {
+      this.dismissed = JSON.parse(localStorage.getItem(this.options.cacheKey) || '[]');
+    } catch(e) { this.dismissed = []; }
+    this.init();
+  }
+
+  HolidayAlert.prototype.init = function() {
+    var self = this;
+    this.update();
+    setInterval(function() { self.update(); }, 60000);
+  };
+
+  HolidayAlert.prototype.update = function() {
+    var now = new Date();
+    var badge = document.getElementById('noti-badge');
+    if (!badge) return;
+
+    var alertHtml = '';
+    var alertCount = 0;
+
+    var day = now.getDay();
+    if (day === 0 || day === 2) {
+      var msgText = "CONTROL DE STOCK";
+      var isDone = sessionStorage.getItem('fede_stock_done') === msgText;
+      
+      if (!isDone) {
+          alertCount++;
+          alertHtml += '<div style="background:var(--blue); border-radius:16px; padding:16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 6px 20px rgba(91, 155, 213, 0.3);">' +
+                '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
+                    '<div style="background:rgba(255,255,255,0.2); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;">' +
+                        '<i data-lucide="clipboard-check" style="color:white; width:var(--icon-size-medium);"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<div style="color:white; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; line-height:1.2;">Control Obligatorio</div>' +
+                        '<div style="color:rgba(255,255,255,0.8); font-size:10px; font-weight:700; margin-top:2px;">Requerido hoy</div>' +
+                    '</div>' +
+                '</div>' +
+                '<button onclick="window.holidayAlert.dismissStockCard(\'' + msgText + '\')" style="background:white; color:var(--blue); border:none; border-radius:10px; padding:8px 14px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:6px;">' +
+                    '<i data-lucide="check" style="width:var(--icon-size-small);"></i> Listo' +
+                '</button>' +
+            '</div>';
+      } else {
+          alertHtml += '<div style="background:linear-gradient(135deg, #10b981, #059669); border-radius:16px; padding:12px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 6px 20px rgba(16, 185, 129, 0.25);">' +
+                '<div style="display:flex; align-items:center; gap:12px;">' +
+                    '<i data-lucide="check-circle-2" style="color:white; width:var(--icon-size-large); background:rgba(255,255,255,0.2); border-radius:10px; padding:8px;"></i>' +
+                    '<div>' +
+                        '<div style="color:white; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Stock Completado</div>' +
+                        '<div style="color:rgba(255,255,255,0.9); font-size:10px; font-weight:700;">¡Todo listo por hoy!</div>' +
+                    '</div>' +
+                '</div>' +
+                '<button onclick="window.holidayAlert.undoStockCard()" style="background:rgba(0,0,0,0.15); color:white; border:none; border-radius:8px; padding:6px 10px; font-weight:800; font-size:10px; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
+                    '<i data-lucide="rotate-ccw" style="width:var(--icon-size-small);"></i> Deshacer' +
+                '</button>' +
+            '</div>';
+      }
+    }
+
+    var upcoming = getUpcomingHolidays(7);
+    if (upcoming.length > 0) {
+      alertCount += upcoming.length;
+      
+      for (var j = 0; j < upcoming.length; j++) {
+          var h = upcoming[j];
+          var timeText = '';
+          var diffMs = h.date.getTime() - now.getTime();
+          
+          if (diffMs <= 0 && h.daysFromNow === 0) {
+              timeText = "Es Hoy";
+          } else if (diffMs < 24 * 3600 * 1000) {
+              var hs = Math.floor(diffMs / (1000 * 60 * 60));
+              var ms = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+              timeText = (hs < 10 ? '0' + hs : hs) + ':' + (ms < 10 ? '0' + ms : ms);
+          } else {
+              timeText = "En " + Math.ceil(diffMs / (1000 * 3600 * 24)) + " días";
+          }
+
+          alertHtml += '<div style="background:linear-gradient(135deg, #098b8c, #065f57); border-radius:16px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:flex-start; gap:14px; box-shadow:0 8px 25px rgba(6, 95, 87, 0.4); color:white;">' +
+                '<i data-lucide="calendar-clock" style="color:#a5f3fc; width:var(--icon-size-large); height:var(--icon-size-large); margin-top:2px; flex-shrink:0;"></i>' +
+                '<div style="flex:1;">' +
+                    '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                        '<div style="font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">' + h.name + '</div>' +
+                        '<div style="background:rgba(0,0,0,0.25); padding:4px 8px; border-radius:8px; font-size:11px; font-weight:800; letter-spacing:1px; color:#a5f3fc; white-space:nowrap;">' +
+                            timeText +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="font-size:11px; font-weight:600; color:rgba(255,255,255,0.85); margin-top:6px; line-height:1.4;">' +
+                        h.desc +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+      }
+    }
+
+    this.cachedAlertHtml = alertHtml;
+
+    if (alertCount > 0) {
+        badge.textContent = alertCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+
+    var openPanel = document.getElementById('noti-panel-content');
+    if (openPanel) {
+        openPanel.innerHTML = this.cachedAlertHtml || '<div style="text-align:center; padding:30px 20px; color:var(--dim); font-size:12px; font-weight:700;"><i data-lucide="check-circle" style="width:var(--icon-size-large); height:var(--icon-size-large); margin-bottom:10px; opacity:0.5;"></i><br>No hay notificaciones pendientes.</div>';
+        if(window.lucide) lucide.createIcons({root: openPanel});
+    }
+  };
+
+  HolidayAlert.prototype.togglePanel = function() {
+      var overlay = document.getElementById('noti-overlay');
+      if (overlay) {
+          overlay.remove();
+          return;
+      }
+      
+      overlay = document.createElement('div');
+      overlay.id = 'noti-overlay';
+      overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:9000; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:80px; padding-left:20px; padding-right:20px; animation:fadeIn 0.2s ease;";
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      
+      var content = this.cachedAlertHtml || '<div style="text-align:center; padding:30px 20px; color:var(--dim); font-size:12px; font-weight:700;"><i data-lucide="check-circle" style="width:var(--icon-size-large); height:var(--icon-size-large); margin-bottom:10px; opacity:0.5;"></i><br>No hay notificaciones pendientes.</div>';
+      
+      overlay.innerHTML = '<div style="background:var(--s1); width:100%; max-width:400px; border-radius:24px; padding:20px; border:1px solid rgba(255,255,255,0.05); box-shadow:0 10px 40px rgba(0,0,0,0.8); position:relative; max-height:calc(100vh - 120px); display:flex; flex-direction:column;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-shrink:0;">' +
+                '<div style="font-weight:900; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;">' +
+                    '<i data-lucide="bell-ring" style="width:var(--icon-size-medium); color:var(--gold);"></i> Notificaciones' +
+                '</div>' +
+                '<button onclick="document.getElementById(\'noti-overlay\').remove()" style="background:rgba(255,255,255,0.05); border:none; width:30px; height:30px; border-radius:50%; color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer;"><i data-lucide="x" style="width:var(--icon-size-small);"></i></button>' +
+            '</div>' +
+            '<div id="noti-panel-content" style="overflow-y:auto; flex:1; padding-right:4px;">' +
+                content +
+            '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      if(window.lucide) lucide.createIcons({root: overlay});
+  };
+
+  HolidayAlert.prototype.showDetails = function() {
+      this.togglePanel();
+  };
+
+  HolidayAlert.prototype.dismissStockCard = function(msg) { sessionStorage.setItem('fede_stock_done', msg); this.update(); };
+  HolidayAlert.prototype.undoStockCard = function() { sessionStorage.removeItem('fede_stock_done'); this.update(); };
+
+  /**
+   * HOLIDAY STOCK PREDICTION
+   */
+  function HolidayStockHelper(options) {
+      this.options = options || {};
+      this.options.daysBuffer = this.options.daysBuffer || 3;
+      this.options.multiplier = this.options.multiplier || 1.5;
+  }
+
+  HolidayStockHelper.prototype.getSuggestedReorders = function() {
+      var upcoming = getUpcomingHolidays(7);
+      if (upcoming.length === 0) return [];
+
+      var sug = [];
+      for (var i = 0; i < upcoming.length; i++) {
+        var h = upcoming[i];
+        if (h.daysFromNow <= this.options.daysBuffer) {
+          sug.push({
+            holiday: h.name,
+            date: h.date,
+            priority: h.daysFromNow === 0 ? 'urgent' : 'high',
+            message: this.generateMessage(h, h.daysFromNow),
+            categories: this.getHighDemandCategories(h)
+          });
+        }
+      }
+      return sug;
+  };
+
+  HolidayStockHelper.prototype.getHighDemandCategories = function(h) {
+      var map = {
+        'Navidad': ['Carnes', 'Bebidas', 'Secos'],
+        'Año Nuevo': ['Bebidas', 'Carnes', 'Frutas'],
+        'Pascua': ['Verdulería', 'Lácteos']
+      };
+      return map[h.name] || ['Bebidas', 'Carnes', 'Panificados'];
+  };
+
+  HolidayStockHelper.prototype.generateMessage = function(h, days) {
+      if (days === 0) return '⚠️ ' + h.name + ' HOY. ¡Confirmar stock urgente!';
+      if (days === 1) return '⚠️ Mañana es ' + h.name + '. Recomiendo reposición extra.';
+      return '📦 En ' + days + ' días: ' + h.name + '. Prepara tus pedidos.';
+  };
+</script>

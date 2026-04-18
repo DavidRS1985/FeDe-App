@@ -1,0 +1,23 @@
+# Ignorar archivos que no son parte del proyecto GAS
+**/.git/**
+node_modules/**
+**/node_modules/**
+*.js
+*.txt
+*.md
+archive/**
+DEBUG_STARTUP.html
+merged.html
+extracted_scripts.js
+.clasp.json
+package.json
+package-lock.json
+test.html
+simulated.js
+extract.js
+deep_syntax_check.js
+check_backticks.js
+check_handlers.js
+deep_handler_check.js
+find_syntax_error.js
+fix_app.js

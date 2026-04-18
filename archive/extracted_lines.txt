@@ -1,0 +1,2497 @@
+1: 
+2:   /**
+3:    * FERIADOS ARGENTINA E ITALIA — Base de datos y Lógica de Negocio
+4:    */
+5: 
+6:   const HOLIDAYS_DB = {
+7:     // Global / Coincidentes
+8:     '01-01': { name: 'Año Nuevo', desc: 'ITA: Cotechino con Lenticchie para atraer suerte. ARG: Vitel Toné, piononos y asado frío en familia.', type: 'national' },
+9:     '05-01': { name: 'Día del Trabajador', desc: 'ITA: Panino con la Porchetta o parrilladas de carne. ARG: Locro tradicional, asado o empanadas compartidas.', type: 'national' },
+10:     '12-08': { name: 'Inmaculada Concepción', desc: 'ITA: Pettole y bacalao frito. ARG: Día de armar el arbolito navideño, mates y tortas fritas.', type: 'national' },
+11:     '12-25': { name: 'Navidad', desc: 'ITA: Tortellini en caldo, asados, Panettone y Pandoro. ARG: Vitel Toné, ensalada rusa, asado, turrones y sidra.', type: 'national' },
+12: 
+13:     // Argentina
+14:     '02-17': { name: 'Carnaval', desc: 'ARG: Fiestas populares con murgas. Se suelen comer choripanes, empanadas y comida callejera.', type: 'national' },
+15:     '03-24': { name: 'Día de la Memoria', desc: 'ARG: recuerda a las víctimas de la última dictadura cívico-militar (1976-1983), promoviendo la reflexión, la defensa de la democracia, los derechos humanos y el "Nunca Más" al terrorismo de Estado.', type: 'national' },
+16:     '04-02': { name: 'Día de Malvinas', desc: 'ARG: Conmemoración solemne. Tradicionalmente guisos o comidas de bodegón patrio.', type: 'national' },
+17:     '05-25': { name: 'Revolución de Mayo', desc: 'ARG: Gran celebración patria. Imposible faltar el locro pampa, pastelitos de membrillo y churros.', type: 'national' },
+18:     '06-17': { name: 'Paso a la Inmortalidad de Güemes', desc: 'ARG: Feriado salteño extendido. Empanadas salteñas, tamales y humitas.', type: 'national' },
+19:     '06-20': { name: 'Día de la Bandera', desc: 'ARG: Creación de la insignia. Clásico día de asado dominguero o pastas en familia.', type: 'national' },
+20:     '07-09': { name: 'Día de la Independencia', desc: 'ARG: Fiestas de la independencia nacional. Empanadas de carne cortada a cuchillo, locro y vino tinto.', type: 'national' },
+21:     '08-17': { name: 'Paso a la Inmortalidad de San Martín', desc: 'ARG: Conmemoración del Padre de la Patria. Costumbres de asado, mate y pastelitos.', type: 'national' },
+22:     '10-12': { name: 'Día de la Diversidad Cultural', desc: 'ARG: Integración de culturas. Fusión gastronómica, asados y paellas.', type: 'national' },
+23:     '11-23': { name: 'Día de la Soberanía Nacional', desc: 'ARG: Recuerdo de la Vuelta de Obligado. Día de choripán, asado a la cruz u olla popular.', type: 'national' },
+24: 
+25:     // Italia
+26:     '01-06': { name: 'Epifanía (La Befana)', desc: 'ITA: Conmemoración de la visita de los Reyes Magos. Se acostumbra comer Fugassa d\'la Befana y dulces variados.', type: 'national' },
+27:     '04-25': { name: 'Día de la Liberación', desc: 'ITA: Fin de la ocupación nazi. Se suelen comer Fave e Pecorino y embutidos durante excursiones al campo.', type: 'national' },
+28:     '06-02': { name: 'Festa della Repubblica', desc: 'ITA: Nacimiento de la República. Almuerzos con Lasagna y platos que lleven colores de la bandera (caprese).', type: 'national' },
+29:     '08-15': { name: 'Ferragosto', desc: 'ITA: Fiesta del verano. Platos frescos como Pollo con i peperoni, ensaladas de arroz y Anguria (sandía).', type: 'national' },
+30:     '11-01': { name: 'Día de Todos los Santos', desc: 'ITA: Recuerdo de los difuntos. Preparaciones como el Pane dei Morti y platos a base de calabaza o castañas.', type: 'national' },
+31:     '12-26': { name: 'San Esteban', desc: 'ITA: Continuación de la Navidad. Se consumen  caldos ligeros o las sobras del día anterior.', type: 'national' }
+32:   };
+33: 
+34:   function calculateEaster(year) {
+35:     const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4,
+36:       f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30,
+37:       i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7,
+38:       m = Math.floor((a + 11 * h + 22 * l) / 451), month = Math.floor((h + l - 7 * m + 114) / 31),
+39:       day = ((h + l - 7 * m + 114) % 31) + 1;
+40:     return new Date(year, month - 1, day);
+41:   }
+42: 
+43:   function formatMMDD(date) {
+44:     return String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+45:   }
+46: 
+47:   function getHolidaysForYear(year) {
+48:     const easter = calculateEaster(year);
+49:     const movable = {};
+50:     const vSanto = new Date(easter); vSanto.setDate(easter.getDate() - 2);
+51:     const jSanto = new Date(easter); jSanto.setDate(easter.getDate() - 3);
+52:     const lPascua = new Date(easter); lPascua.setDate(easter.getDate() + 1);
+53: 
+54:     movable[formatMMDD(jSanto)] = { name: 'Jueves Santo', desc: 'ARG: Día de recogimiento. Vigilia: Empanadas de vigilia, tarta de atún y rosca de pascua.', type: 'observance' };
+55:     movable[formatMMDD(vSanto)] = { name: 'Viernes Santo', desc: 'ARG: Ayuno de carnes rojas. Platos de pescado, bacalao o empanadas de verdura.', type: 'national' };
+56:     movable[formatMMDD(easter)] = { name: 'Domingo de Pascua', desc: 'ITA: Agnello al forno, Torta Pasqualina y Colomba Pasquale. ARG: Asado, huevos de chocolate.', type: 'national' };
+57:     movable[formatMMDD(lPascua)] = { name: 'Lunes de Pascua (Pasquetta)', desc: 'ITA: Tradición de picnic con amigos. Se consumen Casatiello, frittatas y parrilladas.', type: 'national' };
+58: 
+59:     return { ...HOLIDAYS_DB, ...movable };
+60:   }
+61: 
+62:   function getUpcomingHolidays(days = 14, fromDate = new Date()) {
+63:     const holidays = getHolidaysForYear(fromDate.getFullYear());
+64:     const upcoming = [];
+65:     const today = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0);
+66: 
+67:     for (let i = 0; i <= days; i++) {
+68:       const d = new Date(today); d.setDate(today.getDate() + i);
+69:       const key = formatMMDD(d);
+70:       if (holidays[key]) {
+71:         upcoming.push({ date: d, dateString: key, ...holidays[key], daysFromNow: i });
+72:       }
+73:     }
+74:     return upcoming;
+75:   }
+76: 
+77:   class HolidayAlert {
+78:     constructor(options = {}) {
+79:       this.options = { cacheKey: 'fede_holiday_dismissed', ...options };
+80:       try {
+81:         this.dismissed = new Set(JSON.parse(localStorage.getItem(this.options.cacheKey) || '[]'));
+82:       } catch { this.dismissed = new Set(); }
+83:       this.init();
+84:     }
+85: 
+86:     init() { this.update(); setInterval(() => this.update(), 60000); }
+87: 
+88:     update() {
+89:     const now = new Date();
+90:     const badge = document.getElementById('noti-badge');
+91:     if (!badge) return;
+92: 
+93:     let alertHtml = '';
+94:     let alertCount = 0;
+95: 
+96:     const day = now.getDay();
+97:     if (day === 0 || day === 2) {
+98:       const msgText = "CONTROL DE STOCK";
+99:       const isDone = sessionStorage.getItem('fede_stock_done') === msgText;
+100:       
+101:       if (!isDone) {
+102:           alertCount++;
+103:           alertHtml += `
+104:             <div style="background:var(--blue); border-radius:16px; padding:16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 6px 20px rgba(91, 155, 213, 0.3);">
+105:                 <div style="display:flex; align-items:center; gap:12px; flex:1;">
+106:                     <div style="background:rgba(255,255,255,0.2); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+107:                         <i data-lucide="clipboard-check" style="color:white; width:var(--icon-size-medium);"></i>
+108:                     </div>
+109:                     <div>
+110:                         <div style="color:white; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; line-height:1.2;">Control Obligatorio</div>
+111:                         <div style="color:rgba(255,255,255,0.8); font-size:10px; font-weight:700; margin-top:2px;">Requerido hoy</div>
+112:                     </div>
+113:                 </div>
+114:                 <button onclick="window.holidayAlert.dismissStockCard('${msgText}')" style="background:white; color:var(--blue); border:none; border-radius:10px; padding:8px 14px; font-weight:900; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+115:                     <i data-lucide="check" style="width:var(--icon-size-small);"></i> Listo
+116:                 </button>
+117:             </div>
+118:           `;
+119:       } else {
+120:           alertHtml += `
+121:             <div style="background:linear-gradient(135deg, #10b981, #059669); border-radius:16px; padding:12px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 6px 20px rgba(16, 185, 129, 0.25);">
+122:                 <div style="display:flex; align-items:center; gap:12px;">
+123:                     <i data-lucide="check-circle-2" style="color:white; width:var(--icon-size-large); background:rgba(255,255,255,0.2); border-radius:10px; padding:8px;"></i>
+124:                     <div>
+125:                         <div style="color:white; font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Stock Completado</div>
+126:                         <div style="color:rgba(255,255,255,0.9); font-size:10px; font-weight:700;">¡Todo listo por hoy!</div>
+127:                     </div>
+128:                 </div>
+129:                 <button onclick="window.holidayAlert.undoStockCard()" style="background:rgba(0,0,0,0.15); color:white; border:none; border-radius:8px; padding:6px 10px; font-weight:800; font-size:10px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+130:                     <i data-lucide="rotate-ccw" style="width:var(--icon-size-small);"></i> Deshacer
+131:                 </button>
+132:             </div>
+133:           `;
+134:       }
+135:     }
+136: 
+137:     const upcoming = getUpcomingHolidays(7);
+138:     if (upcoming.length > 0) {
+139:       alertCount += upcoming.length;
+140:       
+141:       upcoming.forEach(h => {
+142:           let timeText = '';
+143:           const diffMs = h.date.getTime() - now.getTime();
+144:           
+145:           if (diffMs <= 0 && h.daysFromNow === 0) {
+146:               timeText = "Es Hoy";
+147:           } else if (diffMs < 24 * 3600 * 1000) {
+148:               const hs = Math.floor(diffMs / (1000 * 60 * 60));
+149:               const ms = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+150:               timeText = `${String(hs).padStart(2,'0')}:${String(ms).padStart(2,'0')}`;
+151:           } else {
+152:               timeText = `En ${Math.ceil(diffMs / (1000 * 3600 * 24))} días`;
+153:           }
+154: 
+155:           alertHtml += `
+156:             <div style="background:linear-gradient(135deg, #098b8c, #065f57); border-radius:16px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:flex-start; gap:14px; box-shadow:0 8px 25px rgba(6, 95, 87, 0.4); color:white;">
+157:                 <i data-lucide="calendar-clock" style="color:#a5f3fc; width:var(--icon-size-large); height:var(--icon-size-large); margin-top:2px; flex-shrink:0;"></i>
+158:                 <div style="flex:1;">
+159:                     <div style="display:flex; justify-content:space-between; align-items:center;">
+160:                         <div style="font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">${h.name}</div>
+161:                         <div style="background:rgba(0,0,0,0.25); padding:4px 8px; border-radius:8px; font-size:11px; font-weight:800; letter-spacing:1px; color:#a5f3fc; white-space:nowrap;">
+162:                             ${timeText}
+163:                         </div>
+164:                     </div>
+165:                     <div style="font-size:11px; font-weight:600; color:rgba(255,255,255,0.85); margin-top:6px; line-height:1.4;">
+166:                         ${h.desc}
+167:                     </div>
+168:                 </div>
+169:             </div>
+170:           `;
+171:       });
+172:     }
+173: 
+174:     this.cachedAlertHtml = alertHtml;
+175: 
+176:     if (alertCount > 0) {
+177:         badge.textContent = alertCount;
+178:         badge.classList.remove('hidden');
+179:     } else {
+180:         badge.classList.add('hidden');
+181:     }
+182: 
+183:     const openPanel = document.getElementById('noti-panel-content');
+184:     if (openPanel) {
+185:         openPanel.innerHTML = this.cachedAlertHtml || '<div style="text-align:center; padding:30px 20px; color:var(--dim); font-size:12px; font-weight:700;"><i data-lucide="check-circle" style="width:var(--icon-size-large); height:var(--icon-size-large); margin-bottom:10px; opacity:0.5;"></i><br>No hay notificaciones pendientes.</div>';
+186:         if(window.lucide) lucide.createIcons({root: openPanel});
+187:     }
+188:   }
+189: 
+190:   togglePanel() {
+191:       let overlay = document.getElementById('noti-overlay');
+192:       if (overlay) {
+193:           overlay.remove();
+194:           return;
+195:       }
+196:       
+197:       overlay = document.createElement('div');
+198:       overlay.id = 'noti-overlay';
+199:       overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:9000; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:80px; padding-left:20px; padding-right:20px; animation:fadeIn 0.2s ease;";
+200:       overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); }
+201:       
+202:       const content = this.cachedAlertHtml || '<div style="text-align:center; padding:30px 20px; color:var(--dim); font-size:12px; font-weight:700;"><i data-lucide="check-circle" style="width:var(--icon-size-large); height:var(--icon-size-large); margin-bottom:10px; opacity:0.5;"></i><br>No hay notificaciones pendientes.</div>';
+203:       
+204:       overlay.innerHTML = `
+205:         <div style="background:var(--s1); width:100%; max-width:400px; border-radius:24px; padding:20px; border:1px solid rgba(255,255,255,0.05); box-shadow:0 10px 40px rgba(0,0,0,0.8); position:relative; max-height:calc(100vh - 120px); display:flex; flex-direction:column;">
+206:             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-shrink:0;">
+207:                 <div style="font-weight:900; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;">
+208:                     <i data-lucide="bell-ring" style="width:var(--icon-size-medium); color:var(--gold);"></i> Notificaciones
+209:                 </div>
+210:                 <button onclick="document.getElementById('noti-overlay').remove()" style="background:rgba(255,255,255,0.05); border:none; width:30px; height:30px; border-radius:50%; color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer;"><i data-lucide="x" style="width:var(--icon-size-small);"></i></button>
+211:             </div>
+212:             <div id="noti-panel-content" style="overflow-y:auto; flex:1; padding-right:4px;">
+213:                 ${content}
+214:             </div>
+215:         </div>
+216:       `;
+217:       document.body.appendChild(overlay);
+218:       if(window.lucide) lucide.createIcons({root: overlay});
+219:   }
+220: 
+221:   showDetails() {
+222:       // Reemplazado por el Notification Center
+223:       this.togglePanel();
+224:   }
+225: 
+226:   dismissStockCard(msg) { sessionStorage.setItem('fede_stock_done', msg); this.update(); }
+227:   undoStockCard() { sessionStorage.removeItem('fede_stock_done'); this.update(); }
+228: }
+229: 
+230:   /**
+231:    * HOLIDAY STOCK PREDICTION
+232:    * Sugiere aumentos de stock antes de feriados
+233:    */
+234:   class HolidayStockHelper {
+235:     constructor(options = {}) {
+236:       this.options = { daysBuffer: 3, multiplier: 1.5, ...options };
+237:     }
+238: 
+239:     getSuggestedReorders() {
+240:       const upcoming = getUpcomingHolidays(7);
+241:       if (upcoming.length === 0) return [];
+242: 
+243:       const sug = [];
+244:       upcoming.forEach(h => {
+245:         if (h.daysFromNow <= this.options.daysBuffer) {
+246:           sug.push({
+247:             holiday: h.name,
+248:             date: h.date,
+249:             priority: h.daysFromNow === 0 ? 'urgent' : 'high',
+250:             message: this.generateMessage(h, h.daysFromNow),
+251:             categories: this.getHighDemandCategories(h)
+252:           });
+253:         }
+254:       });
+255:       return sug;
+256:     }
+257: 
+258:     getHighDemandCategories(h) {
+259:       const map = {
+260:         'Navidad': ['Carnes', 'Bebidas', 'Secos'],
+261:         'Año Nuevo': ['Bebidas', 'Carnes', 'Frutas'],
+262:         'Pascua': ['Verdulería', 'Lácteos']
+263:       };
+264:       return map[h.name] || ['Bebidas', 'Carnes', 'Panificados'];
+265:     }
+266: 
+267:     generateMessage(h, days) {
+268:       if (days === 0) return `⚠️ ${h.name} HOY. ¡Confirmar stock urgente!`;
+269:       if (days === 1) return `⚠️ Mañana es ${h.name}. Recomiendo reposición extra.`;
+270:       return `📦 En ${days} días: ${h.name}. Prepara tus pedidos.`;
+271:     }
+272:   }
+273: 
+274: 
+275:         window._fedeErrors = [];
+276:         window.addEventListener('error', function(e) {
+277:             window._fedeErrors.push(e.message || e.toString());
+278:             var eb = document.getElementById('error-box');
+279:             if (!eb) {
+280:                 eb = document.createElement('div');
+281:                 eb.id = 'error-box';
+282:                 eb.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:rgba(220,38,38,0.9);color:white;padding:15px;z-index:999999;border-radius:8px;font-family:sans-serif;font-weight:bold;font-size:12px;box-shadow:0 10px 25px rgba(0,0,0,0.5);overflow-wrap:break-word;';
+283:                 if(document.body) document.body.appendChild(eb);
+284:             }
+285:             eb.innerHTML = 'CRITICAL ERROR:<br>' + window._fedeErrors.join('<br>') + '<hr>File: ' + e.filename + '<br>Line: ' + e.lineno;
+286:             
+287:             if (e.filename && e.lineno) {
+288:                 fetch(e.filename).then(res => res.text()).then(text => {
+289:                     var lines = text.split('\n');
+290:                     var badLine = lines[e.lineno - 1];
+291:                     var prevLine = lines[e.lineno - 2];
+292:                     var nextLine = lines[e.lineno];
+293:                     eb.innerHTML += '<hr>CODE:<br><pre style="background:#000;color:#0f0;padding:5px;overflow:auto;">' + 
+294:                       (e.lineno - 1) + ': ' + prevLine + '\n' +
+295:                       e.lineno + ': ' + badLine + '\n' +
+296:                       (e.lineno + 1) + ': ' + nextLine +
+297:                     '</pre>';
+298:                 }).catch(err => console.log("Can't fetch script:", err));
+299:             }
+300:         });
+301:         window.addEventListener('unhandledrejection', function(e) {
+302:             window._fedeErrors.push('Promise: ' + (e.reason ? e.reason.toString() : 'Unknown'));
+303:             var eb = document.getElementById('error-box');
+304:             if (eb) eb.innerHTML = 'CRITICAL PROMISE ERROR:<br>' + window._fedeErrors.join('<br>');
+305:         });
+306:     
+307: 
+308: 
+309:     /* ——————————————————————————————————————————————————————————————————————————
+310:        FeDe ONLINE v8.4 — JS COMPLETO Y CORREGIDO (RESISTENTE A BUGS)
+311:        —————————————————————————————————————————————————————————————————————————— */
+312: 
+313:     let CATS = {}, FAVS = [], HIST = [], relData = {}, currentMode = null, activeCat = null, CUSTOM_UNITS = {};
+314:     let units = ["unidad/es", "kg", "litro/s", "porción/es", "pack/s", "atado/s", "frasco/s", "lata/s"];
+315:     let treeOpen = {};
+316:     let activeSheetId = localStorage.getItem('fede_active_sheet_id') || 'undefined';
+317:     let dbName = 'Master';
+318:     let loadingInterval = null;
+319: 
+320:     const PHRASES = [
+321:         "RETICULANDO ESTANTES...", "CONTANDO GRANOS DE ARROZ...", "PULIENDO COPAS...", 
+322:         "CALIBRANDO MERMAS...", "INVOCANDO REPARTIDOR...", "BUSCANDO TUPPER PERDIDO...",
+323:         "AMASANDO EL SERVIDOR...", "COSECHANDO TOMATES...", "EQUILIBRANDO SAL..."
+324:     ];
+325: 
+326:     /* ── INIT ── */
+327:     /* ── BOOT SEQUENCE (BULLETPROOF) ── */
+328:     function initApp() {
+329:         if (window.fedeInitialized) return;
+330:         window.fedeInitialized = true;
+331:         
+332:         console.log('🚀 [BOOT] Iniciando FeDe...');
+333: 
+334:         // ⏱️ TIMEOUT MASTER — Unico, garantizado, nunca cancelado
+335:         // Si despues de 7s nada resolvió, forzamos la carga de todas formas
+336:         window._masterBootTimeout = setTimeout(() => {
+337:             console.error('🔴 [BOOT] TIMEOUT MASTER - Forzando carga');
+338:             hideLoader('master-timeout');
+339:             toast('⚠️ Conexión lenta — usando datos locales');
+340:         }, 7000);
+341: 
+342:         try {
+343:             startLoadingPhrases();
+344:             loadAppTitle();
+345:             updateTime();
+346:             loadIconSizePreference();
+347:             
+348:             // Sistema Offline
+349:             window.offlineQueue = JSON.parse(localStorage.getItem('fede_offline_queue') || '[]');
+350:             if (typeof updateSyncBadge === 'function') updateSyncBadge();
+351:             window.addEventListener('online', () => { if (typeof processOfflineQueue === 'function') processOfflineQueue(); });
+352: 
+353:             // Usar snapshot local mientras llega la respuesta del servidor
+354:             loadLocalSnapshot();
+355: 
+356:             // Llamar al servidor GAS
+357:             console.log('📡 [BOOT] Conectando con GAS...');
+358:             loadConfigFromGAS();
+359: 
+360:             // Inicializar componentes en segundo plano
+361:             setTimeout(() => {
+362:                 try {
+363:                     if (typeof HolidayAlert !== 'undefined') {
+364:                         window.holidayAlert = new HolidayAlert();
+365:                         window.holidayHelper = new HolidayStockHelper();
+366:                     }
+367:                     setInterval(updateTime, 30000);
+368:                 } catch(e) {
+369:                     console.warn('⚠️ HolidayAlert no disponible:', e.message);
+370:                 }
+371:             }, 2000);
+372: 
+373:         } catch (e) {
+374:             console.error('🔴 [BOOT] Error crítico:', e);
+375:             hideLoader('boot-error');
+376:             toast('❌ Error en inicialización');
+377:         }
+378:     }
+379: 
+380:     // Manejo robusto del disparo de carga - Evita doble ejecución
+381:     if (document.readyState === 'loading') {
+382:         window.addEventListener('DOMContentLoaded', initApp, { once: true });
+383:     } else {
+384:         setTimeout(initApp, 1);
+385:     }
+386: 
+387:     /**
+388:      * 🎨 SISTEMA DE TAMAÑO GLOBAL DE ICONOS
+389:      */
+390:     function loadIconSizePreference() {
+391:         const savedSize = localStorage.getItem('fede_icon_size') || 'medium';
+392:         setGlobalIconSize(savedSize);
+393:         console.log('🎨 Icon size cargado:', savedSize);
+394:     }
+395: 
+396:     function setGlobalIconSize(size) {
+397:         const validSizes = ['small', 'medium', 'large'];
+398:         if (!validSizes.includes(size)) size = 'medium';
+399: 
+400:         document.documentElement.setAttribute('data-icon-size', size);
+401:         localStorage.setItem('fede_icon_size', size);
+402: 
+403:         const sizeButtons = document.querySelectorAll('[data-icon-control]');
+404:         sizeButtons.forEach(btn => {
+405:             btn.classList.remove('active');
+406:             if (btn.getAttribute('data-icon-control') === size) btn.classList.add('active');
+407:         });
+408: 
+409:         console.log('🎨 Icon size actualizado:', size);
+410:         refreshIcons();
+411:     }
+412: 
+413:     function renderIconSizeControls() {
+414:         const currentSize = localStorage.getItem('fede_icon_size') || 'medium';
+415: 
+416:         const activeStyle = 'background: var(--primary); border: 1px solid var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(234,88,12,0.3);';
+417:         const inactiveStyle = 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text2);';
+418:         const html = `
+419:         <div style="background: rgba(234, 88, 12, 0.06); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(234, 88, 12, 0.2); border-radius: var(--r2); padding: 20px; margin-bottom: 20px;">
+420:             <h3 style="font-family:'Outfit', sans-serif; font-size: 13px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display:flex; align-items:center; gap:8px;">
+421:                 Tamaño de Iconos
+422:             </h3>
+423:             <p style="font-size: 12px; color: var(--dim); margin-bottom: 14px; font-weight: 500;">Ajusta el tamaño global de iconos:</p>
+424:             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+425:                 <button data-icon-control="small" 
+426:                         onclick="setGlobalIconSize('small')" 
+427:                         style="flex: 1; min-width: 90px; padding: 14px 12px; border-radius: 14px; ${currentSize === 'small' ? activeStyle : inactiveStyle} font-family:'Outfit',sans-serif; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 12px; text-transform: uppercase; letter-spacing:0.5px;">
+428:                     ▾ Pequeño
+429:                 </button>
+430:                 <button data-icon-control="medium" 
+431:                         onclick="setGlobalIconSize('medium')" 
+432:                         style="flex: 1; min-width: 90px; padding: 14px 12px; border-radius: 14px; ${currentSize === 'medium' ? activeStyle : inactiveStyle} font-family:'Outfit',sans-serif; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 12px; text-transform: uppercase; letter-spacing:0.5px;">
+433:                     ■ Medio
+434:                 </button>
+435:                 <button data-icon-control="large" 
+436:                         onclick="setGlobalIconSize('large')" 
+437:                         style="flex: 1; min-width: 90px; padding: 14px 12px; border-radius: 14px; ${currentSize === 'large' ? activeStyle : inactiveStyle} font-family:'Outfit',sans-serif; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 12px; text-transform: uppercase; letter-spacing:0.5px;">
+438:                     ▲ Grande
+439:                 </button>
+440:             </div>
+441:         </div>
+442:         `;
+443: 
+444:         const treeSection = document.getElementById('tree-cats');
+445:         if (treeSection && !document.getElementById('icon-size-controls')) {
+446:             const wrapper = document.createElement('div');
+447:             wrapper.id = 'icon-size-controls';
+448:             wrapper.innerHTML = html;
+449:             treeSection.parentElement.insertBefore(wrapper, treeSection);
+450:             lucide.createIcons();
+451:         }
+452:     }
+453: 
+454:     function loadLocalSnapshot() {
+455:         const snap = JSON.parse(localStorage.getItem(`fede_snapshot_${activeSheetId}`) || 'null');
+456:         if (snap) {
+457:             console.log('📦 [CACHE] Usando snapshot local');
+458:             CATS = snap.cats || {};
+459:             FAVS = snap.favs || [];
+460:             HIST = snap.history || [];
+461:             if (snap.units) units = snap.units;
+462:             if (snap.custom_units) CUSTOM_UNITS = snap.custom_units;
+463:             renderCatGrid();
+464:             renderTree();
+465:             renderHistory();
+466:             updateDBLabel();
+467:         }
+468:     }
+469: 
+470:     const HOLIDAYS = {
+471:         '04-02': 'Día de Malvinas',
+472:         '04-03': 'Viernes Santo',
+473:         '05-01': 'Día del Trabajador',
+474:         '05-25': 'Revolución de Mayo',
+475:         '06-20': 'Día de la Bandera',
+476:         '07-09': 'Día de la Independencia',
+477:         '12-25': 'Navidad'
+478:     };
+479: 
+480:     function updateTime() {
+481:         const now = new Date();
+482:         const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+483:         const dayEl = document.getElementById('hdr-day'), homeDayEl = document.getElementById('home-day');
+484:         const dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+485:         const fullDay = `${days[now.getDay()]} ${dateStr}`;
+486:         if (dayEl) dayEl.textContent = fullDay;
+487:         if (homeDayEl) homeDayEl.textContent = fullDay;
+488:     }
+489: 
+490:     function setSyncStatus(st) {
+491:         const el = document.getElementById('sync-status'); if (!el) return;
+492:         el.className = 'sync-status ' + st;
+493:         const icon = el.querySelector('i');
+494:         if (icon) {
+495:             icon.setAttribute('data-lucide', st === 'online' ? 'cloud-check' : (st === 'pending' ? 'cloud-upload' : 'cloud-off'));
+496:             refreshIcons();
+497:         }
+498:     }
+499: 
+500:     let PREDICTIONS = {};
+501:     function loadPredictions() { 
+502:         // Con timeout y error handler
+503:         google.script.run
+504:             .withSuccessHandler(r => { 
+505:                 if (r && r.success) { 
+506:                     PREDICTIONS = {}; 
+507:                     (r.predictions || []).forEach(p => PREDICTIONS[p.name] = p.suggestion); 
+508:                     renderProducts(); 
+509:                 }
+510:             })
+511:             .withFailureHandler(e => {
+512:                 console.warn('❌ Predicciones no disponibles:', e);
+513:                 // Continuar sin predicciones
+514:                 renderProducts();
+515:             })
+516:             .withUserObject({ timeout: 3000 })
+517:             .getPredictiveAnalysis(activeSheetId); 
+518:     }
+519: 
+520:     function loadConfigFromGAS() {
+521:         updateDBLabel();
+522:         google.script.run.withSuccessHandler(onConfigLoaded).withFailureHandler(onConfigFailed).getAppConfig(activeSheetId);
+523:     }
+524: 
+525:     function onConfigLoaded(result) {
+526:         // Limpiar TODOS los timeouts al recibir respuesta del servidor
+527:         if (window._masterBootTimeout) { clearTimeout(window._masterBootTimeout); window._masterBootTimeout = null; }
+528:         if (window.loaderTimeout) { clearTimeout(window.loaderTimeout); window.loaderTimeout = null; }
+529:         hideLoader('config-loaded');
+530: 
+531:         if (!result) {
+532:             console.warn('GAS payload nulo');
+533:             toast("⚠️ Modo Offline - Datos locales");
+534:             return;
+535:         }
+536: 
+537:         try {
+538:             const { config, history, ssName, isOfflineMode, source, error } = result;
+539:             
+540:             // Actualizar nombre de DB
+541:             if (ssName) { 
+542:                 dbName = isOfflineMode ? `${ssName} (Offline)` : ssName;
+543:                 updateDBLabel(); 
+544:             }
+545: 
+546:             // Cargar datos - Funciona en línea o sin conexión
+547:             if (config) {
+548:                 if (config.cats) CATS = config.cats;
+549:                 if (config.favs) FAVS = config.favs;
+550:                 if (config.units) units = config.units;
+551:                 if (config.custom_units) CUSTOM_UNITS = config.custom_units;
+552:             }
+553:             
+554:             if (history && Array.isArray(history)) { 
+555:                 HIST = history; 
+556:                 renderHistory(); 
+557:             }
+558: 
+559:             // Cache local para inicio instantáneo en la próxima carga
+560:             localStorage.setItem(`fede_snapshot_${activeSheetId}`, JSON.stringify({ 
+561:                 cats: CATS, favs: FAVS, history: HIST, units: units, custom_units: CUSTOM_UNITS, ts: Date.now() 
+562:             }));
+563: 
+564:             // Mostrar estado
+565:             if (isOfflineMode) {
+566:                 console.warn('⚠️ Modo Offline: ', error);
+567:                 toast("📡 Modo Offline - Últimos datos");
+568:             } else {
+569:                 console.log('✓ Datos sincronizados desde servidor');
+570:             }
+571: 
+572:             // Renderizar UI
+573:             renderCatGrid();
+574:             renderTree();
+575:             loadPredictions();
+576:             
+577:             setTimeout(() => {
+578:                 refreshIcons();
+579:                 checkDraft();
+580:                 renderFAB();
+581:             }, 50);
+582:         } catch (e) {
+583:             console.error('Data proc error:', e);
+584:             toast("⚠️ Error procesando datos - Usando offline");
+585:             // Intenta renderizar aunque falle
+586:             try {
+587:                 renderCatGrid();
+588:                 renderTree();
+589:                 setTimeout(() => {
+590:                     refreshIcons();
+591:                     checkDraft();
+592:                     renderFAB();
+593:                 }, 50);
+594:             } catch(e2) {
+595:                 console.error('Error crítico en renderizado:', e2);
+596:             }
+597:         }
+598:     }
+599: 
+600:     function onConfigFailed(error) {
+601:         console.error('❌ Error GAS:', error);
+602:         // Limpiar TODOS los timeouts y ocultar el loader
+603:         if (window._masterBootTimeout) { clearTimeout(window._masterBootTimeout); window._masterBootTimeout = null; }
+604:         if (window.loaderTimeout) { clearTimeout(window.loaderTimeout); window.loaderTimeout = null; }
+605:         hideLoader('config-failed');
+606: 
+607:         toast("⚠️ No se pudo conectar con servidor");
+608:         refreshIcons();
+609:         checkDraft();
+610:     }
+611: 
+612:     function hideLoader(reason = '') {
+613:         // Cancelar el master timeout si la carga fue exitosa
+614:         if (window._masterBootTimeout) {
+615:             clearTimeout(window._masterBootTimeout);
+616:             window._masterBootTimeout = null;
+617:         }
+618:         
+619:         if (loadingInterval) { clearInterval(loadingInterval); loadingInterval = null; }
+620:         
+621:         const loader = document.getElementById('loader');
+622:         if (!loader) return;
+623:         
+624:         // Si ya está oculto, no hacer nada más
+625:         if (loader.style.display === 'none') return;
+626:         
+627:         console.log('✓ [LOADER] Ocultando loader:', reason);
+628:         
+629:         // Home siempre visible
+630:         const home = document.getElementById('home');
+631:         if (home) {
+632:             home.style.display = 'flex';
+633:             home.style.opacity = '1';
+634:             home.style.visibility = 'visible';
+635:         }
+636:         
+637:         // Ocultar sin animación en timeouts
+638:         if (reason && reason.includes('timeout')) {
+639:             loader.style.display = 'none';
+640:             loader.style.opacity = '0';
+641:             loader.style.pointerEvents = 'none';
+642:             renderFAB();
+643:             refreshIcons();
+644:             checkDraft();
+645:             return;
+646:         }
+647: 
+648:         // Animación normal de salida
+649:         loader.style.opacity = '0';
+650:         loader.style.pointerEvents = 'none';
+651:         
+652:         setTimeout(() => {
+653:             loader.style.display = 'none';
+654:             renderFAB();
+655:             refreshIcons();
+656:             checkDraft();
+657:         }, 300);
+658:     }
+659: 
+660:     function startLoadingPhrases() {
+661:         const el = document.getElementById('loader-phrase');
+662:         if (!el) return;
+663: 
+664:         const update = () => {
+665:             const randomPhrase = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+666:             el.style.animation = 'none';
+667:             el.offsetHeight; // trigger reflow
+668:             el.style.animation = 'phraseFade 0.5s ease-in-out';
+669:             el.textContent = randomPhrase;
+670:         };
+671: 
+672:         update(); // First one immediate
+673:         // En móvil, cambiar frase más lentamente
+674:         const isMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
+675:         loadingInterval = setInterval(update, isMobile ? 2000 : 1500);
+676:     }
+677: 
+678:     function saveCatsToGAS(cats) {
+679:         google.script.run
+680:             .withSuccessHandler(result => {
+681:                 if (result && result.success) {
+682:                     toast('✓ Guardado en servidor');
+683:                     localStorage.setItem('fede_cats_backup', JSON.stringify(cats));
+684:                 } else toast('❌ Error guardando');
+685:             })
+686:             .withFailureHandler(error => toast('❌ Error de servidor'))
+687:             .saveConfig('cats', cats, activeSheetId);
+688:     }
+689: 
+690:     function addEntryToGAS(entry) {
+691:         google.script.run
+692:             .withSuccessHandler(result => {
+693:                 if (result && result.success) {
+694:                     toast('✓ Registrado');
+695:                     loadConfigFromGAS();
+696:                 } else toast('❌ Error al guardar');
+697:             })
+698:             .withFailureHandler(error => toast('❌ Error de servidor'))
+699:             .addHistoryEntry(entry, activeSheetId);
+700:     }
+701: 
+702:     function deleteHistoryEntry(entryId) {
+703:         google.script.run
+704:             .withSuccessHandler(res => { if (res.success) { toast('✓ Borrado'); loadConfigFromGAS(); } })
+705:             .deleteHistoryEntry(entryId, activeSheetId);
+706:     }
+707: 
+708:     function deleteHistoryData(type) {
+709:         google.script.run
+710:             .withSuccessHandler(res => { if (res.success) { toast('✓ Historial limpiado'); loadConfigFromGAS(); } })
+711:             .deleteHistory(type, activeSheetId);
+712:     }
+713: 
+714:     /* ── NAVEGACIÓN ── */
+715:     function initRelevamiento(m) {
+716:         enterMode(m);
+717:         goTab('relevamiento');
+718:         renderFAB();
+719:     }
+720: 
+721:     // Mapa de modos: colores y etiquetas
+722:     const MODE_CONFIG = {
+723:         pedido:    { label: 'PEDIDO',    cls: 'pedido',    bodyClass: 'mode-pedido',    borderColor: 'var(--green)',  glow: 'rgba(16,185,129,0.15)' },
+724:         stock:     { label: 'STOCK',     cls: 'stock',     bodyClass: 'mode-stock',     borderColor: 'var(--warning)',glow: 'rgba(245,158,11,0.15)' },
+725:         recepcion: { label: 'RECEPCIÓN', cls: 'recepcion', bodyClass: 'mode-recepcion', borderColor: 'var(--blue)',   glow: 'rgba(59,130,246,0.15)' },
+726:     };
+727: 
+728:     function showModeTag(m) {
+729:         const tag = document.getElementById('mode-tag');
+730:         if (!tag) return;
+731:         const cfg = MODE_CONFIG[m];
+732:         if (cfg) {
+733:             tag.textContent = cfg.label;
+734:             tag.className = 'mode-tag-lg ' + cfg.cls;
+735:             tag.classList.remove('hidden');
+736:         } else {
+737:             tag.classList.add('hidden');
+738:             tag.textContent = '';
+739:         }
+740:     }
+741: 
+742:     function hideModeTag() {
+743:         const tag = document.getElementById('mode-tag');
+744:         if (tag) { tag.classList.add('hidden'); tag.textContent = ''; }
+745:     }
+746: 
+747:     // Abre bottom sheet para cambiar de modo (solo posible si no hay datos cargados)
+748:     function openModeSwitcher() {
+749:         const sh = document.getElementById('mode-switcher-sheet');
+750:         if (!sh) return;
+751: 
+752:         const hasData = Object.keys(relData || {}).length > 0;
+753:         const warn = document.getElementById('ms-warn');
+754:         if (warn) warn.classList.toggle('hidden', !hasData);
+755: 
+756:         sh.classList.add('open');
+757:         refreshIcons();
+758:     }
+759: 
+760:     function closeModeSwitcher(e) {
+761:         if (!e || e.target === document.getElementById('mode-switcher-sheet')) {
+762:             document.getElementById('mode-switcher-sheet')?.classList.remove('open');
+763:         }
+764:     }
+765:     function switchModeTo(m) {
+766:         const hasData = Object.keys(relData).length > 0;
+767:         if (hasData) {
+768:             if (!confirm('Hay datos cargados. Si cambias de modo se borran. ¿Continuar?')) return;
+769:             relData = {};
+770:             localStorage.removeItem('fede_draft');
+771:         }
+772:         closeModeSwitcher();
+773:         if (m === 'recepcion') {
+774:             // La vista de recepción ahora está integrada en el flujo o tiene su propia lógica
+775:             enterMode('recepcion');
+776:             goTab('relevamiento'); // Integrado al relevamiento para consistencia
+777:         } else {
+778:             enterMode(m);
+779:             goTab('relevamiento');
+780:         }
+781:         renderFAB();
+782:         toast('Modo: ' + MODE_CONFIG[m].label);
+783:     }
+784: 
+785:     function enterMode(m) {
+786:         currentMode = m;
+787:         const hdr = document.getElementById('main-hdr');
+788:         const cfg = MODE_CONFIG[m] || {};
+789: 
+790:         // Limpiar TODAS las clases de modo previas y aplicar la nueva
+791:         Object.values(MODE_CONFIG).forEach(c => document.body.classList.remove(c.bodyClass));
+792:         if (cfg.bodyClass) document.body.classList.add(cfg.bodyClass);
+793: 
+794:         showModeTag(m);
+795: 
+796:         if (hdr) {
+797:             hdr.style.borderBottom = '2px solid ' + (cfg.borderColor || 'var(--bd)');
+798:             hdr.style.boxShadow = '0 2px 20px ' + (cfg.glow || 'transparent');
+799:         }
+800:     }
+801: 
+802:     function enterAdmin() {
+803:         currentMode = null;
+804:         document.getElementById('home').classList.add('hidden');
+805:         document.getElementById('app').classList.add('visible');
+806:         hideModeTag();
+807:         const hdr = document.getElementById('main-hdr');
+808:         if (hdr) { hdr.style.borderBottom = '1px solid var(--bd)'; hdr.style.boxShadow = 'none'; }
+809:         goTab('datos');
+810:         setTimeout(() => renderIconSizeControls(), 100);
+811:         refreshIcons();
+812:     }
+813: 
+814:     function enterDashboard() {
+815:         currentMode = null;
+816:         document.getElementById('home').classList.add('hidden');
+817:         document.getElementById('app').classList.add('visible');
+818:         hideModeTag();
+819:         const hdr = document.getElementById('main-hdr');
+820:         if (hdr) { hdr.style.borderBottom = '1px solid var(--bd)'; hdr.style.boxShadow = 'none'; }
+821:         goTab('dashboard');
+822:         renderDashboard();
+823:         refreshIcons();
+824:     }
+825: 
+826:     function goHome() {
+827:         if (currentMode && Object.keys(relData).length > 0) saveDraft();
+828:         document.getElementById('app').classList.remove('visible');
+829:         document.getElementById('home').classList.remove('hidden');
+830:         document.getElementById('prod-section')?.classList.add('hidden');
+831:         hideModeTag();
+832:         const hdr = document.getElementById('main-hdr');
+833:         if (hdr) { hdr.style.borderBottom = ''; hdr.style.boxShadow = ''; }
+834: 
+835:         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+836:         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+837: 
+838:         // Limpiar clases de modo del body
+839:         Object.values(MODE_CONFIG).forEach(c => document.body.classList.remove(c.bodyClass));
+840: 
+841:         currentMode = null;
+842:         activeCat = null;
+843:         checkDraft();
+844:         refreshIcons();
+845:     }
+846: 
+847:     function goTab(id) {
+848:         const h = document.getElementById('home');
+849:         const a = document.getElementById('app');
+850:         if (h) h.classList.add('hidden');
+851:         if (a) { a.classList.remove('hidden'); a.classList.add('visible'); }
+852: 
+853:         // Mostrar pastilla SOLO en vistas de carga activa
+854:         const activePillViews = ['relevamiento', 'entrante'];
+855:         if (activePillViews.includes(id) && currentMode) {
+856:             showModeTag(currentMode);
+857:         } else {
+858:             hideModeTag();
+859:         }
+860: 
+861:         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+862:         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+863: 
+864:         const viewEl = document.getElementById('view-' + id);
+865:         const tabEl = document.getElementById('tab-' + id);
+866: 
+867:         if (viewEl) viewEl.classList.add('active');
+868:         if (tabEl) tabEl.classList.add('active');
+869: 
+870:         if (id === 'relevamiento') renderCatGrid();
+871:         if (id === 'historial') renderHistory();
+872:         if (id === 'datos') { renderTree(); setTimeout(() => renderIconSizeControls(), 100); }
+873:         if (id === 'dashboard') renderDashboard();
+874:         if (id === 'entrante') renderEntranteView();
+875: 
+876:         renderFAB();
+877:         setTimeout(() => lucide.createIcons(), 50);
+878:     }
+879: 
+880:     /* ── RELEVAMIENTO ── */
+881:     function renderCatGrid() {
+882:         const grid = document.getElementById('cat-grid');
+883:         if (!grid) return;
+884:         const catNames = Object.keys(CATS);
+885:         if (catNames.length === 0) {
+886:             grid.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px;">Sin categorías cargadas</div>';
+887:             return;
+888:         }
+889:         const sorted = catNames.sort((a, b) => (CATS[a].order || 99) - (CATS[b].order || 99));
+890:         grid.innerHTML = sorted.map(cat => {
+891:             const icon = CATS[cat]?.icon || 'package';
+892:             const size = CATS[cat]?.iconSize;
+893:             const styleOverride = size ? `style="--cat-icon-size: ${size}px;"` : '';
+894:             const encoded = encodeURIComponent(cat);
+895:             return `<div class="cchip" data-cat="${encoded}" onclick="selectCatFromEl(this)" ${styleOverride}>
+896:                 <i data-lucide="${icon}"></i>
+897:                 <span>${cat}</span>
+898:             </div>`;
+899:         }).join('');
+900:         refreshIcons(grid);
+901:     }
+902: 
+903:     function selectCatFromEl(el) { selectCat(decodeURIComponent(el.dataset.cat)); }
+904:     function selectCat(cat) {
+905:         if (!CATS[cat]) return toast('❌ Categoría no encontrada');
+906:         activeCat = cat;
+907:         const searchInp = document.getElementById('prod-search');
+908:         if (searchInp) searchInp.value = '';
+909:         document.querySelectorAll('.cchip').forEach(c => c.classList.remove('active'));
+910:         document.querySelector(`.cchip[data-cat="${encodeURIComponent(cat)}"]`)?.classList.add('active');
+911:         document.getElementById('cat-title').textContent = cat;
+912:         document.getElementById('prod-section').classList.remove('hidden');
+913:         renderProducts();
+914:         setTimeout(() => document.getElementById('prod-section').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+915:     }
+916: 
+917:     function renderProducts() {
+918:         if (!activeCat || !CATS[activeCat]) return;
+919:         const list = document.getElementById('prod-list');
+920:         if (!list) return;
+921:         const prods = [...(CATS[activeCat]?.prods || [])].sort();
+922:         if (prods.length === 0) {
+923:             list.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px;">Sin productos en esta categoría</div>';
+924:             return;
+925:         }
+926:         try {
+927:             list.innerHTML = prods.map(p => genProductRow(p, getUnitsForProduct(activeCat, p))).join('');
+928:             renderFAB();
+929:             refreshIcons(list);
+930:         } catch (e) {
+931:             console.error('❌ [RENDER] Error:', e.message);
+932:         }
+933:     }
+934: 
+935:     function genProductRow(p, prodUnits) {
+936:         if (!Array.isArray(prodUnits)) prodUnits = getUnitsForProduct(activeCat, p);
+937:         const ep = encodeURIComponent(p);
+938:         const d = relData[p] || { qty: 0, unit: (prodUnits[0] || units[0]) };
+939:         const isFav = FAVS.includes(p);
+940:         const is86 = d.qty === 86;
+941:         return `
+942:             <div data-prow="${ep}" class="prow ${d.qty > 0 ? 'has-qty' : ''} ${is86 ? 'is-86' : ''}">
+943:                 <!-- FILA 1: NOMBRE Y FAV -->
+944:                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+945:                     <button onclick="toggleFav('${ep}')" aria-label="${isFav ? 'Quitar favorito' : 'Agregar favorito'}" style="background:none; border:none; color:${isFav ? 'var(--gold)' : 'var(--dim2)'}; cursor:pointer; flex-shrink:0; display:flex; align-items:center; padding:4px;">
+946:                         <i data-lucide="star" style="width:20px; height:20px; fill:${isFav ? 'var(--gold)' : 'none'}; color:${isFav ? 'var(--gold)' : 'var(--dim)'};"></i>
+947:                     </button>
+948:                     <div style="flex:1;">
+949:                         <div class="pname">${p}</div>
+950:                         ${PREDICTIONS[p] ? `<div style="font-size:10px; color:var(--blue); font-weight:800; margin-top:2px; text-transform:uppercase; letter-spacing:0.5px;">Sug: ${PREDICTIONS[p]} ${d.unit}</div>` : ''}
+951:                     </div>
+952:                 </div>
+953:                 
+954:                 <div style="display:flex; align-items:center; justify-content:center; width:100%;">
+955:                     <div class="stepper" style="width:100%; max-width:280px; background:var(--s2); border-radius:18px; display:flex; align-items:center; border:2px solid var(--bd);">
+956:                         <button class="step-btn" data-prod="${ep}" data-dir="-1" onclick="stepEl(this)" style="padding:16px 24px; font-weight:900; background:none; border:none; font-size:28px;">−</button>
+957:                         <div class="pqty-box" onclick="manualEl(this)" data-prod="${ep}" style="flex:1; text-align:center; font-weight:900; font-size:24px; color:var(--text); line-height:1.1;">
+958:                             <div style="color:${is86 ? 'var(--red)' : 'var(--text)'}">${is86 ? '86' : (d.qty || '0')}</div>
+959:                             <div style="font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">${is86 ? 'AGOTADO' : d.unit}</div>
+960:                         </div>
+961:                         <button class="step-btn" data-prod="${ep}" data-dir="1" onclick="stepEl(this)" style="padding:16px 24px; font-weight:900; background:none; border:none; font-size:28px;">+</button>
+962:                     </div>
+963:                 </div>
+964:                 
+965:                 <!-- FILA 3: UNIDADES -->
+966:                 <div class="unit-row" style="margin-top:14px; display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;">
+967:                     ${prodUnits.map(u => `<div class="uchip ${d.unit === u ? 'active' : ''}" data-prod="${ep}" data-unit="${encodeURIComponent(u)}" onclick="setUnitEl(this)" style="padding:8px 14px; font-size:12px; min-width:60px;">${u}</div>`).join('')}
+968:                 </div>
+969:             </div>`;
+970:     }
+971: 
+972:     function updateProductRow(p) {
+973:         const ep = encodeURIComponent(p);
+974:         const el = document.querySelector(`[data-prow="${ep}"]`);
+975:         if (el) {
+976:             el.outerHTML = genProductRow(p);
+977:             // Re-renderizar iconos solo en ese elemento si fuera necesario (aquí no hay iconos vinculados a valores dinámicos pero por precaución:)
+978:             // refreshIcons(document.querySelector(`[data-prow="${ep}"]`));
+979:         }
+980:     }
+981: 
+982:     function refreshIcons(root = document) {
+983:         if (window.lucide) lucide.createIcons({ root: root });
+984:         // Aplicar tamaños de iconos desde el data-icon-size
+985:         root.querySelectorAll('[data-lucide]').forEach(icon => {
+986:             if (!icon.style.width) {
+987:                 icon.style.width = 'var(--icon-size)';
+988:                 icon.style.height = 'var(--icon-size)';
+989:             }
+990:         });
+991:     }
+992: 
+993:     let searchTimeout = null;
+994:     function filterProducts(q) {
+995:         if (searchTimeout) clearTimeout(searchTimeout);
+996:         searchTimeout = setTimeout(() => {
+997:             const query = q.toLowerCase().trim();
+998:             document.querySelectorAll('.prow').forEach(el => {
+999:                 const name = el.querySelector('.pname').textContent.toLowerCase();
+1000:                 el.style.display = name.includes(query) ? '' : 'none';
+1001:             });
+1002:         }, 150);
+1003:     }
+1004: 
+1005:     function formatUnit(q, u) {
+1006:         if (!u) return '';
+1007:         const pts = u.split('/');
+1008:         const sing = pts[0];
+1009:         const plur = pts.length > 1 ? sing + pts[1] : sing + 's';
+1010:         return q === 1 ? sing : plur;
+1011:     }
+1012: 
+1013:     const UNIT_MAPPING = {
+1014:         "Huevos": ["unidad/es", "docena", "maple"],
+1015:         "Carnes": ["kg", "piezas", "cortes"],
+1016:         "Aceite": ["litro/s", "bidones", "botellas"],
+1017:         "Lácteos": ["litro/s", "unidad/es", "kg"],
+1018:         "Verdurería": ["kg", "atado/s", "unidad/es"], // BUG 12 FIX: era "Verduras"
+1019:         "Cereales": ["kg", "bolsa/s", "unidad/es"],
+1020:         "Frutas": ["kg", "unidad/es", "bolsa/s"],
+1021:         "Panes": ["unidad/es", "bolsa/s", "pack/s"],
+1022:         "Pescados": ["kg", "piezas", "Porciones"],
+1023:         "Bebidas": ["litro/s", "botella/s", "lata/s"],
+1024:         "Condimentos": ["kg", "frasco/s", "unidad/es"],
+1025:         "Pastas": ["kg", "pack/s", "unidad/es"],
+1026:         "Congelados": ["kg", "unidad/es", "pack/s"]
+1027:     };
+1028: 
+1029:     function getUnitsForProduct(catName, prodName = '') {
+1030:         if (prodName && CUSTOM_UNITS[prodName] && CUSTOM_UNITS[prodName].length > 0) return CUSTOM_UNITS[prodName];
+1031:         let defaultU = UNIT_MAPPING[catName] || units;
+1032:         if (!prodName) return defaultU;
+1033: 
+1034:         const p = prodName.toLowerCase();
+1035:         
+1036:         // 🚀 INTELIGENCIA DE UNIDADES (SISTEMA DE MATCHING DINÁMICO)
+1037:         // -------------------------------------------------------------
+1038:         
+1039:         // 1. Carnes, Pescados y Embutidos
+1040:         if (p.includes('carne') || p.includes('pollo') || p.includes('cerdo') || p.includes('bife') || p.includes('lomo') || 
+1041:             p.includes('bondiola') || p.includes('peceto') || p.includes('oso') || p.includes('panceta') || 
+1042:             p.includes('pescado') || p.includes('merluza') || p.includes('salmón') || p.includes('salmon') || p.includes('pechuga')) {
+1043:             return ['kg', 'pieza/s', 'unidad/es', 'gramos'];
+1044:         } 
+1045:         
+1046:         // 2. Lácteos y Quesos
+1047:         if (p.includes('queso') || p.includes('sardo') || p.includes('gouda') || p.includes('parmesano') || p.includes('brie') || 
+1048:             p.includes('azul') || p.includes('horma')) {
+1049:             return ['kg', 'horma/s', 'unidad/es', 'gramos'];
+1050:         }
+1051:         if (p.includes('leche') || p.includes('crema') || p.includes('yogurt') || p.includes('miel') || p.includes('aceite')) {
+1052:             return ['litro/s', 'caja/s', 'pote/s', 'botella/s', 'bidón/es'];
+1053:         }
+1054:         if (p.includes('burrata') || p.includes('manteca') || p.includes('ricota') || p.includes('provoleta')) {
+1055:             return ['unidad/es', 'pote/s', 'kg', 'pan/es'];
+1056:         }
+1057:         
+1058:         // 3. Verdulería y Frutas
+1059:         if (p.includes('papa') || p.includes('cebolla') || p.includes('calabaza') || p.includes('zanahoria') || p.includes('tomate')) {
+1060:             return ['kg', 'cajón/es', 'bolsa/s', 'unidad/es'];
+1061:         }
+1062:         if (p.includes('lechuga') || p.includes('rúcula') || p.includes('espinaca') || p.includes('rúcula') || p.includes('perejil') || p.includes('verdeo')) {
+1063:             return ['atado/s', 'kg', 'bolsa/s', 'unidad/es'];
+1064:         }
+1065:         if (p.includes('limón') || p.includes('manzana') || p.includes('naranja') || p.includes('palta') || p.includes('choclo') || p.includes('ajo')) {
+1066:             return ['kg', 'unidad/es', 'caja/s'];
+1067:         }
+1068:         if (p.includes('arándano') || p.includes('frutilla') || p.includes('cherry')) {
+1069:             return ['paquete/s', 'bandeja/s', 'kg', 'gramos'];
+1070:         }
+1071: 
+1072:         // 4. Panadería y Masas
+1073:         if (p.includes('pan ') || p.includes('brioche') || p.includes('focaccia') || p.includes('prepiz') || p.includes('tequeño')) {
+1074:             return ['unidad/es', 'bolsa/s', 'kg', 'docena'];
+1075:         }
+1076: 
+1077:         // 5. Pastas y Secos
+1078:         if (p.includes('fideo') || p.includes('spaguetti') || p.includes('pasta') || p.includes('tallarine') || p.includes('ñoqui') || p.includes('sorrentino') || 
+1079:             p.includes('harina') || p.includes('azúcar') || p.includes('arroz') || p.includes('fécula') || p.includes('lenteja') || p.includes('garbanzo')) {
+1080:             return ['kg', 'paquete/s', 'bolsa/s', 'gramos'];
+1081:         }
+1082: 
+1083:         // 6. Condimentos y Conservas
+1084:         if (p.includes('sal ') || p.includes('pimienta') || p.includes('condimento') || p.includes('ají') || p.includes('orégano') || p.includes('vinagre') || p.includes('aceto')) {
+1085:             return ['paquete/s', 'frasco/s', 'kg', 'gramos', 'botella/s'];
+1086:         }
+1087:         if (p.includes('aceituna') || p.includes('alcaparra') || p.includes('hongo') || p.includes('tomates de') || p.includes('pasta de') || p.includes('mermelada')) {
+1088:             return ['frasco/s', 'lata/s', 'kg', 'unidad/es'];
+1089:         }
+1090: 
+1091:         // 7. Bebidas y Varios
+1092:         if (p.includes('vino') || p.includes('cerveza') || p.includes('gaseosa') || p.includes('agua') || p.includes('jugo')) {
+1093:             return ['botella/s', 'cajón/es', 'litro/s', 'unidad/es'];
+1094:         }
+1095:         if (p.includes('huevo')) return ['maple', 'docena', 'unidad/es'];
+1096:         
+1097:         // 8. Platos de Carta / Cocina / Personal
+1098:         if (catName === 'Platos carta' || catName === 'Personal' || p.includes('milanesa') || p.includes('pizza') || p.includes('tarta') || p.includes('hamburguesa')) {
+1099:             return ['porción/es', 'unidad/es', 'kg', 'bandeja/s'];
+1100:         }
+1101: 
+1102:         return defaultU;
+1103:     }
+1104: 
+1105:     function setUnitEl(el) { setUnit(decodeURIComponent(el.dataset.prod), decodeURIComponent(el.dataset.unit)); }
+1106:     function setUnit(p, u) {
+1107:         if (!relData[p]) relData[p] = { qty: 0, unit: u };
+1108:         else relData[p].unit = u;
+1109:         updateProductRow(p); saveDraft();
+1110:     }
+1111: 
+1112:     function stepEl(el) { stepProd(decodeURIComponent(el.dataset.prod), parseInt(el.dataset.dir)); }
+1113:     function stepProd(p, dir) {
+1114:         if (!relData[p]) relData[p] = { qty: 0, unit: units[0] };
+1115: 
+1116:         // Moverse entre 0 y 86
+1117:         if (dir === -1 && relData[p].qty === 0) {
+1118:             relData[p].qty = 86;
+1119:         } else if (relData[p].qty === 86) {
+1120:             relData[p].qty = 0; // Cualquier dirección saca de 86 a 0
+1121:         } else {
+1122:             const step = (relData[p].unit === 'kg' || relData[p].unit === 'litro/s') ? 0.5 : 1;
+1123:             relData[p].qty = Math.max(0, parseFloat((relData[p].qty + dir * step).toFixed(2)));
+1124:         }
+1125: 
+1126:         // Limpieza: Si vuelve a 0 real, eliminar del relevamiento
+1127:         if (relData[p].qty === 0) delete relData[p];
+1128: 
+1129:         updateProductRow(p); renderFAB(); saveDraft();
+1130:     }
+1131: 
+1132:     function manualEl(el) { manualEntry(decodeURIComponent(el.dataset.prod)); }
+1133:     function manualEntry(p) {
+1134:         const val = prompt(`Cantidad para ${p}:`, relData[p]?.qty || '');
+1135:         if (val === null) return;
+1136:         const n = parseFloat(val.replace(',', '.'));
+1137:         if (!isNaN(n) && n >= 0) {
+1138:             if (!relData[p]) relData[p] = { qty: n, unit: units[0] };
+1139:             else relData[p].qty = n;
+1140:             if (relData[p].qty === 0) delete relData[p];
+1141:             updateProductRow(p); renderFAB(); saveDraft();
+1142:         }
+1143:     }
+1144: 
+1145:     function renderFAB() {
+1146:         const count = Object.keys(relData).length;
+1147:         const fab = document.getElementById('fab');
+1148:         if (!fab) return; // BUG 7 FIX: null guard
+1149:         if (count > 0) {
+1150:             fab.classList.remove('hidden');
+1151:             fab.style.opacity = '1';
+1152:             fab.style.pointerEvents = 'auto';
+1153:             const fabCount = document.getElementById('fab-count');
+1154:             if (fabCount) fabCount.textContent = count;
+1155:         } else {
+1156:             fab.classList.add('hidden');
+1157:         }
+1158:     }
+1159: 
+1160:     /* ── RESUMEN Y NUBE ── */
+1161:     function openResumen() {
+1162:         const titleEl = document.getElementById('sh-title');
+1163:         const cfg = MODE_CONFIG[currentMode] || { label: 'RESUMEN', cls: 'stock', bodyClass: 'mode-stock' };
+1164: 
+1165:         if (titleEl) {
+1166:             titleEl.textContent = currentMode === 'pedido' ? 'Comanda de Pedido' : 'Estado de Stock';
+1167:             titleEl.style.color = currentMode === 'pedido' ? 'var(--violet)' : 'var(--blue)';
+1168:         }
+1169: 
+1170:         // 🎨 OCULTAR FAB
+1171:         const fab = document.getElementById('fab');
+1172:         if (fab) { fab.style.opacity = '0'; fab.style.pointerEvents = 'none'; }
+1173: 
+1174:         const byCat = {};
+1175:         Object.entries(relData).forEach(([p, d]) => {
+1176:             let cat = 'Otras';
+1177:             Object.keys(CATS).forEach(c => { if (CATS[c].prods.includes(p)) cat = c; });
+1178:             if (!byCat[cat]) byCat[cat] = [];
+1179:             byCat[cat].push({ p, d });
+1180:         });
+1181: 
+1182:         let html = '';
+1183:         const itemColor = currentMode === 'pedido' ? 'var(--violet)' : 'var(--blue)';
+1184: 
+1185:         Object.keys(byCat).sort().forEach(cat => {
+1186:             html += `<div class="res-cat" style="border-left: 3px solid ${itemColor}; background:rgba(255,255,255,0.02); padding:12px; border-radius:12px; margin-bottom:16px;">
+1187:                 <div class="res-cat-name" style="color:${itemColor}; font-size:12px; margin-bottom:10px;">${cat.toUpperCase()}</div>
+1188:                 ${byCat[cat].map(i => `
+1189:                     <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:15px; border-bottom:1px dashed rgba(255,255,255,0.05); padding-bottom:4px;">
+1190:                         <span style="font-weight:500;">${i.p}</span>
+1191:                         <span style="font-weight:900; color:${i.d.qty === 86 ? 'var(--red)' : itemColor}">
+1192:                             ${i.d.qty === 86 ? 'AGOTADO' : i.d.qty + ' ' + i.d.unit}
+1193:                         </span>
+1194:                     </div>`).join('')}
+1195:             </div>`;
+1196:         });
+1197:         
+1198:         // Agregar botones de acción según el modo
+1199:         let actionButtons = '';
+1200:         if (currentMode === 'pedido') {
+1201:             actionButtons = `
+1202:             <div style="display:flex; gap:10px; margin-top:20px;">
+1203:                 <button onclick="generateComandaFromRelData()" style="flex:1; padding:12px; background:linear-gradient(135deg, var(--primary), #FB923C); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; transition:all 0.2s;">
+1204:                     📋 COMANDA
+1205:                 </button>
+1206:                 <button onclick="sendWA()" style="flex:1; padding:12px; background:linear-gradient(135deg, var(--green), #34D399); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; transition:all 0.2s;">
+1207:                     💬 WhatsApp
+1208:                 </button>
+1209:             </div>`;
+1210:         } else if (currentMode === 'recepcion') {
+1211:             actionButtons = `
+1212:             <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+1213:                 <button onclick="loadLastPedido()" style="flex:1; min-width:100px; padding:12px; background:var(--blue); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">
+1214:                     📦 Cargar Pedido
+1215:                 </button>
+1216:                 <button onclick="compareReceiptWithPedido()" style="flex:1; min-width:100px; padding:12px; background:var(--warning); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">
+1217:                     🔍 Comparar
+1218:                 </button>
+1219:             </div>`;
+1220:         }
+1221:         
+1222:         html += actionButtons;
+1223:         
+1224:         document.getElementById('sh-body').innerHTML = html || '<div style="text-align:center;color:var(--dim);padding:40px;">No hay items cargados.</div>';
+1225:         document.getElementById('sheet-overlay').classList.add('open');
+1226:         refreshIcons();
+1227:     }
+1228: 
+1229:     function closeResumen(e) {
+1230:         if (!e || e.target === document.getElementById('sheet-overlay')) {
+1231:             document.getElementById('sheet-overlay').classList.remove('open');
+1232: 
+1233:             // 🎨 RESTAURAR FAB CON FADE IN
+1234:             const fab = document.getElementById('fab');
+1235:             if (fab && !fab.classList.contains('hidden')) {
+1236:                 fab.style.opacity = '1';
+1237:                 fab.style.pointerEvents = 'auto';
+1238:             }
+1239:         }
+1240:     }
+1241: 
+1242:     function sendWA() {
+1243:         const now = new Date();
+1244:         const modeLabel = (currentMode || 'STOCK').toUpperCase();
+1245:         let msg = `*COMANDA FEDE — ${modeLabel}*\n_${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}_\n\n`;
+1246: 
+1247:         const byCat = {};
+1248:         Object.entries(relData).forEach(([p, d]) => {
+1249:             let cat = 'Otros';
+1250:             Object.keys(CATS).forEach(c => { if (CATS[c].prods.includes(p)) cat = c; });
+1251:             if (!byCat[cat]) byCat[cat] = [];
+1252:             byCat[cat].push({ p, d });
+1253:         });
+1254: 
+1255:         Object.keys(byCat).sort().forEach(cat => {
+1256:             msg += `*${cat.toUpperCase()}*\n`; // BUG 6 FIX: \n real, no literal \\n
+1257:             byCat[cat].forEach(i => {
+1258:                 const is86 = i.d.qty === 86;
+1259:                 msg += `- ${i.p}: ${is86 ? 'AGOTADO (86)' : i.d.qty + ' ' + i.d.unit}\n`;
+1260:             });
+1261:             msg += '\n';
+1262:         });
+1263: 
+1264:         saveToCloud(true);
+1265:         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+1266:         closeResumen();
+1267:     }
+1268: 
+1269:     function sendHistWA(id) {
+1270:         const h = HIST.find(x => x.id == id);
+1271:         if (!h) return;
+1272:         const items = Array.isArray(h.items) ? h.items : [];
+1273:         const now = new Date(h.fecha);
+1274:         let msg = `*FEDE — HISTORIAL ${(h.mode || 'stock').toUpperCase()}*\n_${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}_\n\n`;
+1275:         const byCat = {};
+1276:         items.forEach(i => {
+1277:             if (!byCat[i.cat || 'Otros']) byCat[i.cat || 'Otros'] = [];
+1278:             byCat[i.cat || 'Otros'].push(i);
+1279:         });
+1280:         Object.keys(byCat).sort().forEach(cat => {
+1281:             msg += `*${cat.toUpperCase()}*\n`;
+1282:             byCat[cat].forEach(i => {
+1283:                 const qty86 = i.qty === 86;
+1284:                 msg += `• ${i.prod}: ${qty86 ? '⛔ 86' : i.qty + ' ' + formatUnit(i.qty, i.unit)}\n`;
+1285:             });
+1286:             msg += '\n';
+1287:         });
+1288:         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+1289:     }
+1290: 
+1291:     /* ── MÓDULO RECEPCIÓN + COMANDA ── */
+1292:     
+1293:     /**
+1294:      * Carga el último pedido como base para la recepción
+1295:      */
+1296:     function loadLastPedido() {
+1297:         google.script.run
+1298:             .withSuccessHandler(res => {
+1299:                 if (!res.success || !res.pedido) {
+1300:                     toast('⚠️ No hay pedidos previos para cargar');
+1301:                     return;
+1302:                 }
+1303:                 
+1304:                 const lastPedido = res.pedido;
+1305:                 toast(`✓ Pedido cargado: ${new Date(lastPedido.fecha).toLocaleDateString('es-AR')}`);
+1306:                 
+1307:                 // BUG 4 FIX: Guardar el id del último pedido para comparación posterior
+1308:                 localStorage.setItem('fede_last_pedido_id', lastPedido.id);
+1309:                 
+1310:                 // Pre-llenar relData con items del último pedido
+1311:                 relData = {};
+1312:                 if (Array.isArray(lastPedido.items)) {
+1313:                     lastPedido.items.forEach(item => {
+1314:                         if (item.prod) {
+1315:                             relData[item.prod] = {
+1316:                                 qty: item.qty,
+1317:                                 unit: item.unit,
+1318:                                 cat: item.cat
+1319:                             };
+1320:                         }
+1321:                     });
+1322:                 }
+1323:                 
+1324:                 localStorage.setItem('fede_draft', JSON.stringify(relData));
+1325:                 renderFAB();
+1326:                 renderProducts();
+1327:             })
+1328:             .withFailureHandler(e => toast('❌ Error: ' + e.message))
+1329:             .getLatestPedido(activeSheetId);
+1330:     }
+1331: 
+1332:     /**
+1333:      * Compara recepción actual vs pedido anterior
+1334:      */
+1335:     function compareReceiptWithPedido() {
+1336:         const receiptItems = Object.entries(relData).map(([prod, data]) => ({
+1337:             prod,
+1338:             qty: data.qty,
+1339:             unit: data.unit,
+1340:             cat: data.cat
+1341:         }));
+1342:         
+1343:         google.script.run
+1344:             .withSuccessHandler(res => {
+1345:                 if (!res.success) {
+1346:                     toast('❌ Error en comparación: ' + res.error);
+1347:                     return;
+1348:                 }
+1349:                 
+1350:                 const status = res.status;
+1351:                 const diff = res.differences || [];
+1352:                 
+1353:                 let html = `<div style="font-size:13px; padding:20px;">
+1354:                     <div style="margin-bottom:16px; padding:12px; background:${
+1355:                         status === 'completa' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'
+1356:                     }; border-radius:8px; border-left:3px solid ${
+1357:                         status === 'completa' ? 'var(--green)' : 'var(--red)'
+1358:                     };">
+1359:                         <strong>Estado: ${status.toUpperCase()}</strong><br/>
+1360:                         ${diff.length} diferencia${diff.length !== 1 ? 's' : ''} detectada${diff.length !== 1 ? 's' : ''}
+1361:                     </div>
+1362:                     ${diff.length > 0 ? `
+1363:                         <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; max-height:300px; overflow-y:auto;">
+1364:                             ${diff.map(d => `
+1365:                                 <div style="margin-bottom:8px; padding:8px; border-bottom:1px dashed rgba(255,255,255,0.1);">
+1366:                                     <strong>${d.prod}</strong><br/>
+1367:                                     Pedido: <span style="color:var(--dim);">${d.pedidoQty}${d.unit}</span> → 
+1368:                                     Recibido: <span style="color:${d.diff < 0 ? 'var(--red)' : 'var(--green)'};">${d.receiptQty}${d.unit}</span>
+1369:                                 </div>
+1370:                             `).join('')}
+1371:                         </div>
+1372:                     ` : '<div style="text-align:center; color:var(--green); padding:20px;">✓ Todo coincide perfectamente</div>'}
+1373:                 </div>`;
+1374:                 
+1375:                 const sheet = document.getElementById('sheet-overlay');
+1376:                 document.getElementById('sh-title').textContent = 'Comparación Recepción';
+1377:                 document.getElementById('sh-body').innerHTML = html;
+1378:                 sheet.classList.add('open');
+1379:             })
+1380:             .withFailureHandler(e => toast('❌ Error: ' + e.message))
+1381:             .compareReceiptToPedido(localStorage.getItem('fede_last_pedido_id') || '', receiptItems, activeSheetId);
+1382:     }
+1383: 
+1384:     /**
+1385:      * Genera COMANDA formateada para WhatsApp desde relData
+1386:      */
+1387:     function generateComandaFromRelData() {
+1388:         const items = Object.entries(relData).map(([prod, data]) => ({
+1389:             prod,
+1390:             qty: data.qty,
+1391:             unit: data.unit,
+1392:             cat: data.cat || 'Diversos'
+1393:         }));
+1394:         
+1395:         google.script.run
+1396:             .withSuccessHandler(res => {
+1397:                 if (!res.success) {
+1398:                     toast('❌ Error generando comanda');
+1399:                     return;
+1400:                 }
+1401:                 
+1402:                 // Guardar en window para copiar
+1403:                 window.currentComanda = res.comanda;
+1404:                 
+1405:                 // Mostrar preview
+1406:                 const previewHtml = `<div style="font-family:monospace; font-size:12px; white-space:pre-wrap; color:var(--text2); background:rgba(0,0,0,0.3); padding:16px; border-radius:8px; max-height:400px; overflow-y:auto; line-height:1.6;">
+1407: ${res.comanda}
+1408:                 </div>
+1409:                 <div style="margin-top:16px; display:flex; gap:10px;">
+1410:                     <button onclick="copyComandaToClipboard()" style="flex:1; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">
+1411:                         📋 Copiar
+1412:                     </button>
+1413:                     <button onclick="sendComandaViaWA()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">
+1414:                         📱 WhatsApp
+1415:                     </button>
+1416:                 </div>`;
+1417:                 
+1418:                 const sheet = document.getElementById('sheet-overlay');
+1419:                 document.getElementById('sh-title').textContent = 'COMANDA GENERADA';
+1420:                 document.getElementById('sh-body').innerHTML = previewHtml;
+1421:                 sheet.classList.add('open');
+1422:                 toast('✓ Comanda generada');
+1423:             })
+1424:             .withFailureHandler(e => toast('❌ Error: ' + e.message))
+1425:             .generateComanda(items);
+1426:     }
+1427: 
+1428:     /**
+1429:      * Copia comanda al clipboard
+1430:      */
+1431:     function copyComandaToClipboard() {
+1432:         if (!window.currentComanda) {
+1433:             toast('❌ No hay comanda para copiar');
+1434:             return;
+1435:         }
+1436:         
+1437:         navigator.clipboard.writeText(window.currentComanda).then(() => {
+1438:             toast('✓ Comanda copiada al clipboard');
+1439:         }).catch(err => {
+1440:             toast('❌ Error al copiar: ' + err.message);
+1441:         });
+1442:     }
+1443: 
+1444:     /**
+1445:      * Envía comanda por WhatsApp
+1446:      */
+1447:     function sendComandaViaWA() {
+1448:         if (!window.currentComanda) return;
+1449:         window.open(`https://wa.me/?text=${encodeURIComponent(window.currentComanda)}`, '_blank');
+1450:         toast('✓ Abriendo WhatsApp');
+1451:     }
+1452: 
+1453:     /**
+1454:      * Carga dashboard de analytics simplificado - SIMPLIFICADO PARA EVITAR LOOPS
+1455:      */
+1456:     function loadAnalyticsData() {
+1457:         // Solo cargamos si la función existe
+1458:         if (typeof google === 'undefined' || !google.script) return;
+1459:         
+1460:         try {
+1461:             google.script.run
+1462:                 .withSuccessHandler(res => {
+1463:                     // Cargar múltiples datos en paralelo (las funciones ya existen en backend)
+1464:                     if (!res || !res.success) return;
+1465:                     // Insertar datos en el dashboard sin llamadas adicionales
+1466:                 })
+1467:                 .withFailureHandler(e => console.warn('Analytics fallback:', e.message))
+1468:                 .getAlerts(activeSheetId);
+1469:         } catch(e) {
+1470:             console.warn('loadAnalyticsData error:', e.message);
+1471:         }
+1472:     }
+1473: 
+1474:     function saveToCloud(doClear = true) {
+1475:         const items = Object.entries(relData).map(([prod, d]) => {
+1476:             let cat = 'Otros';
+1477:             Object.keys(CATS).forEach(c => { if (CATS[c].prods.includes(prod)) cat = c; });
+1478:             return { prod, cat, qty: d.qty, unit: d.unit };
+1479:         });
+1480:         if (!items.length) { toast("⚠️ No hay datos para guardar"); return; }
+1481:         const entry = {
+1482:             id: Date.now(),
+1483:             fecha: new Date().toISOString(),
+1484:             turno: document.getElementById('hdr-turno')?.textContent || 'Apertura',
+1485:             mode: currentMode || 'stock',
+1486:             items,
+1487:             total: items.length
+1488:         };
+1489: 
+1490:         // 🟢 AUTO-DISMISS ALERT: Si es un control de stock, descartamos la alerta obligatoria
+1491:         if ((currentMode || 'stock') === 'stock' && window.holidayAlert) {
+1492:             window.holidayAlert.dismissStockCard("CONTROL DE STOCK");
+1493:         }
+1494: 
+1495:         setSyncStatus('pending');
+1496:         google.script.run
+1497:             .withSuccessHandler(() => {
+1498:                 HIST.unshift(entry);
+1499:                 toast("✓ ¡Sincronizado!");
+1500:                 if (doClear) {
+1501:                     relData = {};
+1502:                     localStorage.removeItem('fede_draft');
+1503:                     renderFAB(); closeResumen(); goHome();
+1504:                 }
+1505:                 setSyncStatus('online');
+1506:                 processOfflineQueue(); // Verificar si hay más
+1507:             })
+1508:             .withFailureHandler(err => {
+1509:                 enqueueEntry(entry);
+1510:                 if (doClear) {
+1511:                     relData = {};
+1512:                     localStorage.removeItem('fede_draft');
+1513:                     renderFAB(); closeResumen(); goHome();
+1514:                 }
+1515:                 setSyncStatus('error');
+1516:             })
+1517:             .addHistoryEntry(entry, activeSheetId);
+1518:     }
+1519: 
+1520:     function enqueueEntry(entry) {
+1521:         window.offlineQueue.push(entry);
+1522:         localStorage.setItem('fede_offline_queue', JSON.stringify(window.offlineQueue));
+1523:         updateSyncBadge();
+1524:         toast("⚠️ Sin conexión. Guardado en cola local.");
+1525:     }
+1526: 
+1527:     function updateSyncBadge() {
+1528:         const badge = document.getElementById('hdr-sync-badge');
+1529:         const count = document.getElementById('sync-count');
+1530:         if (badge && count) {
+1531:             if (window.offlineQueue.length > 0) {
+1532:                 badge.classList.remove('hidden');
+1533:                 count.textContent = window.offlineQueue.length;
+1534:             } else {
+1535:                 badge.classList.add('hidden');
+1536:             }
+1537:         }
+1538:     }
+1539: 
+1540:     let isSyncing = false;
+1541:     function processOfflineQueue() {
+1542:         if (isSyncing || window.offlineQueue.length === 0) return;
+1543:         isSyncing = true;
+1544:         const entry = window.offlineQueue[0];
+1545: 
+1546:         google.script.run
+1547:             .withSuccessHandler(() => {
+1548:                 window.offlineQueue.shift();
+1549:                 localStorage.setItem('fede_offline_queue', JSON.stringify(window.offlineQueue));
+1550:                 updateSyncBadge();
+1551:                 isSyncing = false;
+1552:                 if (window.offlineQueue.length > 0) processOfflineQueue();
+1553:                 else toast("✓ Todos los datos sincronizados");
+1554:             })
+1555:             .withFailureHandler(() => {
+1556:                 isSyncing = false; // Reintentar después
+1557:             })
+1558:             .addHistoryEntry(entry, activeSheetId);
+1559:     }
+1560: 
+1561:     /* ── GESTIÓN ABM ── */
+1562:     function renderTree() {
+1563:         const el = document.getElementById('tree-cats');
+1564:         if (!el) return;
+1565:         const sorted = Object.keys(CATS).sort((a, b) => (CATS[a].order || 99) - (CATS[b].order || 99));
+1566:         el.innerHTML = sorted.map(cat => {
+1567:             const isOpen = treeOpen[cat];
+1568:             const ec = encodeURIComponent(cat);
+1569:             return `
+1570:                 <div class="tree-node">
+1571:                     <div class="tree-row" data-cat="${ec}" onclick="toggleTreeEl(this)">
+1572:                         <span class="tree-toggle ${isOpen ? 'open' : ''}">+</span>
+1573:                         <i data-lucide="${CATS[cat].icon || 'package'}" style="width:var(--icon-size-small);height:var(--icon-size-small);color:var(--gold);flex-shrink:0;"></i>
+1574:                         <span class="tree-label">${cat}</span>
+1575:                         <span style="font-size:11px;color:var(--dim);">${CATS[cat].prods.length} items</span>
+1576:                         <button data-cat="${ec}" onclick="event.stopPropagation();openEditCatEl(this)" style="background:none;border:none;color:var(--text2);padding:5px;cursor:pointer;">✏️</button>
+1577:                         <button data-cat="${ec}" onclick="event.stopPropagation();deleteCatEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>
+1578:                     </div>
+1579:                     <div class="tree-children ${isOpen ? 'open' : ''}">
+1580:                         ${[...CATS[cat].prods].sort().map(p => {
+1581:                 const ep = encodeURIComponent(p);
+1582:                 return `<div class="tree-leaf">
+1583:                                 <span>${p}</span>
+1584:                                 <div style="display:flex;gap:5px;">
+1585:                                     <button data-cat="${ec}" data-prod="${ep}" onclick="openEditProdEl(this)" class="tree-leaf-btn-edit">✏️</button>
+1586:                                     <button data-cat="${ec}" data-prod="${ep}" onclick="deleteProdEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>
+1587:                                 </div>
+1588:                             </div>`;
+1589:             }).join('')}
+1590:                         <div class="tree-add-form">
+1591:                             <input data-cat="${ec}" class="tree-add-inp tree-prod-inp" placeholder="Nuevo producto..." onkeydown="if(event.key==='Enter') addProdInp(this)">
+1592:                             <button data-cat="${ec}" onclick="addProdBtn(this)" class="tree-add-btn">+ ADD</button>
+1593:                         </div>
+1594:                     </div>
+1595:                 </div>`;
+1596:         }).join('');
+1597:         setTimeout(() => lucide.createIcons(), 50);
+1598:     }
+1599: 
+1600:     function toggleTreeEl(el) {
+1601:         const cat = decodeURIComponent(el.dataset.cat);
+1602:         treeOpen[cat] = !treeOpen[cat];
+1603:         renderTree();
+1604:     }
+1605: 
+1606:     function addCat() {
+1607:         const v = document.getElementById('new-cat-inp').value.trim();
+1608:         if (!v) return toast("Ingresá un nombre");
+1609:         if (CATS[v]) return toast("Ya existe");
+1610:         google.script.run
+1611:             .withSuccessHandler(r => {
+1612:                 if (r.success) { CATS = r.data; document.getElementById('new-cat-inp').value = ''; renderTree(); renderCatGrid(); toast("✓ Creada"); }
+1613:                 else toast("❌ " + r.error);
+1614:             })
+1615:             .withFailureHandler(err => toast("❌ Error: " + err.message))
+1616:             .createCategory(v, 'package');
+1617:     }
+1618: 
+1619:     function deleteCatEl(el) {
+1620:         const cat = decodeURIComponent(el.dataset.cat);
+1621:         if (!confirm(`¿Borrar "${cat}"?`)) return;
+1622:         delete CATS[cat];
+1623:         google.script.run.withSuccessHandler(() => { renderTree(); renderCatGrid(); toast("✓ Eliminada"); }).saveConfig('cats', CATS);
+1624:     }
+1625: 
+1626:     function addProdBtn(el) { _addProd(decodeURIComponent(el.dataset.cat), el.closest('.tree-children').querySelector('.tree-prod-inp')); }
+1627:     function addProdInp(inp) { _addProd(decodeURIComponent(inp.dataset.cat), inp); }
+1628:     function _addProd(cat, inp) {
+1629:         const v = inp.value.trim();
+1630:         if (!v || CATS[cat]?.prods?.includes(v)) return;
+1631:         google.script.run.withSuccessHandler(r => { if (r.success) { CATS = r.data; inp.value = ''; renderTree(); toast("✓ Añadido"); } }).createProduct(cat, v);
+1632:     }
+1633: 
+1634:     function deleteProdEl(el) {
+1635:         const cat = decodeURIComponent(el.dataset.cat), prod = decodeURIComponent(el.dataset.prod);
+1636:         if (confirm(`¿Eliminar "${prod}"?`)) google.script.run.withSuccessHandler(r => { if (r.success) { CATS = r.data; renderTree(); toast("✓ Eliminado"); } }).deleteProduct(cat, prod);
+1637:     }
+1638: 
+1639:     let editCatOld = null;
+1640:     function openEditCatEl(el) {
+1641:         const catName = decodeURIComponent(el.dataset.cat);
+1642:         editCatOld = catName;
+1643:         document.getElementById('modal-cat-name').value = catName;
+1644:         document.getElementById('modal-cat-icon').value = CATS[catName]?.icon || 'package';
+1645:         document.getElementById('modal-cat-size').value = CATS[catName]?.iconSize || '';
+1646:         document.getElementById('modal-edit-cat').classList.add('open');
+1647:     }
+1648:     function closeEditCatModal(e) { if (!e || e.target === document.getElementById('modal-edit-cat')) document.getElementById('modal-edit-cat').classList.remove('open'); }
+1649:     function handleEditCategory() {
+1650:         const newName = document.getElementById('modal-cat-name').value.trim();
+1651:         const newIcon = document.getElementById('modal-cat-icon').value.trim() || 'package';
+1652:         const newSize = parseInt(document.getElementById('modal-cat-size').value, 10) || null;
+1653:         google.script.run.withSuccessHandler(r => { if (r.success) { CATS = r.data; renderTree(); renderCatGrid(); toast("✓ Actualizada"); closeEditCatModal(); } }).updateCategory(editCatOld, newName, newIcon, newSize);
+1654:     }
+1655: 
+1656:     let editProdCat = null, editProdOld = null;
+1657:     function openEditProdEl(el) {
+1658:         editProdCat = decodeURIComponent(el.dataset.cat); editProdOld = decodeURIComponent(el.dataset.prod);
+1659:         document.getElementById('modal-prod-name').value = editProdOld;
+1660: 
+1661:         const uGroup = CUSTOM_UNITS[editProdOld] || [];
+1662:         for (let i = 0; i < 4; i++) {
+1663:             document.getElementById('mu-' + i).value = uGroup[i] || '';
+1664:         }
+1665: 
+1666:         document.getElementById('modal-edit-prod').classList.add('open');
+1667:     }
+1668:     function closeEditProdModal(e) { if (!e || e.target === document.getElementById('modal-edit-prod')) document.getElementById('modal-edit-prod').classList.remove('open'); }
+1669: 
+1670:     function handleEditProduct() {
+1671:         const newName = document.getElementById('modal-prod-name').value.trim();
+1672: 
+1673:         // Guardar Unidades Personalizadas (Hasta 4)
+1674:         let uArr = [];
+1675:         for (let i = 0; i < 4; i++) {
+1676:             const val = document.getElementById('mu-' + i).value.trim();
+1677:             if (val) uArr.push(val);
+1678:         }
+1679: 
+1680:         if (uArr.length > 0) CUSTOM_UNITS[newName] = uArr;
+1681:         else delete CUSTOM_UNITS[newName];
+1682: 
+1683:         if (editProdOld !== newName && CUSTOM_UNITS[editProdOld]) delete CUSTOM_UNITS[editProdOld];
+1684: 
+1685:         google.script.run.saveConfig('custom_units', CUSTOM_UNITS, activeSheetId);
+1686: 
+1687:         // Guardar nombre y relocalizar en CATS
+1688:         google.script.run.withSuccessHandler(r => {
+1689:             if (r.success) {
+1690:                 CATS = r.data;
+1691:                 // Actualizar el DOM partial si es necesario y persistir local data
+1692:                 const oldData = relData[editProdOld];
+1693:                 if (oldData) { relData[newName] = oldData; delete relData[editProdOld]; saveDraft(); }
+1694:                 renderTree();
+1695:                 toast("✓ Actualizado");
+1696:                 closeEditProdModal();
+1697:             }
+1698:         }).updateProduct(editProdCat, editProdOld, newName);
+1699:     }
+1700: 
+1701:     function handleDeleteProduct() {
+1702:         if (!confirm(`¿Eliminar "${editProdOld}"?`)) return;
+1703:         delete CUSTOM_UNITS[editProdOld];
+1704:         google.script.run.saveConfig('custom_units', CUSTOM_UNITS, activeSheetId);
+1705:         google.script.run
+1706:             .withSuccessHandler(r => {
+1707:                 if (r.success) { CATS = r.data; renderTree(); toast("✓ Eliminado"); closeEditProdModal(); }
+1708:                 else toast("❌ " + r.error);
+1709:             })
+1710:             .withFailureHandler(err => toast("❌ Error: " + err.message))
+1711:             .deleteProduct(editProdCat, editProdOld);
+1712:     }
+1713: 
+1714:     /* ── DASHBOARD ── */
+1715:     function renderDashboard() {
+1716:         const loader = document.getElementById('dash-loader');
+1717:         const content = document.getElementById('dash-content');
+1718:         if (loader) loader.classList.remove('hidden');
+1719:         if (content) content.classList.add('hidden');
+1720: 
+1721:         google.script.run
+1722:             .withSuccessHandler(r => {
+1723:                 if (loader) loader.classList.add('hidden');
+1724:                 if (content) content.classList.remove('hidden');
+1725:                 google.script.run
+1726:                     .withSuccessHandler(ra => {
+1727:                         const intelEl = document.getElementById('dash-intelligence-list');
+1728:                         if (ra?.success && ra.predictions?.length) {
+1729:                             intelEl.innerHTML = ra.predictions.map(p => `
+1730:                                 <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid rgba(212,168,67,0.1); margin-bottom:8px;">
+1731:                                     <div>
+1732:                                         <div style="font-weight:700; font-size:14px; color:var(--text);">${p.name}</div>
+1733:                                         <div style="font-size:10px; color:var(--dim);">Promedio: ${p.avg} ${p.unit || ''}</div>
+1734:                                     </div>
+1735:                                     <div style="text-align:right;">
+1736:                                         <div style="font-size:14px; font-weight:900; color:var(--gold);">Sug: ${p.suggestion}</div>
+1737:                                         <div style="font-size:9px; color:var(--gold); opacity:0.8; text-transform:uppercase;">Repo sug.</div>
+1738:                                     </div>
+1739:                                 </div>`).join('');
+1740:                         } else {
+1741:                             intelEl.innerHTML = '<p style="color:var(--dim); font-size:12px;">No hay historial suficiente para predicciones.</p>';
+1742:                         }
+1743:                         refreshIcons();
+1744:                     })
+1745:                     .withFailureHandler(e => {
+1746:                         console.warn('Predicciones no disponibles:', e.message);
+1747:                         const intelEl = document.getElementById('dash-intelligence-list');
+1748:                         if (intelEl) intelEl.innerHTML = '<p style="color:var(--dim); font-size:12px;">Sin datos de predicciones.</p>';
+1749:                     })
+1750:                     .getPredictiveAnalysis(30);
+1751: 
+1752:                 if (!r || !r.success) return;
+1753:                 document.getElementById('card-totalitems').textContent = r.data.totalItems;
+1754:                 document.getElementById('card-movtoday').textContent = r.data.movementsToday;
+1755:                 const recentCatsEl = document.getElementById('dash-recent-cats');
+1756:                 if (r.data.recentCats?.length) {
+1757:                     recentCatsEl.innerHTML = r.data.recentCats.map(rc => {
+1758:                         const cat = CATS[rc.name] || {};
+1759:                         const icon = cat.icon || 'package';
+1760:                         return `
+1761:                             <div class="dash-card-glass" style="min-width:140px; flex-shrink:0; text-align:center; padding:16px;">
+1762:                                 <div style="background:var(--goldf); width:50px; height:50px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+1763:                                     <i data-lucide="${icon}" style="width:var(--icon-size-large); height:var(--icon-size-large); color:var(--gold);"></i>
+1764:                                 </div>
+1765:                                 <div style="font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px;">${rc.name}</div>
+1766:                                 <div style="font-size:10px; color:var(--dim); font-weight:800;">${new Date(rc.ts).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}</div>
+1767:                                 <button class="wa-btn" style="padding:6px; font-size:10px; margin-top:10px; background:var(--gold); color:#1a1008; border-radius:8px;" onclick="viewCatDetails('${encodeURIComponent(rc.name)}')">VER DETALLE</button>
+1768:                             </div>`;
+1769:                     }).join('');
+1770:                 }
+1771:                 const rankingEl = document.getElementById('dash-product-ranking');
+1772:                 if (r.data.productRanking?.length) {
+1773:                     const maxCount = r.data.productRanking[0].count;
+1774:                     rankingEl.innerHTML = r.data.productRanking.map((p, idx) => {
+1775:                         const w = (p.count / maxCount) * 100;
+1776:                         return `
+1777:                             <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+1778:                                 <span style="font-weight:800; color:var(--gold); width:20px;">${idx + 1}</span>
+1779:                                 <div style="flex:1;">
+1780:                                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+1781:                                         <span style="font-weight:700; font-size:13px;">${p.name}</span>
+1782:                                         <span style="font-size:11px; color:var(--dim);">${p.count} veces</span>
+1783:                                     </div>
+1784:                                     <div style="background:var(--s3); border-radius:4px; height:8px; overflow:hidden;">
+1785:                                         <div style="background:var(--gold); height:100%; width:${w}%; transition:width 0.6s;"></div>
+1786:                                     </div>
+1787:                                 </div>
+1788:                             </div>`;
+1789:                     }).join('');
+1790:                 }
+1791:                 const sel = document.getElementById('dash-cat-select');
+1792:                 sel.innerHTML = '<option value="">— Selecciona categoría —</option>';
+1793:                 (r.data.allCategories || []).forEach(cat => {
+1794:                     const o = document.createElement('option'); o.value = cat; o.textContent = cat; sel.appendChild(o);
+1795:                 });
+1796:                 if (r.data.allCategories?.length) { sel.value = r.data.allCategories[0]; renderProductChart(7); }
+1797:                 // 🚨 HOLIDAY STOCK SUGGESTIONS (Con validación)
+1798:                 try {
+1799:                     const sug = window.holidayHelper && typeof window.holidayHelper.getSuggestedReorders === 'function' ? window.holidayHelper.getSuggestedReorders() : [];
+1800:                     const intelList = document.getElementById('dash-intelligence-list');
+1801:                     if (sug && sug.length > 0) {
+1802:                         const sugHtml = sug.map(s => `
+1803:                             <div style="background:rgba(224,82,82,0.1); border:1px solid var(--red); border-radius:12px; padding:15px; margin-bottom:12px;">
+1804:                                 <div style="font-weight:900; font-size:11px; color:var(--red); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">⚠️ Sugerencia Feriado</div>
+1805:                                 <div style="font-size:14px; font-weight:700; color:var(--text);">${s.message}</div>
+1806:                                 <p style="font-size:11px; color:var(--dim); margin-top:4px;">Refuerzo sugerido en: <b>${s.categories.join(', ')}</b></p>
+1807:                             </div>`).join('');
+1808:                         if (intelList) intelList.innerHTML = sugHtml + intelList.innerHTML;
+1809:                     }
+1810:                 } catch(e) {
+1811:                     console.warn('❌ Error al cargar sugerencias de feriados:', e.message);
+1812:                 }
+1813:                 updateRecepReport(7); // Nuevo: Cargar reporte de recepción por defecto
+1814:                 refreshIcons();
+1815:             })
+1816:             .getDashboardMetrics(activeSheetId);
+1817:     }
+1818: 
+1819:     /**
+1820:      * Actualiza el mini-reporte de comparación de Recepción vs Pedido
+1821:      */
+1822:     function updateRecepReport(days, btn) {
+1823:         const container = document.getElementById('recep-report-container');
+1824:         if (!container) return;
+1825: 
+1826:         // BUG 8 FIX: Si no se pasa btn (ej. desde renderDashboard), marcar el botón 7D activo por defecto
+1827:         if (btn) {
+1828:             const btns = btn.parentNode.querySelectorAll('button');
+1829:             btns.forEach(b => b.classList.remove('active'));
+1830:             btn.classList.add('active');
+1831:         } else {
+1832:             // Sin btn, marcar el primero (7D) como activo
+1833:             const btns = document.querySelectorAll('.dash-range-btn');
+1834:             if (btns.length) {
+1835:                 btns.forEach(b => b.classList.remove('active'));
+1836:                 btns[0].classList.add('active');
+1837:             }
+1838:         }
+1839: 
+1840:         container.innerHTML = '<div style="text-align:center; padding:20px;"><div class="spinner-sm" style="margin:0 auto;"></div></div>';
+1841: 
+1842:         google.script.run
+1843:             .withSuccessHandler(r => {
+1844:                 if (!r || !r.success) {
+1845:                     container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--error); font-size:12px;">Error al cargar datos</div>';
+1846:                     return;
+1847:                 }
+1848: 
+1849:                 if (!r.report || r.report.length === 0) {
+1850:                     container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--dim); font-size:12px;">Sin datos comparativos en este período.</div>';
+1851:                     return;
+1852:                 }
+1853: 
+1854:                 // Renderizar tabla resumida
+1855:                 container.innerHTML = `
+1856:                     <div style="overflow-x:auto;">
+1857:                         <table style="width:100%; border-collapse:collapse; font-size:12px; font-family:inherit;">
+1858:                             <thead>
+1859:                                 <tr style="color:var(--dim); font-weight:800; text-align:left; border-bottom:1px solid var(--bd);">
+1860:                                     <th style="padding:8px 4px; text-transform:uppercase;">Producto</th>
+1861:                                     <th style="padding:8px 4px; text-align:right; text-transform:uppercase;">Ped.</th>
+1862:                                     <th style="padding:8px 4px; text-align:right; text-transform:uppercase;">Rec.</th>
+1863:                                     <th style="padding:8px 4px; text-align:right; text-transform:uppercase;">Dif.</th>
+1864:                                 </tr>
+1865:                             </thead>
+1866:                             <tbody>
+1867:                                 ${r.report.map(row => {
+1868:                                     const diff = row.diff;
+1869:                                     const diffColor = diff < 0 ? 'var(--red)' : (diff > 0 ? 'var(--blue)' : 'var(--green)');
+1870:                                     const diffIcon = diff < 0 ? '▼' : (diff > 0 ? '▲' : '✓');
+1871:                                     return `
+1872:                                     <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+1873:                                         <td style="padding:10px 4px; font-weight:700; color:var(--text); line-height:1.2;">
+1874:                                             ${row.name}
+1875:                                             <div style="font-size:9px; color:var(--dim); font-weight:500;">Stock: ${row.stock || 0} ${row.unit}</div>
+1876:                                         </td>
+1877:                                         <td style="padding:10px 4px; text-align:right; color:var(--dim); font-weight:600;">${row.pedido}</td>
+1878:                                         <td style="padding:10px 4px; text-align:right; font-weight:700; color:var(--text);">${row.recepcion}</td>
+1879:                                         <td style="padding:10px 4px; text-align:right; font-weight:900; color:${diffColor};">
+1880:                                             ${diffIcon} ${Math.abs(diff)}
+1881:                                         </td>
+1882:                                     </tr>`;
+1883:                                 }).join('')}
+1884:                             </tbody>
+1885:                         </table>
+1886:                     </div>
+1887:                 `;
+1888:                 refreshIcons(container);
+1889:             })
+1890:             .getComparisonReport(activeSheetId, days);
+1891:     }
+1892: 
+1893:     function viewCatDetails(catEnc) { enterMode('pedido'); selectCat(decodeURIComponent(catEnc)); }
+1894: 
+1895:     function renderProductChart(period) {
+1896:         const cat = document.getElementById('dash-cat-select').value;
+1897:         const container = document.getElementById('chart-container');
+1898:         const loader = document.getElementById('chart-loader');
+1899:         if (!cat) return;
+1900: 
+1901:         if (loader) loader.classList.remove('hidden');
+1902:         if (container) container.innerHTML = '';
+1903: 
+1904:         google.script.run
+1905:             .withSuccessHandler(r => {
+1906:                 if (loader) loader.classList.add('hidden');
+1907:                 if (!r?.success) return;
+1908: 
+1909:                 const rawItems = Object.entries(r.data || {});
+1910:                 const items = rawItems.filter(([, v]) => (v.qty > 0 || v.isOut)).sort((a, b) => (b[1].qty || 0) - (a[1].qty || 0));
+1911: 
+1912:                 if (!items.length) {
+1913:                     container.innerHTML = '<p style="text-align:center;color:var(--dim);padding:40px;font-size:12px;">Sin movimientos registrados para esta categoría.</p>';
+1914:                     return;
+1915:                 }
+1916: 
+1917:                 const maxVal = Math.max(...items.map(i => i[1].qty || 0)) || 1;
+1918: 
+1919:                 container.innerHTML = items.map(([prod, s]) => {
+1920:                     const isOut = s.isOut && s.outCount > 0;
+1921:                     const qty = s.qty || 0;
+1922:                     const w = (qty / maxVal) * 100;
+1923: 
+1924:                     return `
+1925:                     <div style="margin-bottom:18px;">
+1926:                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px;">
+1927:                             <div style="flex:1;">
+1928:                                 <div style="font-weight:700; font-size:14px; color:var(--text); line-height:1.2;">${prod}</div>
+1929:                                 ${isOut ? `<div style="font-size:10px; color:var(--red); font-weight:800; margin-top:2px; text-transform:uppercase;">🚫 Agotado (${s.outCount} veces)</div>` : ''}
+1930:                             </div>
+1931:                             <div style="text-align:right;">
+1932:                                 <span style="font-size:18px; font-weight:900; color:${isOut && !qty ? 'var(--red)' : 'var(--blue)'};">
+1933:                                     ${isOut && !qty ? '86' : qty.toFixed(1)}
+1934:                                 </span>
+1935:                                 <span style="font-size:10px; color:var(--dim); font-weight:800; margin-left:2px;">${s.unit || ''}</span>
+1936:                             </div>
+1937:                         </div>
+1938:                         <div style="background:var(--s3); border-radius:6px; height:20px; overflow:hidden; border:1.5px solid var(--bd); position:relative;">
+1939:                             <div style="background:${isOut && !qty ? 'rgba(224,82,82,0.4)' : 'var(--gold)'}; height:100%; width:${isOut && !qty ? '100%' : w + '%'}; transition:width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+1940:                         </div>
+1941:                     </div>`;
+1942:                 }).join('');
+1943:             })
+1944:             .getProductMovements(cat, period || 7);
+1945:     }
+1946: 
+1947:     /**
+1948:      * Renderiza dashboard mejorado con analytics de recepción
+1949:      */
+1950:     function renderDashboardWithAnalytics(data) {
+1951:         const dashContent = document.getElementById('dash-content');
+1952:         if (!dashContent) return;
+1953: 
+1954:         // Construir HTML con nuevas tarjetas
+1955:         let analyticsHtml = '<div style="display:grid; gap:16px; margin-bottom:24px;">';
+1956: 
+1957:         // Card: Alertas Activas
+1958:         if (data.alerts && data.alerts.success) {
+1959:             const totalAlerts = (data.alerts.agotados?.length || 0) + (data.alerts.pendientes?.length || 0);
+1960:             analyticsHtml += `
+1961:             <div class="alert-card ${totalAlerts > 0 ? 'warning' : 'success'}">
+1962:                 <div style="display:flex; align-items:center; gap:12px;">
+1963:                     <i data-lucide="${totalAlerts > 0 ? 'alert-circle' : 'check-circle'}" style="width:var(--icon-size-large); height:var(--icon-size-large); color:${totalAlerts > 0 ? 'var(--warning)' : 'var(--success)'}; flex-shrink:0;"></i>
+1964:                     <div style="flex:1;">
+1965:                         <div style="font-weight:700; font-size:13px;">Alertas Activas</div>
+1966:                         <div style="font-size:11px; color:var(--dim); margin-top:2px;">
+1967:                             ${data.alerts.agotados?.length || 0} agotados · ${data.alerts.pendientes?.length || 0} pendientes
+1968:                         </div>
+1969:                     </div>
+1970:                 </div>
+1971:             </div>`;
+1972:         }
+1973: 
+1974:         // Card: Stock Crítico
+1975:         if (data.stock && data.stock.success) {
+1976:             analyticsHtml += `
+1977:             <div class="alert-card ${data.stock.bajo?.length > 0 ? 'warning' : 'info'}">
+1978:                 <div style="display:flex; align-items:center; gap:12px;">
+1979:                     <i data-lucide="database" style="width:var(--icon-size-large); height:var(--icon-size-large); color:${data.stock.bajo?.length > 0 ? 'var(--warning)' : 'var(--blue)'}; flex-shrink:0;"></i>
+1980:                     <div style="flex:1;">
+1981:                         <div style="font-weight:700; font-size:13px;">Stock Crítico</div>
+1982:                         <div style="font-size:11px; color:var(--dim); margin-top:2px;">
+1983:                             ${data.stock.bajo?.length || 0} productos bajo nivel · Total en stock: ${data.stock.totalItems}
+1984:                         </div>
+1985:                     </div>
+1986:                 </div>
+1987:             </div>`;
+1988:         }
+1989: 
+1990:         // Card: Última Semana
+1991:         if (data.last7 && data.last7.success) {
+1992:             analyticsHtml += `
+1993:             <div class="alert-card success">
+1994:                 <div style="display:flex; align-items:center; gap:12px;">
+1995:                     <i data-lucide="trending-up" style="width:var(--icon-size-large); height:var(--icon-size-large); color:var(--success); flex-shrink:0;"></i>
+1996:                     <div style="flex:1;">
+1997:                         <div style="font-weight:700; font-size:13px;">Últimos 7 Días</div>
+1998:                         <div style="font-size:11px; color:var(--dim); margin-top:2px;">
+1999:                             Pedidos: ${data.last7.totalPedidos} · Recibidos: ${data.last7.totalRecepciones} · Tasa: ${data.last7.tasa}%
+2000:                         </div>
+2001:                     </div>
+2002:                 </div>
+2003:             </div>`;
+2004:         }
+2005: 
+2006:         // Card: Top Consumo
+2007:         if (data.top && data.top.success && data.top.top?.length > 0) {
+2008:             const topList = data.top.top.slice(0, 3).map(t => `${t.prod} (${t.count}x)`).join(' · ');
+2009:             analyticsHtml += `
+2010:             <div class="alert-card info">
+2011:                 <div style="display:flex; align-items:center; gap:12px;">
+2012:                     <i data-lucide="fire" style="width:var(--icon-size-large); height:var(--icon-size-large); color:var(--primary); flex-shrink:0;"></i>
+2013:                     <div style="flex:1;">
+2014:                         <div style="font-weight:700; font-size:13px;">Top Consumo</div>
+2015:                         <div style="font-size:11px; color:var(--dim); margin-top:2px;">
+2016:                             ${topList}
+2017:                         </div>
+2018:                     </div>
+2019:                 </div>
+2020:             </div>`;
+2021:         }
+2022: 
+2023:         analyticsHtml += '</div>';
+2024: 
+2025:         // Agregar a dashboard
+2026:         const existingAnalytics = dashContent.querySelector('[data-analytics-panel]');
+2027:         if (existingAnalytics) {
+2028:             existingAnalytics.outerHTML = `<div data-analytics-panel>${analyticsHtml}</div>`;
+2029:         } else {
+2030:             dashContent.insertAdjacentHTML('afterbegin', `<div data-analytics-panel>${analyticsHtml}</div>`);
+2031:         }
+2032: 
+2033:         lucide.createIcons();
+2034:         refreshIcons();
+2035:     }
+2036: 
+2037:     function renderFavs() {
+2038:         const grid = document.getElementById('favs-grid'), container = document.getElementById('home-favs');
+2039:         if (!grid || !container) return; // Protegido contra nulos
+2040:         if (!FAVS.length) { container.classList.add('hidden'); return; }
+2041:         container.classList.remove('hidden');
+2042:         grid.innerHTML = FAVS.slice(0, 6).map(p => {
+2043:             let cat = 'Otros';
+2044:             Object.keys(CATS).forEach(c => { if (CATS[c].prods.includes(p)) cat = c; });
+2045:             const icon = CATS[cat]?.icon || 'star';
+2046:             return `
+2047:                 <div class="dash-card" onclick="enterFav('${encodeURIComponent(p)}')" style="margin-bottom:0; padding:12px 6px; text-align:center; cursor:pointer; background:rgba(212,168,67,0.05); border:1px solid rgba(212,168,67,0.15);">
+2048:                     <i data-lucide="${icon}" style="width:var(--icon-size-small); height:var(--icon-size-small); color:var(--gold); display:block; margin:0 auto 6px;"></i>
+2049:                     <div style="font-size:11px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p}</div>
+2050:                 </div>`;
+2051:         }).join('');
+2052:         refreshIcons();
+2053:     }
+2054: 
+2055:     function enterFav(pEnc) {
+2056:         const p = decodeURIComponent(pEnc); let cat = null;
+2057:         Object.keys(CATS).forEach(c => { if (CATS[c].prods.includes(p)) cat = c; });
+2058:         if (!cat) return;
+2059:         enterMode('pedido'); selectCat(cat);
+2060:         setTimeout(() => {
+2061:             const row = Array.from(document.querySelectorAll('.prow')).find(r => r.querySelector('.pname').textContent === p);
+2062:             if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+2063:         }, 600);
+2064:     }
+2065: 
+2066:     function toggleFav(pEnc) {
+2067:         const p = decodeURIComponent(pEnc), idx = FAVS.indexOf(p);
+2068:         if (idx > -1) FAVS.splice(idx, 1); else { FAVS.unshift(p); if (FAVS.length > 6) FAVS.pop(); }
+2069:         updateProductRow(p); google.script.run.saveConfig('favs', FAVS, activeSheetId);
+2070:     }
+2071: 
+2072:     /* ── GLOBAL SEARCH ── */
+2073:     function searchGlobalHome(q) {
+2074:         const query = q.toLowerCase().trim();
+2075:         const resEl = document.getElementById('home-search-res');
+2076:         if (!query || query.length < 2) { resEl.classList.remove('active'); return; }
+2077: 
+2078:         let results = [];
+2079:         Object.keys(CATS).forEach(cat => {
+2080:             CATS[cat].prods.forEach(p => {
+2081:                 if (p.toLowerCase().includes(query)) {
+2082:                     results.push({ p, cat });
+2083:                 }
+2084:             });
+2085:         });
+2086: 
+2087:         if (results.length === 0) {
+2088:             resEl.innerHTML = '<div style="padding:15px; color:var(--dim); font-size:12px; text-align:center;">No se encontraron productos.</div>';
+2089:         } else {
+2090:             resEl.innerHTML = results.slice(0, 10).map(r =>
+2091:                 `<div class="gs-item" onclick="promptGlobalLoad('${encodeURIComponent(r.p)}', '${encodeURIComponent(r.cat)}')">
+2092:                     <span class="gs-pname">${r.p}</span>
+2093:                     <span class="gs-pcat">${r.cat}</span>
+2094:                 </div>`
+2095:             ).join('');
+2096:         }
+2097:         resEl.classList.add('active');
+2098:     }
+2099: 
+2100:     let globalSelected = null;
+2101:     function promptGlobalLoad(pEnc, catEnc) {
+2102:         const p = decodeURIComponent(pEnc), cat = decodeURIComponent(catEnc);
+2103:         document.getElementById('home-search-res').classList.remove('active');
+2104:         document.getElementById('home-search').value = '';
+2105: 
+2106:         globalSelected = { p, cat };
+2107:         document.getElementById('as-pname').textContent = p;
+2108:         document.getElementById('as-pcat').textContent = cat;
+2109: 
+2110:         const d = localStorage.getItem('fede_draft');
+2111:         document.getElementById('as-lbl-pedido').textContent = (currentMode === 'pedido' || (d && d.includes('"pedido"'))) ? 'Continuar Pedido Activo' : 'Nuevo Pedido';
+2112:         document.getElementById('as-lbl-stock').textContent = (currentMode === 'stock' || (d && d.includes('"stock"'))) ? 'Continuar Control Activo' : 'Nuevo Control de Stock';
+2113: 
+2114:         document.getElementById('global-action-sheet').classList.add('active');
+2115:     }
+2116: 
+2117:     function closeActionSheet(e) {
+2118:         if (!e || e.target === document.getElementById('global-action-sheet')) {
+2119:             document.getElementById('global-action-sheet').classList.remove('active');
+2120:         }
+2121:     }
+2122: 
+2123:     function confirmGlobalLoad(mode) {
+2124:         document.getElementById('global-action-sheet').classList.remove('active');
+2125:         if (!globalSelected) return;
+2126: 
+2127:         if (currentMode !== mode) initRelevamiento(mode);
+2128:         else {
+2129:             document.getElementById('home').classList.add('hidden');
+2130:             document.getElementById('app').classList.add('visible');
+2131:         }
+2132: 
+2133:         setTimeout(() => {
+2134:             selectCat(globalSelected.cat);
+2135:             setTimeout(() => {
+2136:                 const ep = encodeURIComponent(globalSelected.p);
+2137:                 const el = document.querySelector(`[data-prow="${ep}"]`);
+2138:                 if (el) {
+2139:                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+2140:                     el.style.transition = 'background 0.5s';
+2141:                     el.style.background = 'var(--goldf)';
+2142:                     setTimeout(() => el.style.background = '', 1500);
+2143:                 }
+2144:             }, 100);
+2145:         }, 50);
+2146:     }
+2147: 
+2148:     /* ── DRAFT ── */
+2149:     function saveDraft() { if (currentMode) localStorage.setItem('fede_draft', JSON.stringify({ mode: currentMode, items: relData, ts: Date.now() })); }
+2150:     function checkDraft() {
+2151:         const draft = JSON.parse(localStorage.getItem('fede_draft') || 'null');
+2152:         const banner = document.getElementById('draft-banner');
+2153:         if (draft && Object.keys(draft.items).length > 0) banner.classList.remove('hidden'); else banner.classList.add('hidden');
+2154:     }
+2155:     function restoreDraft() {
+2156:         const draft = JSON.parse(localStorage.getItem('fede_draft') || 'null');
+2157:         if (draft) {
+2158:             relData = draft.items;
+2159:             initRelevamiento(draft.mode);
+2160:             renderFAB();
+2161:         }
+2162:     }
+2163:     function discardDraft() { if (confirm("¿Borrar?")) { localStorage.removeItem('fede_draft'); checkDraft(); } }
+2164: 
+2165:     /* ── HISTORIAL ── */
+2166:     let histFilters = { mode: 'all', from: '', to: '', query: '' };
+2167:     function setHistFilter(type, val, el) {
+2168:         histFilters[type] = val;
+2169:         if (el) {
+2170:             el.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+2171:             el.classList.add('active');
+2172:         }
+2173:         renderHistory();
+2174:     }
+2175: 
+2176:     function renderHistory() {
+2177:         const list = document.getElementById('hist-list');
+2178:         if (!list) return;
+2179: 
+2180:         let filtered = HIST;
+2181: 
+2182:         // 1. Filtrar por Modo
+2183:         if (histFilters.mode !== 'all') {
+2184:             filtered = filtered.filter(h => (h.mode || 'stock').toLowerCase() === histFilters.mode);
+2185:         }
+2186: 
+2187:         // 2. Filtrar por Fechas
+2188:         if (histFilters.from) {
+2189:             const fromD = new Date(histFilters.from); fromD.setHours(0, 0, 0, 0);
+2190:             filtered = filtered.filter(h => new Date(h.fecha) >= fromD);
+2191:         }
+2192:         if (histFilters.to) {
+2193:             const toD = new Date(histFilters.to); toD.setHours(23, 59, 59, 999);
+2194:             filtered = filtered.filter(h => new Date(h.fecha) <= toD);
+2195:         }
+2196: 
+2197:         // 3. Filtrar por Búsqueda (Soporta producto o categoría)
+2198:         if (histFilters.query) {
+2199:             const q = histFilters.query.toLowerCase();
+2200:             filtered = filtered.filter(h => {
+2201:                 const prodsMsg = (h.items || []).map(i => i.prod.toLowerCase() + (i.cat || '').toLowerCase()).join(' ');
+2202:                 return prodsMsg.includes(q);
+2203:             });
+2204:         }
+2205:         if (!filtered.length) { list.innerHTML = `<p style="text-align:center;padding:40px;color:var(--dim);">No hay registros ${histFilters.mode !== 'all' ? ('de ' + histFilters.mode) : ''} aún.</p>`; return; }
+2206:         list.innerHTML = filtered.map(h => {
+2207:             const items = Array.isArray(h.items) ? h.items : [];
+2208:             return `
+2209:             <div class="dash-card" id="hist-card-${h.id}">
+2210:                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+2211:                     <span style="font-weight:800;color:var(--gold);border:1px solid var(--gold);padding:4px 12px;border-radius:12px;font-size:12px;">${(h.mode || 'stock').toUpperCase()}</span>
+2212:                     <div style="display:flex; gap:8px;">
+2213:                         <button onclick="editHistEntry('${h.id}')" style="background:var(--s2); border:1px solid var(--bd); border-radius:8px; padding:6px 10px; color:var(--text);"><i data-lucide="edit-3" style="width:14px;"></i></button>
+2214:                         <button onclick="deleteHistEntryManual('${h.id}')" style="background:rgba(224,82,82,0.1); border:1px solid var(--red); border-radius:8px; padding:6px 10px; color:var(--red);"><i data-lucide="trash-2" style="width:14px;"></i></button>
+2215:                     </div>
+2216:                 </div>
+2217:                 <div onclick="toggleHistExpand('${h.id}')" style="cursor:pointer;">
+2218:                     <div style="font-weight:700; font-size:18px;">${h.total} registros</div>
+2219:                     <div style="font-size:13px; color:var(--dim);">${new Date(h.fecha).toLocaleString('es-AR')}</div>
+2220:                     <div id="hist-expanded-${h.id}" class="hidden" style="margin-top:10px;">
+2221:                         ${items.map(i => `<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px;"><span>${i.prod}</span><span style="font-weight:800; color:${i.qty === 86 ? 'var(--red)' : 'var(--primary)'}">${i.qty === 86 ? 'AGOTADO' : i.qty + ' ' + formatUnit(i.qty, i.unit)}</span></div>`).join('')}
+2222:                         <button onclick="sendHistWA('${h.id}'); event.stopPropagation();" style="width:100%; background:#25D366; color:white; margin-top:12px; padding:10px; border-radius:8px; border:none; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;"><i data-lucide="message-circle" style="width:18px;"></i> ENVIAR WA</button>
+2223:                     </div>
+2224:                 </div>
+2225:             </div>`;
+2226:         }).join('');
+2227:     }
+2228: 
+2229:     function toggleHistExpand(id) { document.getElementById(`hist-expanded-${id}`).classList.toggle('hidden'); }
+2230:     function deleteHistEntryManual(id) { if (confirm("¿Eliminar este registro?")) google.script.run.withSuccessHandler(() => { HIST = HIST.filter(h => h.id != id); renderHistory(); toast("✓ Eliminado"); }).deleteHistoryEntry(id); }
+2231: 
+2232:     let editingHistId = null, editingHistItems = [];
+2233:     function editHistEntry(id) {
+2234:         const h = HIST.find(x => x.id == id); if (!h) return;
+2235:         editingHistId = id; editingHistItems = JSON.parse(JSON.stringify(h.items));
+2236:         renderEditHistItems(); document.getElementById('modal-edit-hist').classList.add('open');
+2237:     }
+2238:     function renderEditHistItems() {
+2239:         document.getElementById('edit-hist-body').innerHTML = editingHistItems.map((item, idx) => `
+2240:             <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid var(--bd);">
+2241:                 <div style="flex:1;"><div style="font-weight:700; font-size:14px;">${item.prod}</div><div style="font-size:11px; color:var(--dim);">${item.unit}</div></div>
+2242:                 <div style="display:flex; align-items:center; gap:10px; background:var(--s2); border-radius:8px; padding:4px;">
+2243:                     <button onclick="stepEditHistItem(${idx}, -1)" style="background:none; border:none; color:var(--text); font-size:18px; width:30px;">−</button>
+2244:                     <span style="font-weight:800; min-width:30px; text-align:center;">${item.qty}</span>
+2245:                     <button onclick="stepEditHistItem(${idx}, 1)" style="background:none; border:none; color:var(--text); font-size:18px; width:30px;">+</button>
+2246:                 </div>
+2247:                 <button onclick="editingHistItems.splice(${idx}, 1); renderEditHistItems();" style="background:none; border:none; color:var(--red); padding-left:10px;">✕</button>
+2248:             </div>`).join('');
+2249:     }
+2250:     function stepEditHistItem(idx, dir) {
+2251:         const item = editingHistItems[idx];
+2252:         const step = (item.unit === 'kg' || item.unit === 'litro/s') ? 0.5 : 1;
+2253:         item.qty = Math.max(0, parseFloat((item.qty + dir * step).toFixed(2)));
+2254:         renderEditHistItems();
+2255:     }
+2256:     function saveHistoryEdit() {
+2257:         const original = HIST.find(h => h.id == editingHistId);
+2258:         if (!original) return;
+2259:         // BUG 2 FIX: Preservar fecha original, borrar primero para evitar duplicados
+2260:         const entry = { ...original, items: editingHistItems, total: editingHistItems.length }; // fecha original preservada
+2261:         google.script.run
+2262:             .withSuccessHandler(() => {
+2263:                 // Borrar primero, luego insertar — evita race condition con dobles
+2264:                 google.script.run
+2265:                     .withSuccessHandler(() => { loadConfigFromGAS(); closeEditHistModal(); toast('✓ Actualizado'); })
+2266:                     .withFailureHandler(e => toast('❌ Error al guardar: ' + e.message))
+2267:                     .addHistoryEntry(entry, activeSheetId);
+2268:             })
+2269:             .withFailureHandler(e => toast('❌ Error al borrar: ' + e.message))
+2270:             .deleteHistoryEntry(editingHistId, activeSheetId);
+2271:     }
+2272:     function closeEditHistModal() { document.getElementById('modal-edit-hist').classList.remove('open'); }
+2273: 
+2274:     /* ── UTILIDADES ── */
+2275:     function toast(m, d = 2500) { const t = document.getElementById('toast'); if (!t) return; /* BUG 10 FIX */ t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), d); }
+2276: 
+2277:     function exportCSV() {
+2278:         if (!HIST.length) return toast("No hay historial");
+2279:         const rows = [['ID', 'Fecha', 'Modo', 'Turno', 'Total', 'Productos']];
+2280:         HIST.forEach(h => {
+2281:             const prods = (h.items || []).map(i => `${i.prod} (${i.qty} ${i.unit || ''})`).join(' | ');
+2282:             rows.push([h.id, new Date(h.fecha).toLocaleString(), h.mode || '', h.turno || '', h.total, prods]);
+2283:         });
+2284:         const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+2285:         const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+2286:         const url = URL.createObjectURL(blob);
+2287:         const a = document.createElement('a'); a.href = url; a.download = `fede_historial.csv`; a.click(); toast("✓ CSV descargado");
+2288:     }
+2289: 
+2290:     function clearHistory(type) {
+2291:         if (!confirm(`¿Borrar todo el historial de ${type.toUpperCase()}? Esta acción no se puede deshacer.`)) return;
+2292:         google.script.run
+2293:             .withSuccessHandler(r => {
+2294:                 if (r.success) {
+2295:                     HIST = HIST.filter(h => (h.mode || 'stock').toLowerCase() !== type);
+2296:                     renderHistory();
+2297:                     toast(`✓ ${r.count} registros eliminados`);
+2298:                 } else toast("❌ Error: " + r.error);
+2299:             })
+2300:             .withFailureHandler(err => toast("❌ Error de servidor"))
+2301:             .deleteHistory(type, activeSheetId); // BUG 5 FIX: pasar activeSheetId
+2302:     }
+2303: 
+2304:     function clearAllHistory() {
+2305:         if (!confirm("⚠️ ¿ESTÁS SEGURO DE BORRAR TODO? Se eliminarán todos los registros de Pedidos y Stock.")) return;
+2306:         google.script.run
+2307:             .withSuccessHandler(r => {
+2308:                 if (r.success) {
+2309:                     HIST = [];
+2310:                     renderHistory();
+2311:                     toast("✓ Base de datos vaciada");
+2312:                 } else toast("❌ Error: " + r.error);
+2313:             })
+2314:             .withFailureHandler(err => toast("❌ Error de servidor"))
+2315:             .deleteHistory('all');
+2316:     }
+2317: 
+2318:     /* ── FULLSCREEN ── */
+2319:     let fsCurrentCat = null, fsProducts = [], fsCurrentIdx = 0;
+2320:     function enterFullscreenMode() { if (!activeCat) return toast("Selecciona categoría"); fsCurrentCat = activeCat; fsProducts = [...CATS[fsCurrentCat].prods].sort(); fsCurrentIdx = 0; document.getElementById('prod-fullscreen').classList.add('active'); renderFSProduct(); }
+2321:     function exitFullscreenMode() { document.getElementById('prod-fullscreen').classList.remove('active'); saveDraft(); renderFAB(); }
+2322:     function renderFSProduct() {
+2323:         const prod = fsProducts[fsCurrentIdx], d = relData[prod] || { qty: 0, unit: units[0] };
+2324:         document.getElementById('prod-fs-cat').textContent = fsCurrentCat.toUpperCase();
+2325:         document.getElementById('prod-fs-name-sm').textContent = prod;
+2326:         document.getElementById('prod-fs-name').textContent = prod;
+2327:         document.getElementById('prod-fs-unit-row').innerHTML = getUnitsForProduct(fsCurrentCat).map(u => {
+2328:             // BUG 9 FIX: encodeURIComponent para evitar quiebre con nombres con comillas simples
+2329:             const eu = encodeURIComponent(u);
+2330:             const ep2 = encodeURIComponent(prod);
+2331:             return `<div class="prod-fs-uchip ${d.unit === u ? 'active' : ''}" onclick="fsSetUnit(decodeURIComponent('${eu}'), decodeURIComponent('${ep2}'))">${u}</div>`;
+2332:         }).join('');
+2333:         const v = document.getElementById('prod-fs-stepval');
+2334:         if (d.qty === 86) { v.textContent = '86'; v.classList.add('is-86'); }
+2335:         else { v.textContent = d.qty || '—'; v.classList.remove('is-86'); }
+2336:         document.getElementById('prod-fs-counter').textContent = `${fsCurrentIdx + 1} / ${fsProducts.length}`;
+2337:     }
+2338:     function fsSetUnit(u, prod) { if (!relData[prod]) relData[prod] = { qty: 0, unit: u }; else relData[prod].unit = u; renderFSProduct(); saveDraft(); }
+2339:     function fsStepProd(dir) {
+2340:         const prod = fsProducts[fsCurrentIdx]; if (!relData[prod]) relData[prod] = { qty: 0, unit: units[0] };
+2341:         const step = (relData[prod].unit === 'kg' || relData[prod].unit === 'litro/s') ? 0.5 : 1;
+2342:         relData[prod].qty = Math.max(0, parseFloat((relData[prod].qty + dir * step).toFixed(2)));
+2343:         if (relData[prod].qty === 0) delete relData[prod];
+2344:         renderFSProduct(); saveDraft();
+2345:     }
+2346:     function fs86() { const p = fsProducts[fsCurrentIdx]; relData[p] = { qty: 86, unit: units[0] }; toast("⚠️ 86"); saveDraft(); setTimeout(() => fsNext(), 500); }
+2347:     function fsNext() { if (fsCurrentIdx < fsProducts.length - 1) { fsCurrentIdx++; renderFSProduct(); } else { exitFullscreenMode(); toast("✓ Fin"); } }
+2348:     function fsPrev() { if (fsCurrentIdx > 0) { fsCurrentIdx--; renderFSProduct(); } }
+2349:     function fsManualEntry() {
+2350:         const p = fsProducts[fsCurrentIdx]; const val = prompt(`Cantidad:`, relData[p]?.qty || '');
+2351:         if (val !== null) {
+2352:             const n = parseFloat(val.replace(',', '.'));
+2353:             if (!isNaN(n)) { relData[p] = { qty: n, unit: relData[p]?.unit || units[0] }; renderFSProduct(); saveDraft(); }
+2354:         }
+2355:     }
+2356: 
+2357:     /* ── GESTIÓN DE BASES DE DATOS (DB) ── */
+2358:     function saveSheetId() {
+2359:         let val = document.getElementById('db-sheet-id').value.trim();
+2360:         if (!val) return toast("❌ Ingresa un ID o URL");
+2361:         if (val.includes('/d/')) val = val.split('/d/')[1].split('/')[0];
+2362:         localStorage.setItem('fede_active_sheet_id', val);
+2363:         toast("✓ Vinculando..."); setTimeout(() => location.reload(), 1000);
+2364:     }
+2365:     function resetToMaster() {
+2366:         localStorage.removeItem('fede_active_sheet_id');
+2367:         toast("✓ Maestro restaurado."); setTimeout(() => location.reload(), 1000);
+2368:     }
+2369:     function updateDBLabel() {
+2370:         const label = document.getElementById('active-db-label');
+2371:         if (label) {
+2372:             const sid = localStorage.getItem('fede_active_sheet_id');
+2373:             if (sid) {
+2374:                 label.textContent = `${dbName} (${sid.substring(0, 8)}...)`;
+2375:                 label.style.color = 'var(--gold)';
+2376:             } else {
+2377:                 label.textContent = `DATABASE: MASTER (DEFAULT)`;
+2378:             }
+2379:         }
+2380:     }
+2381: 
+2382:     function clearCurrentRel() {
+2383:         if (!confirm("¿Seguro que quieres borrar todo el relevamiento actual y dejar todo en 0?")) return;
+2384:         relData = {};
+2385:         localStorage.removeItem('fede_draft');
+2386:         renderProducts();
+2387:         renderFAB();
+2388:         closeResumen();
+2389:         toast("Relevamiento borrado");
+2390:     }
+2391: 
+2392:     /* ── ENTRANTE: MERCADERÍA ── */
+2393:     function renderEntranteView() {
+2394:         const dl = document.getElementById('ent-prods-datalist');
+2395:         if (dl) {
+2396:             const allProds = [];
+2397:             Object.values(CATS).forEach(c => allProds.push(...c.prods));
+2398:             const uniqueProds = [...new Set(allProds)].sort();
+2399:             dl.innerHTML = uniqueProds.map(p => `<option value="${p}">`).join('');
+2400:         }
+2401: 
+2402:         const dateInput = document.getElementById('ent-date-inp');
+2403:         if (dateInput && !dateInput.value) {
+2404:             dateInput.value = new Date().toISOString().split('T')[0];
+2405:         }
+2406: 
+2407:         loadEntranteHistory();
+2408:         refreshIcons();
+2409:     }
+2410: 
+2411:     function saveEntranteRecord() {
+2412:         const prod = document.getElementById('ent-prod-inp').value.trim();
+2413:         const qty = parseFloat(document.getElementById('ent-qty-inp').value);
+2414:         const unit = document.getElementById('ent-unit-inp').value;
+2415:         const date = document.getElementById('ent-date-inp').value;
+2416: 
+2417:         if (!prod || isNaN(qty) || !date) {
+2418:             toast("Completa todos los campos");
+2419:             return;
+2420:         }
+2421: 
+2422:         const entry = {
+2423:             id: Date.now(),
+2424:             fecha: new Date(date + 'T12:00:00').toISOString(),
+2425:             mode: 'entrante',
+2426:             items: [{ prod, qty, unit, cat: 'Entrada' }],
+2427:             total: 1
+2428:         };
+2429: 
+2430:         setSyncStatus('pending');
+2431:         google.script.run
+2432:             .withSuccessHandler(r => {
+2433:                 if (r && r.success) {
+2434:                     toast("Entrada registrada");
+2435:                     document.getElementById('ent-prod-inp').value = '';
+2436:                     document.getElementById('ent-qty-inp').value = '';
+2437:                     loadConfigFromGAS();
+2438:                 } else {
+2439:                     toast("Error al guardar");
+2440:                 }
+2441:                 setSyncStatus('online');
+2442:             })
+2443:             .withFailureHandler(err => {
+2444:                 if (window.enqueueEntry) enqueueEntry(entry);
+2445:                 setSyncStatus('error');
+2446:             })
+2447:             .addHistoryEntry(entry, activeSheetId);
+2448:     }
+2449: 
+2450:     function loadEntranteHistory() {
+2451:         const list = document.getElementById('ent-history-list');
+2452:         if (!list) return;
+2453: 
+2454:         const ents = (HIST || []).filter(h => h.mode === 'entrante').slice(0, 10);
+2455:         if (ents.length === 0) {
+2456:             list.innerHTML = '<div style="text-align:center; color:var(--dim); padding:20px; font-size:12px;">Sin entradas recientes.</div>';
+2457:             return;
+2458:         }
+2459: 
+2460:         list.innerHTML = ents.map(h => {
+2461:             const item = (h.items && h.items[0]) || {};
+2462:             return `
+2463:             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--bd); background:rgba(16,185,129,0.03); border-radius:10px; margin-bottom:8px;">
+2464:                 <div>
+2465:                     <div style="font-weight:700; font-size:14px; color:var(--text);">${item.prod || 'Producto'}</div>
+2466:                     <div style="font-size:11px; color:var(--dim);">${new Date(h.fecha).toLocaleDateString('es-AR')}</div>
+2467:                 </div>
+2468:                 <div style="text-align:right;">
+2469:                     <div style="font-size:15px; font-weight:800; color:var(--green);">${item.qty || 0} ${item.unit || ''}</div>
+2470:                 </div>
+2471:             </div>`;
+2472:         }).join('');
+2473:     }
+2474: 
+2475:     /* ── IDENTIDAD: APP TITLE ── */
+2476:     function loadAppTitle() {
+2477:         const title = localStorage.getItem('fede_app_title') || 'FeDe';
+2478:         const titleDisplay = document.getElementById('app-logo-text');
+2479:         const titleInput = document.getElementById('app-title-inp');
+2480:         if (titleDisplay) titleDisplay.textContent = title;
+2481:         if (titleInput) titleInput.value = title;
+2482:     }
+2483: 
+2484:     function saveAppTitle() {
+2485:         const val = document.getElementById('app-title-inp').value.trim();
+2486:         if (!val) return;
+2487:         localStorage.setItem('fede_app_title', val);
+2488:         const titleDisplay = document.getElementById('app-logo-text');
+2489:         if (titleDisplay) titleDisplay.textContent = val;
+2490:         google.script.run.saveConfig('app_title', val, activeSheetId);
+2491:         toast("Título actualizado");
+2492:     }
+2493: 
+2494:     // refreshIcons() definida en línea ~672 con soporte de parámetro root — NO DUPLICAR AQUÍ
+2495: 
+2496: 
+2497: 

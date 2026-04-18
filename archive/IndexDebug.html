@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FeDe Debug</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;background:#0f0f0d;color:#f0ece0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}#box{max-width:680px;padding:20px;border-radius:12px;background:#141412;border:1px solid #2b2b28}</style>
+</head>
+<body>
+  <div id="box">
+    <h2>FEDE Debug View</h2>
+    <p id="status">Iniciando diagnóstico...</p>
+    <pre id="out" style="white-space:pre-wrap;margin-top:12px;color:#c8c4b4"></pre>
+  </div>
+
+  <script>
+    console.log('FEDE DEBUG: script start');
+    document.getElementById('status').textContent = 'Comprobando entorno...';
+    try { window.__FEDE_DEBUG = true; } catch(e) { console.error(e); }
+
+    function log(msg){ document.getElementById('out').textContent += msg + '\n'; console.log(msg); }
+
+    if (!window.google || !google.script || !google.script.run) {
+      document.getElementById('status').textContent = 'google.script.run NO disponible';
+      log('google.script.run NOT available');
+    } else {
+      document.getElementById('status').textContent = 'Llamando a getAppState()...';
+      try {
+        google.script.run
+          .withSuccessHandler(function(r){ document.getElementById('status').textContent = 'getAppState OK'; log('getAppState OK: ' + JSON.stringify({cats: Object.keys(r.config.cats||{}).length, history: (r.history||[]).length})); })
+          .withFailureHandler(function(e){ document.getElementById('status').textContent = 'getAppState FAIL'; log('getAppState FAIL: ' + JSON.stringify(e)); })
+          .getAppState();
+      } catch(e){ document.getElementById('status').textContent = 'Call error'; log('google.script.run call error: ' + e.toString()); }
+    }
+
+    // Safety marker for DOM verification
+    (function(){ const m = document.createElement('div'); m.id='fede-diag'; m.style.display='none'; m.textContent='FEDE_DIAG:INDEX_DEBUG_OK'; document.body.appendChild(m); })();
+  </script>
+</body>
+</html>

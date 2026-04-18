@@ -1,0 +1,785 @@
+const MASTER_ID = '1oVhQLOGo4FzaHqB8rCloxnPpkomEB7z57ZM8Jk8a0fU';
+const Logger_FeDe = {
+  levels: { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 },
+  currentLevel: 1, 
+  log(level, message, data = null) {
+    console.log(`[${new Date().toISOString()}] [${Object.keys(this.levels)[level]}] ${message}`, data);
+  },
+  debug(msg, data) { if (this.currentLevel <= 0) this.log(0, msg, data); },
+  info(msg, data) { if (this.currentLevel <= 1) this.log(1, msg, data); },
+  warn(msg, data) { if (this.currentLevel <= 2) this.log(2, msg, data); },
+  error(msg, data) { this.log(3, msg, data); }
+};
+const Validator = {
+  isString(value) { return typeof value === 'string' && value.length > 0; },
+  isArray(value) { return Array.isArray(value); },
+  isObject(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); },
+  isNumber(value, min = -Infinity, max = Infinity) { 
+    return typeof value === 'number' && value >= min && value <= max; 
+  },
+  sanitizeString(value) {
+    return String(value).trim().replace(/[<>\"']/g, '');
+  },
+  validateSheetId(id) {
+    return typeof id === 'string' && id.length > 20;
+  }
+};
+const IdGenerator = {
+  generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  },
+  generateEntryId() {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+};
+function getSheetId(id) {
+    return id && id !== 'undefined' && Validator.validateSheetId(id) ? id : MASTER_ID;
+}
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('FeDe Online v8.5.0')
+    .setFaviconUrl('https://img.icons8.com/isometric/512/restaurant-membership-card.png')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+const DEFAULT_CONFIG = {
+  units: ['porcion/es', 'kg', 'unidad', 'litro', 'botella', 'maple', 'caja', 'frasco', 'lata', 'tupper', 'bandeja', 'atado', 'bolsa', 'paquete'],
+  favs: ["Ojo de bife", "Bondiola", "Peceto", "Pechuga", "Salmon", "Langostinos", "Burrata", "Queso Sardo", "Queso Gouda", "Queso parmesano"],
+  cats: {
+    "Carnes": { icon: "beef", order: 2, prods: ["Bondiola", "Carne picada", "Chorizo", "Lomo", "Pechuga", "Peceto"] },
+    "Lacteos": { icon: "milk", order: 3, prods: ["Burrata", "Leche entera", "Manteca", "Queso Gouda", "Queso mozzarella", "Queso parmesano"] },
+    "Verduleria": { icon: "carrot", order: 5, prods: ["Ajo", "Cebolla", "Espinaca", "Lechuga", "Papa", "Tomate cherry", "Zanahoria"] },
+    "Pescados": { icon: "fish", order: 6, prods: ["Langostinos", "Merluza", "Salmon"] }
+  },
+  custom_units: {}
+};
+function getAppConfig(targetId) {
+  const startTime = Date.now();
+  const MAX_EXECUTION_TIME = 3500; 
+  try {
+    Logger_FeDe.info('Cargando configuracion de app [INICIO]', { targetId, timestamp: new Date().toISOString() });
+    const sheetId = getSheetId(targetId);
+    if (!sheetId || sheetId.length < 20) {
+      throw new Error('Sheet ID invalido o no configurado');
+    }
+    if (new Date().getTime() - startTime > MAX_EXECUTION_TIME) {
+      throw new Error('Timeout: Demasiado tiempo abriendo hoja');
+    }
+    let ss;
+    try {
+      ss = SpreadsheetApp.openById(sheetId);
+      if (!ss || !ss.getName) {
+        throw new Error('No se pudo acceder al Spreadsheet');
+      }
+    } catch(e) {
+      Logger_FeDe.error('Fallo al abrir Spreadsheet', { error: e.message, sheetId });
+      throw new Error('No se pudo conectar con la base de datos: ' + e.message);
+    }
+    const configSheet = getOrCreateSheet(ss, 'Config');
+    const histSheet = getOrCreateSheet(ss, 'History');
+    if (new Date().getTime() - startTime > MAX_EXECUTION_TIME) {
+      throw new Error('Timeout: Demasiado tiempo creando hojas');
+    }
+    let config = DEFAULT_CONFIG;
+    try {
+      const configData = configSheet.getDataRange().getValues();
+      let configParsed = {};
+      for (let i = 0; i < configData.length; i++) {
+        if (new Date().getTime() - startTime > MAX_EXECUTION_TIME) {
+          Logger_FeDe.warn('Timeout durante lectura de config', { row: i });
+          break;
+        }
+        const row = configData[i];
+        if (row[0] && Validator.isString(row[0])) {
+          try {
+            configParsed[row[0]] = JSON.parse(row[1]);
+          } catch(e) {
+            Logger_FeDe.warn('No se pudo parsear config item', { key: row[0], error: e.message });
+            configParsed[row[0]] = row[1];
+          }
+        }
+      }
+      if (configParsed.cats && Validator.isObject(configParsed.cats) && Object.keys(configParsed.cats).length > 0) {
+        config = configParsed;
+      } else {
+        Logger_FeDe.warn('Config vacia, usando valores por defecto');
+      }
+    } catch(e) {
+      Logger_FeDe.error('Error leyendo config, usando defaults', { error: e.message });
+      config = DEFAULT_CONFIG;
+    }
+    if (!config.cats || Object.keys(config.cats).length === 0) {
+      Logger_FeDe.info('Inicializando configuracion por defecto');
+      config = DEFAULT_CONFIG;
+    }
+    let history = [];
+    try {
+      const lastRow = histSheet.getLastRow();
+      if (lastRow > 1) {
+        const rowsToRead = Math.min(100, lastRow - 1);
+        const histData = histSheet.getRange(2, 1, rowsToRead, 6).getValues();
+        history = histData.map(row => ({
+          id: String(row[0] || ''),
+          fecha: String(row[1] || new Date().toISOString()),
+          mode: String(row[2] || 'pedido').toLowerCase(),
+          turno: String(row[3] || ''),
+          total: Number(row[4]) || 0,
+          items: (() => {
+            try {
+              return JSON.parse(row[5] || '[]');
+            } catch(e) {
+              return [];
+            }
+          })()
+        })).reverse();
+      }
+    } catch(e) {
+      Logger_FeDe.warn('Error leyendo historial, continuando sin historial', { error: e.message });
+      history = [];
+    }
+    const elapsedTime = new Date().getTime() - startTime;
+    Logger_FeDe.info('Configuracion cargada exitosamente', { 
+      categories: Object.keys(config.cats || {}).length,
+      historyItems: history.length,
+      elapsedMs: elapsedTime
+    });
+    return { 
+      success: true, 
+      ssName: ss.getName() || 'Base de Datos',
+      config: config, 
+      history: history, 
+      timestamp: new Date().toISOString(),
+      source: 'gcloud'
+    };
+  } catch(e) {
+    const elapsedTime = new Date().getTime() - startTime;
+    Logger_FeDe.error('Error cargando configuracion - USANDO FALLBACK', { 
+      error: e.message, 
+      elapsedMs: elapsedTime,
+      targetId 
+    });
+    return { 
+      success: true,
+      isOfflineMode: true,
+      ssName: 'Modo Offline',
+      config: DEFAULT_CONFIG, 
+      history: [], 
+      timestamp: new Date().toISOString(),
+      source: 'offline-fallback',
+      error: e.message
+    };
+  }
+}
+function getAppState() { return getAppConfig(); }
+function saveConfig(key, value, targetId) {
+  try {
+    if (!Validator.isString(key)) {
+      throw new Error('La clave debe ser un string valido');
+    }
+    if (value === null || value === undefined) {
+      throw new Error('El valor no puede ser nulo');
+    }
+    Logger_FeDe.debug('Guardando configuracion', { key, valueType: typeof value });
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'Config');
+    const data = sheet.getDataRange().getValues();
+    const valStr = JSON.stringify(value);
+    let found = false;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] == key) {
+        sheet.getRange(i + 1, 2).setValue(valStr);
+        found = true; 
+        break;
+      }
+    }
+    if (!found) sheet.appendRow([key, valStr]);
+    Logger_FeDe.info('Configuracion guardada exitosamente', { key });
+    return { success: true, key: key };
+  } catch(e) { 
+    Logger_FeDe.error('Error guardando configuracion', { error: e.message, key });
+    return { success: false, error: e.message }; 
+  }
+}
+function addHistoryEntry(entry, targetId) {
+  try {
+    if (!Validator.isObject(entry)) {
+      throw new Error('entry debe ser un objeto valido');
+    }
+    Logger_FeDe.debug('Agregando entrada al historial', { 
+      mode: entry.mode, 
+      itemCount: (entry.items || []).length 
+    });
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const entryId = entry.id || IdGenerator.generateEntryId();
+    const newRow = [
+      entryId,
+      entry.fecha || new Date().toISOString(),
+      String(entry.mode || 'stock').toLowerCase(),
+      entry.turno || 'Sin turno',
+      Number(entry.total) || 0,
+      JSON.stringify(entry.items || [])
+    ];
+    sheet.appendRow(newRow);
+    if (sheet.getLastRow() > 500) {
+      sheet.deleteRows(2, 100);
+      Logger_FeDe.info('Limpieza de historial realizada');
+    }
+    Logger_FeDe.info('Entrada del historial agregada', { entryId });
+    return { success: true, entryId: entryId };
+  } catch(e) { 
+    Logger_FeDe.error('Error agregando entrada al historial', { error: e.message });
+    return { success: false, error: e.message }; 
+  }
+}
+function deleteHistoryEntry(entryId, targetId) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const data = sheet.getDataRange().getValues();
+    for (let i = data.length - 1; i > 0; i--) {
+      if (data[i][0] == entryId) {
+        sheet.deleteRow(i + 1);
+        break;
+      }
+    }
+    return {success: true};
+  } catch(e) { return {success: false, error: e.message}; }
+}
+function logCatEdit(catName) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(undefined));
+    const sheet = getOrCreateSheet(ss, 'Config');
+    const data = sheet.getDataRange().getValues();
+    let edits = {};
+    let rowIdx = -1;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] == 'catEditLog') {
+        try { edits = JSON.parse(data[i][1]); } catch(e) {}
+        rowIdx = i + 1;
+        break;
+      }
+    }
+    edits[catName] = new Date().toISOString();
+    const keys = Object.keys(edits).sort((a,b) => new Date(edits[b]) - new Date(edits[a])).slice(0, 10);
+    const newEdits = {};
+    keys.forEach(k => newEdits[k] = edits[k]);
+    const valStr = JSON.stringify(newEdits);
+    if (rowIdx > 0) sheet.getRange(rowIdx, 2).setValue(valStr);
+    else sheet.appendRow(['catEditLog', valStr]);
+    return {success: true};
+  } catch(e) { return {success: false, error: e.message}; }
+}
+function deleteHistory(type, targetId) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: true, count: 0 };
+    if (type === 'all') {
+      sheet.deleteRows(2, lastRow - 1);
+      return { success: true, count: lastRow - 1 };
+    } else {
+      const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+      let count = 0;
+      for (let i = data.length - 1; i >= 0; i--) {
+        const mode = (data[i][2] || '').toLowerCase();
+        if (mode === type.toLowerCase()) {
+          sheet.deleteRow(i + 2);
+          count++;
+        }
+      }
+      return { success: true, count: count };
+    }
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+function getOrCreateSheet(ss, name) {
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    if (name === 'History') sheet.appendRow(['ID', 'Fecha', 'Modo', 'Turno', 'Total', 'Data_JSON']);
+  }
+  return sheet;
+}
+function initializeDefaultConfig(sheet) {
+  const config = {
+    units: ['porcion/es', 'kg', 'unidad', 'litro', 'botella', 'maple', 'caja', 'frasco', 'lata', 'tupper', 'bandeja', 'atado', 'bolsa', 'paquete'],
+    favs: ["Ojo de bife", "Bondiola", "Peceto", "Pechuga", "Salmon", "Langostinos", "Burrata", "Queso Sardo", "Queso Gouda", "Queso parmesano", "Leche entera", "Manteca"],
+    cats: {
+      "Personal": { icon: "chess-pawn", order: 1, prods: ["Pizza", "Tarta", "Milanesa de pollo", "Guiso de lentejas", "Pastas del personal", "Filet de merluza", "Sopa", "Cerdo"] },
+      "Carnes": { icon: "beef", order: 2, prods: ["Bondiola", "Carne picada", "Chorizo", "Jamon cocido", "Jamon crudo", "Lomo", "Mortadela con pistacho", "Ojo de bife", "Osobuco", "Panceta (bacon)", "Pechuga", "Peceto"] },
+      "Lacteos": { icon: "milk", order: 3, prods: ["Burrata", "Crema de leche", "Leche entera", "Manteca", "Provoleta", "Queso al pesto", "Queso azul", "Queso brie", "Queso crema", "Queso danbo", "Queso Gouda", "Queso Gouda ahumado", "Queso Gruyere", "Queso Holanda amarillo", "Queso mozzarella", "Queso parmesano", "Queso pategras", "Queso Sardo", "Ricota", "Yogurt"] },
+      "Huevos": { icon: "egg", order: 4, prods: ["Huevos"] },
+      "Verduleria": { icon: "carrot", order: 5, prods: ["Ajo", "Arandanos", "Banana", "Berenjena", "Brocoli", "Brotes", "Calabaza", "Cebolla", "Cebolla de verdeo", "Choclo", "Espinaca", "Frutilla", "Kale", "Lechuga", "Limon", "Manzana verde", "Naranja", "Palta", "Papa", "Pera", "Perejil", "Puerro", "Remolacha", "Repollo", "Rucula", "Tomate cherry", "Tomate perita", "Uvas verdes", "Zanahoria", "Zucchini"] },
+      "Pescados": { icon: "fish", order: 6, prods: ["Langostinos", "Merluza", "Pescado blanco (pesca del dia)", "Salmon"] },
+      "Panaderia": { icon: "croissant", order: 7, prods: ["Pan baguetin", "Pan brioche", "Pan de campo", "Pan de hamburguesa", "Pan de miga", "Pan de molde", "Pan de panera", "Pan focaccia", "Prepizza", "Tequenos"] },
+      "Pastas": { icon: "soup", order: 8, prods: ["Calzoncelli", "Noquis", "Sorrentinos de salmon", "Spaghetti seco", "Tagliatelle", "Tallarines"] },
+      "Bebidas": { icon: "bottle-wine", order: 9, prods: ["Vino"] },
+      "Condimentos": { icon: "shrub", order: 10, prods: ["Aceite de girasol", "Aceite de oliva", "Aceto balsamico", "Aderezo Cesar", "Aji molido", "Ketchup", "Mayonesa", "Miel", "Mostaza", "Oregano", "Perejil", "Pimienta negra molida", "Sal fina", "Sal gruesa", "Tahini", "Tomillo", "Vinagre de alcohol"] },
+      "Conservas": { icon: "cylinder", order: 11, prods: ["Aceitunas negras", "Aceitunas verdes", "Alcaparras", "Hongos deshidratados", "Mermeladas", "Pasta de tomate", "Tomates deshidratados", "Tomates pelados en lata"] },
+      "Secos": { icon: "wheat", order: 12, prods: ["Almendras", "Arroz risotto", "Azucar", "Fecula de maiz", "Fecula de mandioca", "Garbanzos", "Harina 000", "Harina 0000", "Harina de mandioca", "Nueces", "Polvo de hornear"] },
+      "Platos carta": { icon: "utensils-crossed", order: 13, prods: ["Affogato", "Berenjenas en escabeche", "Bondiola Braseada", "Borsch", "Brownie c/helado", "Budin de pan", "Burrata fresca c/jamon crudo", "Bunuelos de espinaca", "Caponatta all uso nostro", "Chivito y papas", "Choripan y papas", "Crumble de manzana", "Enrollados FEDE", "Ensalada Cesar con langostinos", "Ensalada Clasica", "Ensalada Kale con praline de mani", "Girandola", "Hamburguesa y papas", "Humus con vegetales encurtidos", "Lasagna clasica", "Milanesa", "Milanesa gratinada", "Milanesa napolitana", "Mousse de chocolate", "Musaka", "Ojo de bife", "Omelett con queso y jamon", "Osobucco al funghi", "Papas fritas y cheddar", "Pechuga grillada", "Pesca del dia", "Pizza FEDE", "Pizza Margherita", "Pizza Mozzarella", "Plato 5 quesos", "Provoleta c/mermelada de morron", "Risotto de langostinos", "Risotto de pera y queso azul", "Risotto de setas", "Rotolo de espinaca", "Salmon grille", "Sorrentinos calabaza/jamon y queso", "Sorrentinos de salmon", "Suprema de pollo", "Tequenos de queso", "Tiramisu", "Tostado jamon y queso", "Toston de campo", "Trucha a la manteca", "Vichysoisse", "Vigilante FEDE"] }
+    }
+  };
+  Object.keys(config).forEach(k => sheet.appendRow([k, JSON.stringify(config[k])]));
+  return config;
+}
+function isValidName(name) { return name && typeof name === 'string' && name.trim().length > 0; }
+function createCategory(name, icon) {
+  if (!isValidName(name)) return {success: false, error: "Nombre vacio"};
+  const config = getAppConfig().config;
+  if (config.cats[name]) return {success: false, error: "Ya existe"};
+  config.cats[name] = {icon: icon || "package", order: Object.keys(config.cats).length + 1, prods: []};
+  saveConfig('cats', config.cats);
+  logCatEdit(name);
+  return {success: true, data: config.cats};
+}
+function updateCategory(oldName, newName, newIcon, newSize) {
+  if (!isValidName(newName)) return {success: false, error: "Nombre vacio"};
+  const config = getAppConfig().config;
+  if (!config.cats[oldName]) return {success: false, error: "No existe"};
+  const cat = config.cats[oldName];
+  cat.icon = newIcon || cat.icon;
+  if (newSize) cat.iconSize = newSize;
+  config.cats[newName] = cat;
+  if (newName !== oldName) delete config.cats[oldName];
+  saveConfig('cats', config.cats);
+  logCatEdit(newName);
+  return {success: true, data: config.cats};
+}
+function deleteCategory(name) {
+  const config = getAppConfig().config;
+  if (!config.cats[name]) return {success: false, error: "No existe"};
+  if (config.cats[name].prods.length > 0) return {success: false, error: "No vacia"};
+  delete config.cats[name];
+  saveConfig('cats', config.cats);
+  return {success: true, data: config.cats};
+}
+function createProduct(catName, productName) {
+  if (!isValidName(productName)) return {success: false, error: "Nombre vacio"};
+  const config = getAppConfig().config;
+  if (!config.cats[catName]) return {success: false, error: "No existe"};
+  config.cats[catName].prods.push(productName);
+  saveConfig('cats', config.cats);
+  logCatEdit(catName);
+  return {success: true, data: config.cats};
+}
+function updateProduct(catName, oldName, newName) {
+  if (!isValidName(newName)) return {success: false, error: "Nombre vacio"};
+  const config = getAppConfig().config;
+  if (!config.cats[catName]) return {success: false, error: "No existe"};
+  const idx = config.cats[catName].prods.indexOf(oldName);
+  if (idx !== -1) config.cats[catName].prods[idx] = newName;
+  saveConfig('cats', config.cats);
+  logCatEdit(catName);
+  return {success: true, data: config.cats};
+}
+function deleteProduct(catName, productName) {
+  const config = getAppConfig().config;
+  if (!config.cats[catName]) return {success: false, error: "No existe"};
+  config.cats[catName].prods = config.cats[catName].prods.filter(p => p !== productName);
+  saveConfig('cats', config.cats);
+  logCatEdit(catName);
+  return {success: true, data: config.cats};
+}
+function getProductMovements(categoryName, days) {
+  try {
+    const ss = SpreadsheetApp.openById(MASTER_ID), histSheet = getOrCreateSheet(ss, 'History'), config = getAppConfig().config;
+    const cutoff = new Date(new Date().getTime() - days * 24 * 60 * 60 * 1000);
+    const stats = {};
+    (config.cats[categoryName].prods || []).forEach(p => stats[p] = { qty: 0, outCount: 0, isOut: false, unit: '' });
+    const lastRow = histSheet.getLastRow();
+    if (lastRow > 1) {
+      histSheet.getRange(2, 1, lastRow - 1, 6).getValues().forEach(row => {
+        const fecha = new Date(row[1]), items = JSON.parse(row[5] || '[]');
+        if (fecha >= cutoff && Array.isArray(items)) {
+          items.forEach(item => { 
+            if (item.cat === categoryName && stats.hasOwnProperty(item.prod)) {
+              if (item.qty === 86 || item.qty === "86") {
+                if (!stats[item.prod].isOut) stats[item.prod].outCount = 0;
+                stats[item.prod].isOut = true;
+                stats[item.prod].outCount = (stats[item.prod].outCount || 0) + 1;
+              } else {
+                stats[item.prod].qty = (stats[item.prod].qty || 0) + parseFloat(item.qty || 0);
+                stats[item.prod].unit = item.unit || "";
+              }
+            }
+          });
+        }
+      });
+    }
+    return {success: true, data: stats};
+  } catch(e) { return {success: false, error: e.message}; }
+}
+function getDashboardMetrics(targetId) {
+  const config = getAppConfig(targetId), cats = config.config.cats, history = config.history || [];
+  let totalItems = 0; Object.keys(cats).forEach(c => totalItems += cats[c].prods.length);
+  const today = new Date(); today.setHours(0,0,0,0);
+  let movementsToday = 0; history.forEach(h => { if (new Date(h.fecha).setHours(0,0,0,0) === today.getTime()) movementsToday++; });
+  let recentCats = [];
+  if (config.config.catEditLog) {
+    const edits = config.config.catEditLog;
+    recentCats = Object.keys(edits).map(name => ({name, ts: edits[name]})).sort((a,b) => new Date(b.ts) - new Date(a.ts)).slice(0, 4);
+  }
+  const productUsage = {};
+  history.forEach(h => { (Array.isArray(h.items) ? h.items : []).forEach(item => { if (item.prod) productUsage[item.prod] = (productUsage[item.prod] || 0) + 1; }); });
+  const ranking = Object.keys(productUsage).map(name => ({name, count: productUsage[name]})).sort((a,b) => b.count - a.count).slice(0, 10);
+  return { success: true, ssName: config.ssName, data: { totalItems, movementsToday, allCategories: Object.keys(cats), recentCats, productRanking: ranking } };
+}
+function getPredictiveAnalysis(targetId, period = 30) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: true, predictions: [] };
+    const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - period);
+    const usage = {};
+    data.forEach(row => {
+      const date = new Date(row[1]);
+      if (date < cutoff) return;
+      const items = JSON.parse(row[5] || '[]');
+      if (!Array.isArray(items)) return;
+      items.forEach(it => {
+        if (!it.prod || it.qty === 86 || it.qty <= 0) return;
+        if (!usage[it.prod]) usage[it.prod] = { qty: 0, count: 0, unit: it.unit };
+        usage[it.prod].qty += parseFloat(it.qty) || 0;
+        usage[it.prod].count += 1;
+      });
+    });
+    const predictions = Object.entries(usage).map(([name, stats]) => {
+      const avg = stats.qty / stats.count;
+      return {
+        name,
+        avg: avg.toFixed(1),
+        unit: stats.unit,
+        suggestion: Math.ceil(avg * 1.25) 
+      };
+    }).sort((a,b) => b.avg - a.avg).slice(0, 8); 
+    return { success: true, predictions };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+function getComparisonReport(targetId, days = 7) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: true, report: [] };
+    const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const stats = {};
+    data.forEach(row => {
+      const date = new Date(row[1]);
+      if (date < cutoff) return;
+      const mode = String(row[2]).toLowerCase();
+      const items = JSON.parse(row[5] || '[]');
+      if (!Array.isArray(items)) return;
+      items.forEach(it => {
+        if (!it.prod) return;
+        if (!stats[it.prod]) stats[it.prod] = { pedido: 0, recepcion: 0, stock: 0, unit: it.unit || "" };
+        const qty = parseFloat(it.qty) || 0;
+        if (qty === 86) return; 
+        if (mode === 'pedido') {
+          stats[it.prod].pedido += qty;
+        } else if (mode === 'recepcion' || mode === 'entrante') {
+          stats[it.prod].recepcion += qty;
+        } else if (mode === 'stock') {
+          stats[it.prod].stock = qty; 
+        }
+      });
+    });
+    const report = Object.entries(stats).map(([name, s]) => ({
+      name,
+      pedido: s.pedido,
+      recepcion: s.recepcion,
+      diff: s.recepcion - s.pedido,
+      stock: s.stock,
+      unit: s.unit
+    })).filter(r => r.pedido > 0 || r.recepcion > 0);
+    return { success: true, report, days };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+function getLatestPedido(targetId) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: true, pedido: null };
+    const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    for (let i = data.length - 1; i >= 0; i--) {
+      const mode = String(data[i][2]).toLowerCase();
+      if (mode === 'pedido') {
+        return {
+          success: true,
+          pedido: {
+            id: String(data[i][0] || ''),
+            fecha: String(data[i][1] || ''),
+            items: JSON.parse(data[i][5] || '[]')
+          }
+        };
+      }
+    }
+    return { success: true, pedido: null };
+  } catch(e) {
+    Logger_FeDe.error('Error en getLatestPedido', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function compareReceiptToPedido(pedidoId, receiptItems, targetId) {
+  try {
+    const ss = SpreadsheetApp.openById(getSheetId(targetId));
+    const sheet = getOrCreateSheet(ss, 'History');
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { success: true, status: 'completa', differences: [] };
+    const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+    let pedidoItems = [];
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (String(data[i][0]) === String(pedidoId)) {
+        pedidoItems = JSON.parse(data[i][5] || '[]');
+        break;
+      }
+    }
+    if (!Array.isArray(pedidoItems)) pedidoItems = [];
+    if (!Array.isArray(receiptItems)) receiptItems = [];
+    const pedidoMap = {};
+    pedidoItems.forEach(item => {
+      if (item.prod) {
+        pedidoMap[item.prod] = { qty: parseFloat(item.qty) || 0, unit: item.unit || '' };
+      }
+    });
+    const receiptMap = {};
+    receiptItems.forEach(item => {
+      if (item.prod) {
+        receiptMap[item.prod] = { qty: parseFloat(item.qty) || 0, unit: item.unit || '' };
+      }
+    });
+    const differences = [];
+    const allProds = new Set([...Object.keys(pedidoMap), ...Object.keys(receiptMap)]);
+    allProds.forEach(prod => {
+      const p = pedidoMap[prod] || { qty: 0, unit: '' };
+      const r = receiptMap[prod] || { qty: 0, unit: '' };
+      if (p.qty !== r.qty) {
+        differences.push({
+          prod,
+          pedidoQty: p.qty,
+          receiptQty: r.qty,
+          diff: r.qty - p.qty,
+          unit: p.unit || r.unit
+        });
+      }
+    });
+    let status = 'completa';
+    if (differences.length > 0) {
+      const hasMissing = differences.some(d => d.receiptQty < d.pedidoQty);
+      const hasExtra = differences.some(d => d.receiptQty > d.pedidoQty);
+      if (hasMissing && !hasExtra) status = 'con_faltantes';
+      else if (hasExtra && !hasMissing) status = 'con_extra';
+      else status = 'con_diferencias';
+    }
+    return { success: true, status, differences, totalDifferences: differences.length };
+  } catch(e) {
+    Logger_FeDe.error('Error en compareReceiptToPedido', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function generateComanda(pedidoItems) {
+  try {
+    if (!Array.isArray(pedidoItems)) return { success: false, error: 'Items debe ser un array' };
+    const byCategory = {};
+    pedidoItems.forEach(item => {
+      if (!item.prod || item.qty === 86 || item.qty <= 0) return;
+      const cat = item.cat || 'Diversos';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(item);
+    });
+    let text = `COMANDA DEL ${new Date().toLocaleDateString('es-AR')}\n`;
+    text += `${''.repeat(30)}\n\n`;
+    const cats = Object.keys(byCategory).sort();
+    cats.forEach(cat => {
+      text += `${cat}:\n`;
+      byCategory[cat].forEach(item => {
+        const qty = item.qty;
+        const unit = item.unit || 'unidad';
+        text += ` ${item.prod} (${qty}${unit})\n`;
+      });
+      text += '\n';
+    });
+    text += `${''.repeat(30)}\n`;
+    text += `TOTAL: ${cats.length} categorias, ${pedidoItems.filter(i => i.qty !== 86 && i.qty > 0).length} items\n`;
+    text += `Hora: ${new Date().toLocaleTimeString('es-AR')}`;
+    return { success: true, comanda: text };
+  } catch(e) {
+    Logger_FeDe.error('Error en generateComanda', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function getAlerts(targetId) {
+  try {
+    const config = getAppConfig(targetId);
+    const history = config.history || [];
+    const agotados = new Set();
+    const pendientes = new Set();
+    history.forEach(h => {
+      if (Array.isArray(h.items)) {
+        h.items.forEach(item => {
+          if (item.qty === 86 || item.qty === '86') {
+            agotados.add(item.prod);
+          }
+        });
+      }
+    });
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 3);
+    history.forEach(h => {
+      if (new Date(h.fecha) < cutoff) return;
+      if (h.mode === 'pedido') {
+        const hasReceipt = history.some(r => 
+          r.mode === 'recepcion' && 
+          new Date(r.fecha) >= new Date(h.fecha) &&
+          r.id !== h.id
+        );
+        if (!hasReceipt && Array.isArray(h.items)) {
+          h.items.forEach(item => pendientes.add(item.prod));
+        }
+      }
+    });
+    return {
+      success: true,
+      agotados: Array.from(agotados),
+      pendientes: Array.from(pendientes),
+      totalAlerts: agotados.size + pendientes.size
+    };
+  } catch(e) {
+    Logger_FeDe.error('Error en getAlerts', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function getStockStatus(targetId) {
+  try {
+    const config = getAppConfig(targetId);
+    const history = config.history || [];
+    const stockMap = {};
+    history.forEach(h => {
+      if (h.mode === 'stock' && Array.isArray(h.items)) {
+        h.items.forEach(item => {
+          if (item.prod && item.qty !== 86 && item.qty > 0) {
+            stockMap[item.prod] = {
+              qty: parseFloat(item.qty) || 0,
+              unit: item.unit || ''
+            };
+          }
+        });
+      }
+    });
+    const bajo = Object.entries(stockMap)
+      .filter(([_, s]) => s.qty < 5) 
+      .map(([name, s]) => ({ prod: name, qty: s.qty, unit: s.unit }));
+    return { success: true, bajo, totalItems: Object.keys(stockMap).length };
+  } catch(e) {
+    Logger_FeDe.error('Error en getStockStatus', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function getLast7Days(targetId) {
+  try {
+    const config = getAppConfig(targetId);
+    const history = config.history || [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    let totalPedidos = 0;
+    let totalRecepciones = 0;
+    let totalFaltantes = 0;
+    history.forEach(h => {
+      if (new Date(h.fecha) < cutoff) return;
+      if (h.mode === 'pedido' && Array.isArray(h.items)) {
+        totalPedidos += h.items.filter(i => i.qty !== 86 && i.qty > 0).length;
+      } else if ((h.mode === 'recepcion' || h.mode === 'entrante') && Array.isArray(h.items)) {
+        totalRecepciones += h.items.filter(i => i.qty !== 86 && i.qty > 0).length;
+      }
+    });
+    totalFaltantes = Math.max(0, totalPedidos - totalRecepciones);
+    return {
+      success: true,
+      totalPedidos,
+      totalRecepciones,
+      totalFaltantes,
+      tasa: totalPedidos > 0 ? ((totalRecepciones / totalPedidos) * 100).toFixed(1) : 0
+    };
+  } catch(e) {
+    Logger_FeDe.error('Error en getLast7Days', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function getTopConsumption(targetId, days = 30) {
+  try {
+    const config = getAppConfig(targetId);
+    const history = config.history || [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const usage = {};
+    history.forEach(h => {
+      if (new Date(h.fecha) < cutoff) return;
+      if (h.mode === 'pedido' && Array.isArray(h.items)) {
+        h.items.forEach(item => {
+          if (item.prod && item.qty !== 86 && item.qty > 0) {
+            usage[item.prod] = (usage[item.prod] || 0) + 1;
+          }
+        });
+      }
+    });
+    const top5 = Object.entries(usage)
+      .map(([name, count]) => ({ prod: name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    return { success: true, top: top5 };
+  } catch(e) {
+    Logger_FeDe.error('Error en getTopConsumption', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+function getPendingReconciliations(targetId) {
+  try {
+    const config = getAppConfig(targetId);
+    const history = config.history || [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7); 
+    const pending = [];
+    history.forEach(h => {
+      if (new Date(h.fecha) < cutoff) return;
+      if (h.mode === 'pedido') {
+        const hasReceipt = history.some(r =>
+          r.mode === 'recepcion' &&
+          new Date(r.fecha) >= new Date(h.fecha) &&
+          r.id !== h.id
+        );
+        if (!hasReceipt && Array.isArray(h.items)) {
+          pending.push({
+            id: h.id,
+            fecha: h.fecha,
+            items: h.items.filter(i => i.qty !== 86 && i.qty > 0).length,
+            total: h.total
+          });
+        }
+      }
+    });
+    return { success: true, pending };
+  } catch(e) {
+    Logger_FeDe.error('Error en getPendingReconciliations', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}

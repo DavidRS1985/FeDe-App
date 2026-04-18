@@ -1,0 +1,2247 @@
+<script>
+    /* ——————————————————————————————————————————————————————————————————————————
+       FeDe Gastro Pro - v9.6.5 — CIABATTA Edition
+       —————————————————————————————————————————————————————————————————————————— */
+
+    var CATS = {}, FAVS = [], HIST = [], relData = {}, currentMode = null, activeCat = null, CUSTOM_UNITS = {};
+    var units = ["unidad/es", "kg", "litro/s", "porción/es", "pack/s", "atado/s", "frasco/s", "lata/s"];
+    var treeOpen = {};
+    var activeSheetId = localStorage.getItem('fede_active_sheet_id') || 'undefined';
+    var dbName = 'Master';
+
+    /* ── MEMORIA DE UNIDADES ── */
+    var UNIT_MEM = {
+        save: function(prod, unit) {
+            var mem = JSON.parse(localStorage.getItem('fede_unit_mem') || '{}');
+            mem[prod] = unit;
+            localStorage.setItem('fede_unit_mem', JSON.stringify(mem));
+        },
+        get: function(prod) {
+            var mem = JSON.parse(localStorage.getItem('fede_unit_mem') || '{}');
+            return mem[prod] || null;
+        }
+    };
+
+    /* ── GRUPOS DE UNIDADES INTELIGENTES ── */
+    var UGRPS = {
+        OILS: ["bidón/es", "litro/s", "botella/s", "kg"],
+        LIQUIDS: ["litro/s", "botella/s", "lata/s"],
+        PRODUCE: ["kg", "atado/s", "unidad/es", "cajón/es", "bolsa/s", "gr"],
+        BREADS: ["unidad/es", "kg", "gr"],
+        MEATS: ["kg", "piezas", "gr"],
+        FISH: ["kg", "penca/s", "porción/es", "gr"],
+        DAIRY: ["kg", "horma/s", "piezas", "gr", "unidad/es"],
+        DRY: ["kg", "bolsa/s", "paquete/s", "gr"],
+        EGGS: ["unidad/es", "docena", "maple"],
+        UNITS: ["unidad/es", "pack/s", "docena"],
+        GENERIC: ["unidad/es", "kg", "litro/s", "porción/es", "pack/s", "atado/s", "frasco/s", "lata/s"]
+    };
+
+    /* ── PANTALLA COMPLETA (Fullscreen API) ── */
+    function toggleAppFullscreen() {
+        var doc = document.documentElement;
+        var isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        
+        if (!isFS) {
+            // ENTRAR en pantalla completa
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+            else if (doc.mozRequestFullScreen) doc.mozRequestFullScreen();
+            else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
+            localStorage.setItem('fede_fullscreen', 'true');
+        } else {
+            // SALIR de pantalla completa
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+            localStorage.setItem('fede_fullscreen', 'false');
+        }
+    }
+
+    // Actualizar icono cuando cambia el estado de fullscreen
+    function onFullscreenChange() {
+        var isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+        var btn = document.getElementById('btn-fullscreen');
+        if (btn) {
+            var icon = btn.querySelector('i');
+            if (icon) {
+                icon.setAttribute('data-lucide', isFS ? 'minimize' : 'maximize');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+    document.addEventListener('mozfullscreenchange', onFullscreenChange);
+
+    // Auto-restaurar fullscreen en la primera interacción del usuario
+    function autoRestoreFullscreen() {
+        if (localStorage.getItem('fede_fullscreen') === 'true') {
+            toggleAppFullscreen();
+        }
+        document.removeEventListener('click', autoRestoreFullscreen);
+    }
+    if (localStorage.getItem('fede_fullscreen') === 'true') {
+        document.addEventListener('click', autoRestoreFullscreen, { once: true });
+    }
+
+    /* ── INIT ── */
+    window.addEventListener('DOMContentLoaded', function() {
+        console.log("FeDe Gastro Pro v9.6.5 - CIABATTA Edition");
+        updateTime();
+        setInterval(updateTime, 10000);
+
+        // 🎨 CARGAR PREFERENCIA DE TAMAÑO DE ICONOS
+        loadIconSizePreference();
+
+        // 🔔 INICIALIZAR HOLIDAY ALERT
+        window.holidayAlert = new HolidayAlert();
+        window.holidayHelper = new HolidayStockHelper();
+
+        // 📦 COLA OFFLINE
+        window.offlineQueue = JSON.parse(localStorage.getItem('fede_offline_queue') || '[]');
+        updateSyncBadge();
+        window.addEventListener('online', processOfflineQueue);
+
+        loadLocalSnapshot();
+
+        // ⏱️ TIMEOUT DE SEGURIDAD PARA EL LOADER (5s máximo)
+        var loaderTimeout = setTimeout(function() {
+            console.warn('⚠️ Loader timeout - ocultando manualmente');
+            hideLoader();
+        }, 5000);
+
+        // Guardar ID en window para cancelarlo si se carga exitosamente
+        window.loaderTimeout = loaderTimeout;
+
+        loadConfigFromGAS();
+    });
+
+    /**
+     * 🎨 SISTEMA DE TAMAÑO GLOBAL DE ICONOS
+     */
+    function loadIconSizePreference() {
+        var savedSize = localStorage.getItem('fede_icon_size') || 'medium';
+        setGlobalIconSize(savedSize);
+        console.log('🎨 Icon size cargado:', savedSize);
+    }
+
+    function setGlobalIconSize(size) {
+        var validSizes = ['small', 'medium', 'large'];
+        if (validSizes.indexOf(size) === -1) size = 'medium';
+
+        document.documentElement.setAttribute('data-icon-size', size);
+        localStorage.setItem('fede_icon_size', size);
+
+        var sizeButtons = document.querySelectorAll('[data-icon-control]');
+        for (var i = 0; i < sizeButtons.length; i++) {
+            var btn = sizeButtons[i];
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-icon-control') === size) btn.classList.add('active');
+        }
+
+        console.log('🎨 Icon size actualizado:', size);
+        refreshIcons();
+    }
+
+    function renderIconSizeControls() {
+        // Feature disabled intentionally
+    }
+
+    function loadLocalSnapshot() {
+        var snapKey = 'fede_snapshot_' + activeSheetId;
+        var snap = JSON.parse(localStorage.getItem(snapKey) || 'null');
+        if (snap) {
+            console.log('📦 [CACHE] Usando snapshot local');
+            CATS = snap.cats || {};
+            FAVS = snap.favs || [];
+            HIST = snap.history || [];
+            if (snap.units) units = snap.units;
+            if (snap.custom_units) CUSTOM_UNITS = snap.custom_units;
+            renderCatGrid();
+            renderTree();
+            renderHistory();
+            updateDBLabel();
+        }
+    }
+
+    var HOLIDAYS = {
+        '04-02': 'Día de Malvinas',
+        '04-03': 'Viernes Santo',
+        '05-01': 'Día del Trabajador',
+        '05-25': 'Revolución de Mayo',
+        '06-20': 'Día de la Bandera',
+        '07-09': 'Día de la Independencia',
+        '12-25': 'Navidad'
+    };
+
+    function updateTime() {
+        var now = new Date();
+        var days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+        var dayEl = document.getElementById('hdr-day');
+        var homeDayEl = document.getElementById('home-day');
+
+        var dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+        var fullDay = days[now.getDay()] + " " + dateStr;
+
+        if (dayEl) dayEl.textContent = fullDay;
+        if (homeDayEl) homeDayEl.textContent = fullDay;
+    }
+
+    function setSyncStatus(st) {
+        // st: 'online' | 'pending' | 'error'
+        var el = document.getElementById('sync-status');
+        if (!el) return;
+        el.className = 'sync-status ' + st;
+        var icon = el.querySelector('i');
+        if (icon) {
+            if (st === 'online') icon.setAttribute('data-lucide', 'cloud-check');
+            else if (st === 'pending') icon.setAttribute('data-lucide', 'cloud-upload');
+            else icon.setAttribute('data-lucide', 'cloud-off');
+            refreshIcons();
+        }
+    }
+
+    var PREDICTIONS = [];
+    function loadPredictions() { 
+        google.script.run.withSuccessHandler(function(r) { 
+            if (r && r.success) { 
+                PREDICTIONS = r.predictions || []; 
+                renderProducts(); 
+                renderHomeSummary(); // Actualizar el resumen en home con la nueva data
+            } 
+        }).getPredictiveAnalysis(activeSheetId); 
+    }
+
+    function loadConfigFromGAS() {
+        console.log('⟳ [LOAD] Iniciando carga desde GAS...', activeSheetId);
+        updateDBLabel();
+        google.script.run
+            .withSuccessHandler(onConfigLoaded)
+            .withFailureHandler(onConfigFailed)
+            .getAppConfig(activeSheetId);
+    }
+
+    function onConfigLoaded(result) {
+        console.log('✓ [LOAD] Config recibida:', result);
+        // Cancelar timeout de seguridad
+        if (window.loaderTimeout) clearTimeout(window.loaderTimeout);
+
+        if (!result || !result.success) {
+            console.error('❌ [LOAD] GAS devolvió error:', result ? result.error : 'Unknown');
+            toast("❌ Error al cargar config");
+            onConfigFailed(result ? result.error : "Unknown error");
+            return;
+        }
+        var config = result.config;
+        var history = result.history;
+        var ssName = result.ssName;
+
+        if (ssName) { dbName = ssName; updateDBLabel(); }
+        if (config && config.cats) {
+            CATS = config.cats;
+            // 🎨 PATCH: Auto-update icons to requested set
+            var iconPatch = {
+                "Personal": "chess-pawn",
+                "Verdulería": "carrot",
+                "Pastas": "soup",
+                "Bebidas": "bottle-wine",
+                "Platos carta": "utensils-crossed"
+            };
+            var needsSave = false;
+            Object.keys(iconPatch).forEach(function(cat) {
+                if (CATS[cat] && CATS[cat].icon !== iconPatch[cat]) {
+                    CATS[cat].icon = iconPatch[cat];
+                    needsSave = true;
+                }
+            });
+            if (needsSave) google.script.run.saveConfig('cats', CATS, activeSheetId);
+        }
+        if (config && config.favs) { FAVS = config.favs; }
+        if (config && config.units && config.units.length) units = config.units;
+        if (config && config.custom_units) CUSTOM_UNITS = config.custom_units;
+
+        // 🆔 Identidad de la App
+        if (config && config.app_title) {
+            document.getElementById('app-title-display').textContent = config.app_title;
+            var inp = document.getElementById('cfg-app-title');
+            if (inp) inp.value = config.app_title;
+        }
+        if (config && config.app_subtitle) {
+            document.getElementById('app-subtitle-display').textContent = config.app_subtitle;
+            var inp = document.getElementById('cfg-app-subtitle');
+            if (inp) inp.value = config.app_subtitle;
+        }
+        if (history) { HIST = history; renderHistory(); }
+
+        // Guardar snapshot para uso offline
+        var snapKey = 'fede_snapshot_' + activeSheetId;
+        var snapData = { cats: CATS, favs: FAVS, history: HIST, units: units, custom_units: CUSTOM_UNITS, ts: Date.now() };
+        localStorage.setItem(snapKey, JSON.stringify(snapData));
+
+        renderCatGrid();
+        renderTree();
+        loadPredictions();
+        hideLoader();
+
+        // 🔄 Sincronizar identidad inicial
+        refreshBrandingUI();
+
+        setTimeout(function() {
+            refreshIcons();
+            checkDraft();
+            renderHomeSummary(); // NUEVO: Llamar al resumen de home
+        }, 100);
+    }
+
+    function onConfigFailed(error) {
+        console.error('❌ Error GAS:', error);
+        // Cancelar timeout de seguridad
+        if (window.loaderTimeout) clearTimeout(window.loaderTimeout);
+
+        toast("⚠️ No se pudo conectar con servidor");
+        var backupCats = localStorage.getItem('fede_cats_backup');
+        var backupHist = localStorage.getItem('fede_history_backup');
+        if (backupCats) CATS = JSON.parse(backupCats);
+        if (backupHist) HIST = JSON.parse(backupHist);
+        hideLoader();
+        refreshIcons();
+        checkDraft();
+    }
+
+    function hideLoader() {
+        var loader = document.getElementById('loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            loader.style.pointerEvents = 'none';
+            setTimeout(function() {
+                loader.style.display = 'none';
+                console.log('✓ Loader ocultado');
+            }, 500);
+        } else {
+            console.warn('⚠️ Elemento loader no encontrado');
+        }
+    }
+
+    function saveCatsToGAS(cats) {
+        google.script.run
+            .withSuccessHandler(function(result) {
+                if (result && result.success) {
+                    toast('✓ Guardado en servidor');
+                    localStorage.setItem('fede_cats_backup', JSON.stringify(cats));
+                } else toast('❌ Error guardando');
+            })
+            .withFailureHandler(function(error) { toast('❌ Error de servidor'); })
+            .saveConfig('cats', cats, activeSheetId);
+    }
+
+    function addEntryToGAS(entry) {
+        google.script.run
+            .withSuccessHandler(function(result) {
+                if (result && result.success) {
+                    toast('✓ Registrado');
+                    loadConfigFromGAS();
+                } else toast('❌ Error al guardar');
+            })
+            .withFailureHandler(function(error) { toast('❌ Error de servidor'); })
+            .addHistoryEntry(entry, activeSheetId);
+    }
+
+    function deleteHistoryEntry(entryId) {
+        google.script.run
+            .withSuccessHandler(function(res) { if (res.success) { toast('✓ Borrado'); loadConfigFromGAS(); } })
+            .deleteHistoryEntry(entryId, activeSheetId);
+    }
+
+    function deleteHistoryData(type) {
+        google.script.run
+            .withSuccessHandler(function(res) { if (res.success) { toast('✓ Historial limpiado'); loadConfigFromGAS(); } })
+            .deleteHistory(type, activeSheetId);
+    }
+
+    function updateAppIdentity() {
+        var title = document.getElementById('cfg-app-title').value;
+        var subtitle = document.getElementById('cfg-app-subtitle').value;
+
+        if (title) {
+            document.getElementById('app-title-display').textContent = title;
+            google.script.run.saveConfig('app_title', title, activeSheetId);
+        }
+        if (subtitle) {
+            document.getElementById('app-subtitle-display').textContent = subtitle;
+            google.script.run.saveConfig('app_subtitle', subtitle, activeSheetId);
+        }
+        toast("✓ Identidad actualizada");
+    }
+
+    function refreshBrandingUI() {
+        var title = (document.getElementById('cfg-app-title') ? document.getElementById('cfg-app-title').value : null) || "CIABATTA";
+        var sub = (document.getElementById('cfg-app-subtitle') ? document.getElementById('cfg-app-subtitle').value : null) || "ARTISAN STOCK";
+        
+        // Home
+        var ht = document.getElementById('app-title-display');
+        var hs = document.getElementById('app-subtitle-display');
+        if (ht) ht.textContent = title;
+        if (hs) hs.textContent = sub;
+
+        // App Header
+        var at = document.getElementById('app-hdr-title');
+        var as = document.getElementById('app-hdr-subtitle');
+        if (at) at.textContent = title;
+        if (as) as.textContent = sub;
+    }
+
+    /* ── NAVEGACIÓN ── */
+    function initRelevamiento(m) {
+        enterMode(m);
+        goTab('relevamiento');
+        renderFAB();
+    }
+
+    // Mapa de colores por modo
+    var MODE_CONFIG = {
+        pedido: { label: 'PEDIDO', borderColor: 'var(--orange)', bg: 'var(--s1)' },
+        stock: { label: 'STOCK', borderColor: 'var(--blue)', bg: 'var(--s1)' },
+        entrante: { label: 'ENTRANTE', borderColor: 'var(--green)', bg: 'var(--s1)' },
+        recepcion: { label: 'RECEPCIÓN', borderColor: 'var(--green)', bg: 'var(--s1)' },
+    };
+
+    function showModeTag(m) {
+        var tag = document.getElementById('mode-tag');
+        if (!tag) return;
+        var cfg = MODE_CONFIG[m];
+        if (cfg) {
+            tag.textContent = cfg.label;
+            tag.className = 'mode-tag-lg ' + m;
+            tag.classList.remove('hidden');
+        } else {
+            tag.classList.add('hidden');
+            tag.textContent = '';
+        }
+    }
+
+    function hideModeTag() {
+        var tag = document.getElementById('mode-tag');
+        if (tag) { tag.classList.add('hidden'); tag.textContent = ''; }
+    }
+
+    function enterMode(m) {
+        currentMode = m;
+        var hdr = document.getElementById('main-hdr');
+        var cfg = MODE_CONFIG[m] || {};
+
+        // Quitar clases de tema previas
+        document.body.classList.remove('theme-stock', 'theme-entrante', 'theme-pedido', 'theme-recepcion');
+        if (m === 'pedido') document.body.classList.add('theme-pedido');
+        if (m === 'stock') document.body.classList.add('theme-stock');
+        if (m === 'entrante' || m === 'recepcion') document.body.classList.add('theme-recepcion');
+
+        showModeTag(m);
+        showContextBar(m);
+
+        if (hdr) {
+            hdr.style.borderBottom = '2px solid ' + (cfg.borderColor || 'var(--bd)');
+            hdr.style.boxShadow = '0 2px 20px ' + (cfg.glow || 'transparent');
+        }
+    }
+
+    function enterAdmin() {
+        currentMode = null;
+        document.getElementById('home').classList.add('hidden');
+        document.getElementById('app').classList.add('visible');
+        hideModeTag();
+        var hdr = document.getElementById('main-hdr');
+        if (hdr) { hdr.style.borderBottom = '1px solid var(--bd)'; hdr.style.boxShadow = 'none'; }
+        goTab('datos');
+        setTimeout(function() { renderIconSizeControls(); }, 100);
+        refreshIcons();
+    }
+
+    function enterDashboard() {
+        currentMode = null;
+        document.getElementById('home').classList.add('hidden');
+        document.getElementById('app').classList.add('visible');
+        hideModeTag();
+        var hdr = document.getElementById('main-hdr');
+        if (hdr) { hdr.style.borderBottom = '1px solid var(--bd)'; hdr.style.boxShadow = 'none'; }
+        setBreadcrumb('dashboard');
+        goTab('dashboard');
+        renderDashboard();
+        refreshIcons();
+    }
+
+    function goHome() {
+        if (BREADCRUMB === 'dashboard') {
+            BREADCRUMB = 'home'; // Resetear
+            goTab('dashboard');
+            return;
+        }
+        if (currentMode && Object.keys(relData).length > 0) saveDraft();
+        document.getElementById('app').classList.remove('visible');
+        document.getElementById('home').classList.remove('hidden');
+        var ps = document.getElementById('prod-section');
+        if (ps) ps.classList.add('hidden');
+        hideModeTag();
+        hideContextBar();
+        var hdr = document.getElementById('main-hdr');
+        if (hdr) { hdr.style.borderBottom = ''; hdr.style.boxShadow = ''; }
+
+        // Manejar estado de pestañas
+        var views = document.querySelectorAll('.view');
+        for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+        var tabs = document.querySelectorAll('.tab');
+        for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
+        var tabHome = document.getElementById('tab-home');
+        if (tabHome) tabHome.classList.add('active');
+
+        // Limpiar temas de modo
+        document.body.classList.remove('theme-stock', 'theme-entrante', 'theme-pedido', 'theme-recepcion');
+        currentMode = null;
+        activeCat = null;
+        checkDraft();
+        refreshIcons();
+        updateActivityIndicators();
+
+        updateActivityIndicators();
+
+        refreshBrandingUI();
+    }
+
+    /* ── BARRA CONTEXTUAL ── */
+    function updateActivityIndicators() {
+        var actH = document.getElementById('hdr-activity-indicator');
+        // El indicador solo se activa si hay trabajo pendiente guardado
+        var draftStr = localStorage.getItem('fede_draft');
+        var draft = draftStr ? JSON.parse(draftStr) : null;
+        var hasDraft = (draft && draft.items && Object.keys(draft.items).length > 0);
+
+        if (hasDraft) {
+            if (actH) {
+                actH.classList.remove('hidden');
+                actH.onclick = function() { if (confirm("¿Reanudar trabajo pendiente?")) restoreDraft(); };
+                actH.style.cursor = 'pointer';
+                actH.title = "Continuar trabajo pendiente";
+            }
+        } else {
+            if (actH) actH.classList.add('hidden');
+        }
+    }
+
+    function showContextBar(m) {
+        var bar = document.getElementById('ctx-bar');
+        var tabs = document.getElementById('main-tabs');
+        var fab = document.getElementById('fab');
+        var hdrTitle = document.getElementById('app-hdr-title');
+        var labels = { pedido: 'PEDIDO', stock: 'STOCK', recepcion: 'RECEPCIÓN', entrante: 'ENTRANTE' };
+
+        if (bar) bar.classList.remove('hidden');
+        if (tabs) tabs.style.display = 'none';
+        if (fab) fab.classList.add('hidden');
+        if (hdrTitle) hdrTitle.innerHTML = (labels[m] || m.toUpperCase());
+
+        updateActivityIndicators();
+    }
+
+    function hideContextBar() {
+        var bar = document.getElementById('ctx-bar');
+        var tabs = document.getElementById('main-tabs');
+        var hdrTitle = document.getElementById('app-hdr-title');
+
+        if (bar) bar.classList.add('hidden');
+        if (tabs) tabs.style.display = '';
+
+        refreshBrandingUI();
+    }
+
+    updateActivityIndicators();
+
+
+    function goTab(id) {
+        var h = document.getElementById('home');
+        var a = document.getElementById('app');
+        if (h) h.classList.add('hidden');
+        if (a) { a.classList.remove('hidden'); a.classList.add('visible'); }
+
+        // Asegurar que la barra contextual se oculte si navegamos a pestañas globales (excepto relevamiento que la usa)
+        if (id !== 'relevamiento') {
+            hideContextBar();
+        }
+
+        // Si ya estamos en relevamiento y volvemos a pulsar el tab, NO ciclar modos
+        // (el usuario elige el modo desde el Home)
+        if (id !== 'relevamiento') {
+            // Ocultar pastilla al navegar a otras secciones
+            hideModeTag();
+        } else if (currentMode) {
+            // Mostrar pastilla solo si hay modo activo
+            showModeTag(currentMode);
+        }
+
+        var views = document.querySelectorAll('.view');
+        for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+        var tabItems = document.querySelectorAll('.tab');
+        for (var j = 0; j < tabItems.length; j++) tabItems[j].classList.remove('active');
+
+        var viewEl = document.getElementById('view-' + id);
+        var tabEl = document.getElementById('tab-' + id);
+
+        if (viewEl) viewEl.classList.add('active');
+        if (tabEl) tabEl.classList.add('active');
+
+        // Si no estamos en el home, el tab de home no debe estar activo
+        if (id !== 'home' && document.getElementById('tab-home')) {
+            document.getElementById('tab-home').classList.remove('active');
+        }
+
+        updateActivityIndicators();
+
+        if (id === 'relevamiento') setTimeout(function() { renderCatGrid(); renderFAB(); finishNav(id); }, 10);
+        else if (id === 'historial') setTimeout(function() { renderHistory(); renderFAB(); finishNav(id); }, 10);
+        else if (id === 'datos') setTimeout(function() { renderTree(); renderFAB(); finishNav(id); }, 10);
+        else if (id === 'dashboard') {
+            // Ir al dashboard: intentar usar cache si existe
+            setTimeout(function() { renderDashboard(false); renderFAB(); finishNav(id); }, 10);
+        }
+        else { renderFAB(); finishNav(id); }
+    }
+
+    var BREADCRUMB = 'home';
+    function setBreadcrumb(origin) { BREADCRUMB = origin; }
+
+    function finishNav(id) {
+        // Limpiar búsqueda si venimos de home
+        var hs = document.getElementById('home-search-res');
+        var hsi = document.getElementById('home-search');
+        if (hs) hs.innerHTML = '';
+        if (hsi) hsi.value = '';
+
+        // Solo refrescar iconos de la vista activa y header/tabs para ahorrar CPU
+        var viewEl = document.getElementById('view-' + id);
+        if (viewEl) lucide.createIcons({ root: viewEl });
+        lucide.createIcons({ root: document.getElementById('main-hdr') });
+        lucide.createIcons({ root: document.querySelector('.tabs') });
+    }
+
+    /* ── RELEVAMIENTO ── */
+    function renderCatGrid() {
+        var grid = document.getElementById('cat-grid');
+        if (!grid) return;
+        var catNames = Object.keys(CATS);
+        if (catNames.length === 0) {
+            grid.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px;">Sin categorías cargadas</div>';
+            return;
+        }
+        var sorted = catNames.sort(function(a, b) { return (CATS[a].order || 99) - (CATS[b].order || 99); });
+        grid.innerHTML = sorted.map(function(cat) {
+            var icon = CATS[cat] ? CATS[cat].icon : 'package';
+            var size = CATS[cat] ? CATS[cat].iconSize : null;
+            var styleOverride = size ? 'style="--cat-icon-size: ' + size + 'px;"' : '';
+            var encoded = encodeURIComponent(cat);
+            return '<div class="cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" ' + styleOverride + '>' +
+                '<i data-lucide="' + icon + '"></i>' +
+                '<span>' + cat + '</span>' +
+            '</div>';
+        }).join('');
+        refreshIcons(grid);
+    }
+
+    function selectCatFromEl(el) { selectCat(decodeURIComponent(el.dataset.cat)); }
+    function selectCat(cat) {
+        if (!CATS[cat]) return toast('❌ Categoría no encontrada');
+        activeCat = cat;
+        var searchInp = document.getElementById('prod-search');
+        if (searchInp) searchInp.value = '';
+        var chips = document.querySelectorAll('.cchip');
+        for (var i = 0; i < chips.length; i++) chips[i].classList.remove('active');
+        var activeChip = document.querySelector('.cchip[data-cat="' + encodeURIComponent(cat) + '"]');
+        if (activeChip) activeChip.classList.add('active');
+        document.getElementById('cat-title').textContent = cat;
+        document.getElementById('prod-section').classList.remove('hidden');
+        renderProducts();
+        setTimeout(function() { document.getElementById('prod-section').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+    }
+
+    function renderProducts() {
+        if (!activeCat || !CATS[activeCat]) return;
+        var list = document.getElementById('prod-list');
+        if (!list) return;
+        var prods = (CATS[activeCat] ? CATS[activeCat].prods : []).slice().sort();
+        if (prods.length === 0) {
+            list.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px;">Sin productos en esta categoría</div>';
+            return;
+        }
+        try {
+            list.innerHTML = prods.map(function(p) { return genProductRow(p, getUnitsForProduct(activeCat, p)); }).join('');
+            renderFAB();
+            refreshIcons(list);
+        } catch (e) {
+            console.error('❌ [RENDER] Error:', e.message);
+        }
+    }
+
+    function genProductRow(p, prodUnits) {
+        if (!Array.isArray(prodUnits)) prodUnits = getUnitsForProduct(activeCat, p);
+        var ep = encodeURIComponent(p);
+        var d = relData[p] || { qty: 0, unit: (prodUnits[0] || units[0]) };
+        var isFav = FAVS.indexOf(p) !== -1;
+        var is86 = d.qty === 86;
+        var lastUsed = UNIT_MEM.get(p);
+
+        var html = '<div data-prow="' + ep + '" class="prow ' + (d.qty > 0 ? 'has-qty' : '') + ' ' + (is86 ? 'is-86' : '') + '">' +
+                '<!-- FILA 1: NOMBRE Y FAV -->' +
+                '<div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">' +
+                    '<button onclick="toggleFav(\'' + ep + '\')" style="background:none; border:none; color:' + (isFav ? 'var(--gold)' : 'var(--dim2)') + '; cursor:pointer; font-size:24px; flex-shrink:0;">' + (isFav ? '★' : '☆') + '</button>' +
+                    '<div style="flex:1;">' +
+                        '<div class="pname">' + p + '</div>' +
+                        (typeof PREDICTIONS !== "undefined" && PREDICTIONS[p] ? '<div style="font-size:10px; color:var(--blue); font-weight:800; margin-top:2px; text-transform:uppercase; letter-spacing:0.5px;">Sug: ' + PREDICTIONS[p] + ' ' + d.unit + '</div>' : '') +
+                    '</div>' +
+                '</div>' +
+                
+                '<div style="display:flex; align-items:center; justify-content:center; width:100%;">' +
+                    '<div class="stepper" style="width:100%; max-width:280px; background:var(--s2); border-radius:18px; display:flex; align-items:center; border:2px solid var(--bd);">' +
+                        '<button class="step-btn" data-prod="' + ep + '" data-dir="-1" onclick="stepEl(this)" style="padding:16px 24px; color:var(--gold); font-weight:900; background:none; border:none; font-size:28px;">−</button>' +
+                        '<div class="pqty-box" onclick="manualEl(this)" data-prod="' + ep + '" style="flex:1; text-align:center; font-weight:900; font-size:24px; color:var(--text); line-height:1.1;">' +
+                            '<div style="color:' + (is86 ? 'var(--red)' : 'var(--text)') + '">' + (is86 ? '86' : (d.qty || '0')) + '</div>' +
+                            '<div style="font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">' + (is86 ? 'AGOTADO (86)' : d.unit) + '</div>' +
+                        '</div>' +
+                        '<button class="step-btn" data-prod="' + ep + '" data-dir="1" onclick="stepEl(this)" style="padding:16px 24px; color:var(--gold); font-weight:900; background:none; border:none; font-size:28px;">+</button>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<!-- FILA 3: UNIDADES -->' +
+                '<div class="unit-row" style="margin-top:14px; display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;">' +
+                    prodUnits.map(function(u) {
+                        return '<div class="uchip ' + (d.unit === u ? 'active' : '') + ' ' + (u === lastUsed ? 'is-preferred' : '') + '" ' +
+                             'data-prod="' + ep + '" data-unit="' + encodeURIComponent(u) + '" onclick="setUnitEl(this)" ' +
+                             'style="padding:8px 14px; font-size:12px; min-width:60px; display:flex; align-items:center; justify-content:center;">' +
+                             (u === lastUsed ? '<i data-lucide="sparkles" style="width:10px;height:10px;margin-right:2px;color:var(--gold);"></i>' : '') + u +
+                        '</div>';
+                    }).join('') +
+                '</div>' +
+            '</div>';
+        return html;
+    }
+
+    function updateProductRow(p) {
+        var ep = encodeURIComponent(p);
+        var el = document.querySelector('[data-prow="' + ep + '"]');
+        if (el) {
+            el.outerHTML = genProductRow(p);
+            // Re-renderizar iconos solo en ese elemento si fuera necesario (aquí no hay iconos vinculados a valores dinámicos pero por precaución:)
+            // refreshIcons(document.querySelector('[data-prow="' + ep + '"]'));
+        }
+    }
+
+    function refreshIcons(root) {
+        if (root === undefined) root = document;
+        if (window.lucide) lucide.createIcons({ root: root });
+        // Aplicar tamaños de iconos desde el data-icon-size
+        var icons = root.querySelectorAll('[data-lucide]');
+        for (var i = 0; i < icons.length; i++) {
+            var icon = icons[i];
+            if (!icon.style.width) {
+                icon.style.width = 'var(--icon-size)';
+                icon.style.height = 'var(--icon-size)';
+            }
+        }
+    }
+
+    var searchTimeout = null;
+    function filterProducts(q) {
+        if (searchTimeout) clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            var query = q.toLowerCase().trim();
+            var items = document.querySelectorAll('.prow');
+            for (var i = 0; i < items.length; i++) {
+                var el = items[i];
+                var name = el.querySelector('.pname').textContent.toLowerCase();
+                el.style.display = name.indexOf(query) !== -1 ? '' : 'none';
+            }
+        }, 150);
+    }
+
+    function formatUnit(q, u) {
+        if (!u) return '';
+        var pts = u.split('/');
+        var sing = pts[0].toLowerCase();
+        
+        var plur = pts.length > 1 ? sing + pts[1] : sing + 's';
+        
+        // Excepciones y reglas de pluralización en español
+        if (pts.length === 1) {
+            if (sing === 'unidad') plur = 'unidades';
+            else if (sing === 'porción' || sing === 'porcion') plur = 'porciones';
+            else if (sing === 'bidón' || sing === 'bidon') plur = 'bidones';
+            else if (sing === 'cajón' || sing === 'cajon') plur = 'cajones';
+            else if (sing === 'horma') plur = 'hormas';
+            else if (sing === 'penca') plur = 'pencas';
+            else if (sing === 'luz') plur = 'luces'; // Por si acaso
+        }
+        
+        var finalSing = pts[0]; // Mantener capitalización original para el singular
+        return q === 1 ? finalSing : plur;
+    }
+
+    var UNIT_MAPPING = {
+        "Huevos": UGRPS.EGGS,
+        "Carnes": UGRPS.MEATS,
+        "Aceite": UGRPS.LIQUIDS,
+        "Lácteos": UGRPS.DAIRY,
+        "Verduras": UGRPS.PRODUCE,
+        "Cereales": UGRPS.DRY,
+        "Frutas": UGRPS.PRODUCE,
+        "Panes": UGRPS.BREADS,
+        "Pescados": UGRPS.FISH,
+        "Bebidas": UGRPS.LIQUIDS,
+        "Condimentos": UGRPS.DRY,
+        "Pastas": UGRPS.DRY,
+        "Congelados": UGRPS.GENERIC
+    };
+
+    function getUnitsForProduct(catName, prodName) {
+        if (prodName === undefined) prodName = '';
+        if (prodName && CUSTOM_UNITS[prodName] && CUSTOM_UNITS[prodName].length > 0) return CUSTOM_UNITS[prodName];
+        
+        var baseUnits = UNIT_MAPPING[catName] || UGRPS.GENERIC;
+        var p = prodName.toLowerCase();
+
+        // Lógica Predictiva por Keywords
+        if (p.indexOf('aceite') !== -1) baseUnits = UGRPS.OILS;
+        else if (p.indexOf('pescado') !== -1 || p.indexOf('salmón') !== -1 || p.indexOf('salmon') !== -1 || p.indexOf('trucha') !== -1) baseUnits = UGRPS.FISH;
+        else if (p.indexOf('pan') !== -1 || p.indexOf('miñon') !== -1 || p.indexOf('flauta') !== -1 || p.indexOf('felipe') !== -1) baseUnits = UGRPS.BREADS;
+        else if (p.indexOf('queso') !== -1 || p.indexOf('jamón') !== -1 || p.indexOf('fiambre') !== -1 || p.indexOf('salame') !== -1 || p.indexOf('horma') !== -1) baseUnits = UGRPS.DAIRY;
+        else if (p.indexOf('carne') !== -1 || p.indexOf('pollo') !== -1 || p.indexOf('cerdo') !== -1 || p.indexOf('vaca') !== -1 || p.indexOf('bife') !== -1) baseUnits = UGRPS.MEATS;
+        else if (p.indexOf('huevo') !== -1) baseUnits = UGRPS.EGGS;
+        else if (p.indexOf('vino') !== -1 || p.indexOf('cerveza') !== -1 || p.indexOf('gaseosa') !== -1 || p.indexOf('agua') !== -1) baseUnits = UGRPS.LIQUIDS;
+        else if (p.indexOf('harina') !== -1 || p.indexOf('arroz') !== -1 || p.indexOf('fideo') !== -1 || p.indexOf('seca') !== -1) baseUnits = UGRPS.DRY;
+        else if (p.indexOf('papa') !== -1 || p.indexOf('tomate') !== -1 || p.indexOf('lechuga') !== -1 || p.indexOf('cebolla') !== -1) baseUnits = UGRPS.PRODUCE;
+
+        // Memoria de Usuario (Promover la última usada)
+        var lastUsed = UNIT_MEM.get(prodName);
+        if (lastUsed) {
+            var finalUnits = baseUnits.slice();
+            var idx = finalUnits.indexOf(lastUsed);
+            if (idx !== -1) {
+                finalUnits.splice(idx, 1);
+                finalUnits.unshift(lastUsed);
+            } else {
+                finalUnits.unshift(lastUsed);
+            }
+            return finalUnits;
+        }
+
+        return baseUnits;
+    }
+
+    function setUnitEl(el) { setUnit(decodeURIComponent(el.dataset.prod), decodeURIComponent(el.dataset.unit)); }
+    function setUnit(p, u) {
+        if (!relData[p]) relData[p] = { qty: 0, unit: u };
+        else relData[p].unit = u;
+        UNIT_MEM.save(p, u); // Guardar en memoria
+        updateProductRow(p); saveDraft();
+    }
+
+    function stepEl(el) { stepProd(decodeURIComponent(el.dataset.prod), parseInt(el.dataset.dir)); }
+    function stepProd(p, dir) {
+        if (!relData[p]) relData[p] = { qty: 0, unit: getUnitsForProduct(activeCat, p)[0] };
+
+        // Moverse entre 0 y 86
+        if (dir === -1 && relData[p].qty === 0) {
+            relData[p].qty = 86;
+        } else if (relData[p].qty === 86) {
+            relData[p].qty = 0; // Cualquier dirección saca de 86 a 0
+        } else {
+            var step = (relData[p].unit === 'kg' || relData[p].unit === 'litro/s') ? 0.5 : 1;
+            relData[p].qty = Math.max(0, parseFloat((relData[p].qty + dir * step).toFixed(2)));
+        }
+
+        // Limpieza: Si vuelve a 0 real, eliminar del relevamiento
+        if (relData[p].qty === 0) delete relData[p];
+
+        updateProductRow(p); renderFAB(); saveDraft();
+    }
+
+    function manualEl(el) { manualEntry(decodeURIComponent(el.dataset.prod)); }
+    function manualEntry(p) {
+        var val = prompt("Cantidad para " + p + ":", (relData[p] ? relData[p].qty : ''));
+        if (val === null) return;
+        var n = parseFloat(val.replace(',', '.'));
+        if (!isNaN(n) && n >= 0) {
+            if (!relData[p]) relData[p] = { qty: n, unit: units[0] };
+            else relData[p].qty = n;
+            if (relData[p].qty === 0) delete relData[p];
+            updateProductRow(p); renderFAB(); saveDraft();
+        }
+    }
+
+    function renderFAB() {
+        var count = Object.keys(relData).length;
+        var fab = document.getElementById('fab');
+        var ctxCount = document.getElementById('ctx-count');
+        var ctxBtn = document.getElementById('ctx-listo-btn');
+
+        // Actualizar contador en la barra contextual
+        if (ctxCount) ctxCount.textContent = count;
+        if (ctxBtn) ctxBtn.disabled = count === 0;
+
+        // El FAB clásico solo se muestra si la ctx-bar está oculta (no en modo relevamiento)
+        var ctxBar = document.getElementById('ctx-bar');
+        var ctxActive = ctxBar && !ctxBar.classList.contains('hidden');
+        if (!ctxActive) {
+            if (count > 0) {
+                fab.classList.remove('hidden');
+                document.getElementById('fab-count').textContent = count;
+            } else {
+                fab.classList.add('hidden');
+            }
+        } else {
+            fab.classList.add('hidden'); // FAB reemplazado por ctx-bar
+        }
+    }
+
+    /* ── RESUMEN Y NUBE ── */
+    function openResumen() {
+        document.getElementById('sh-title').textContent = currentMode === 'pedido' ? 'Resumen de Pedido' : 'Relevamiento de Stock';
+
+        // 🎨 OCULTAR FAB INMEDIATAMENTE
+        var fab = document.getElementById('fab');
+        if (fab) {
+            fab.style.opacity = '0';
+            fab.style.pointerEvents = 'none';
+        }
+
+        var byCat = {};
+        Object.keys(relData).forEach(function(p) {
+            var d = relData[p];
+            var cat = 'Otros';
+            Object.keys(CATS).forEach(function(c) { if (CATS[c].prods.indexOf(p) !== -1) cat = c; });
+            if (!byCat[cat]) byCat[cat] = [];
+            byCat[cat].push({ p: p, d: d });
+        });
+
+        var html = '';
+        Object.keys(byCat).sort().forEach(function(cat) {
+            html += '<div style="margin-bottom:24px;">' +
+                    '<div style="font-size:12px; font-weight:900; color:var(--primary); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">' +
+                        '<i data-lucide="folder-open" style="width:14px; height:14px;"></i>' + cat +
+                    '</div>';
+            var itemsByCat = byCat[cat];
+            for (var j = 0; j < itemsByCat.length; j++) {
+                var it = itemsByCat[j];
+                html += '<div class="edit-hist-row" style="display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:10px 12px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:6px; border:1px solid rgba(255,255,255,0.05);">' +
+                            '<span style="color:var(--text2); font-weight:700;">' + it.p + '</span>' +
+                            '<span style="font-weight:900; color:' + (it.d.qty === 86 ? 'var(--red)' : 'var(--gold)') + '">' + (it.d.qty === 86 ? '⛔ 86' : it.d.qty + ' ' + formatUnit(it.d.qty, it.d.unit)) + '</span>' +
+                        '</div>';
+            }
+            html += '</div>';
+        });
+        document.getElementById('sh-body').innerHTML = html;
+        document.getElementById('sheet-overlay').classList.add('open');
+        setTimeout(function() { refreshIcons(); }, 50);
+    }
+
+    function closeResumen(e) {
+        if (!e || e.target === document.getElementById('sheet-overlay')) {
+            document.getElementById('sheet-overlay').classList.remove('open');
+
+            // 🎨 RESTAURAR FAB CON FADE IN
+            var fab = document.getElementById('fab');
+            if (fab && !fab.classList.contains('hidden')) {
+                fab.style.opacity = '1';
+                fab.style.pointerEvents = 'auto';
+            }
+        }
+    }
+
+    function sendWA() {
+        var titleEl = document.getElementById('cfg-app-title');
+        var title = (titleEl && titleEl.value) ? titleEl.value : 'CIABATTA';
+        var now = new Date();
+        var dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        var timeStr = now.toLocaleTimeString('es-AR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        
+        var msg = "*" + title + " - " + (currentMode || 'STOCK').toUpperCase() + "*\n";
+        msg += "_Fecha de registro: " + dateStr + " " + timeStr + "_\n\n";
+        var byCat = {};
+        Object.keys(relData).forEach(function(p) {
+            var d = relData[p];
+            var cat = 'Otros';
+            Object.keys(CATS).forEach(function(c) { if (CATS[c].prods.indexOf(p) !== -1) cat = c; });
+            if (!byCat[cat]) byCat[cat] = [];
+            byCat[cat].push({ p: p, d: d });
+        });
+        Object.keys(byCat).sort().forEach(function(cat) {
+            msg += "*" + cat.toUpperCase() + "*\n";
+            byCat[cat].forEach(function(i) {
+                var qty86 = i.d.qty === 86;
+                msg += "• " + i.p + ": " + (qty86 ? '⛔ 86' : i.d.qty + ' ' + formatUnit(i.d.qty, i.d.unit)) + "\n";
+            });
+            msg += '\n';
+        });
+
+        // AUTO-SAVE ON SEND
+        saveToCloud(true);
+
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+        closeResumen();
+    }
+
+    function sendHistWA(id) {
+        var h = null;
+        for (var k = 0; k < HIST.length; k++) { if (HIST[k].id == id) { h = HIST[k]; break; } }
+        if (!h) return;
+        var items = Array.isArray(h.items) ? h.items : [];
+        var titleEl = document.getElementById('cfg-app-title');
+        var title = (titleEl && titleEl.value) ? titleEl.value : 'CIABATTA';
+        
+        var d = new Date(h.fecha);
+        var dateStr = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        var timeStr = d.toLocaleTimeString('es-AR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+        var msg = "*" + title + " - HISTORIAL " + (h.mode || 'stock').toUpperCase() + "*\n";
+        msg += "_Fecha de registro: " + dateStr + " " + timeStr + "_\n\n";
+        var byCat = {};
+        items.forEach(function(i) {
+            if (!byCat[i.cat || 'Otros']) byCat[i.cat || 'Otros'] = [];
+            byCat[i.cat || 'Otros'].push(i);
+        });
+        Object.keys(byCat).sort().forEach(function(cat) {
+            msg += "*" + cat.toUpperCase() + "*\n";
+            byCat[cat].forEach(function(i) {
+                var qty86 = i.qty === 86;
+                msg += "• " + i.prod + ": " + (qty86 ? '⛔ 86' : i.qty + ' ' + formatUnit(i.qty, i.unit)) + "\n";
+            });
+            msg += '\n';
+        });
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    function saveToCloud(doClear) {
+        if (doClear === undefined) doClear = true;
+        var items = [];
+        var prods = Object.keys(relData);
+        for (var i = 0; i < prods.length; i++) {
+            var prod = prods[i];
+            var d = relData[prod];
+            var cat = 'Otros';
+            Object.keys(CATS).forEach(function(c) { if (CATS[c].prods.indexOf(prod) !== -1) cat = c; });
+            items.push({ prod: prod, cat: cat, qty: d.qty, unit: d.unit });
+        }
+        if (!items.length) { toast("⚠️ No hay datos para guardar"); return; }
+        
+        var entryId = Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        var tEl = document.getElementById('hdr-turno');
+        var turno = (tEl && tEl.textContent) ? tEl.textContent : 'Apertura';
+        var entry = {
+            id: entryId,
+            fecha: new Date().toISOString(),
+            turno: turno,
+            mode: currentMode || 'stock',
+            items: items,
+            total: items.length
+        };
+
+        // 🟢 AUTO-DISMISS ALERT: Si es un control de stock, descartamos la alerta obligatoria
+        if ((currentMode || 'stock') === 'stock' && window.holidayAlert) {
+            window.holidayAlert.dismissStockCard("CONTROL DE STOCK");
+        }
+
+        setSyncStatus('pending');
+        google.script.run
+            .withSuccessHandler(function() {
+                HIST.unshift(entry);
+                toast("✓ ¡Sincronizado!");
+                if (doClear) {
+                    relData = {};
+                    localStorage.removeItem('fede_draft');
+                    renderFAB(); closeResumen(); goHome();
+                }
+                setSyncStatus('online');
+                processOfflineQueue(); // Verificar si hay más
+            })
+            .withFailureHandler(function(err) {
+                enqueueEntry(entry);
+                if (doClear) {
+                    relData = {};
+                    localStorage.removeItem('fede_draft');
+                    renderFAB(); closeResumen(); goHome();
+                }
+                setSyncStatus('error');
+            })
+            .addHistoryEntry(entry, activeSheetId);
+    }
+
+    function enqueueEntry(entry) {
+        window.offlineQueue.push(entry);
+        localStorage.setItem('fede_offline_queue', JSON.stringify(window.offlineQueue));
+        updateSyncBadge();
+        toast("⚠️ Sin conexión. Guardado en cola local.");
+    }
+
+    function updateSyncBadge() {
+        var badge = document.getElementById('hdr-sync-badge');
+        var count = document.getElementById('sync-count');
+        if (badge && count) {
+            if (window.offlineQueue.length > 0) {
+                badge.classList.remove('hidden');
+                count.textContent = window.offlineQueue.length;
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+    }
+
+    var isSyncing = false;
+    function processOfflineQueue() {
+        if (isSyncing || window.offlineQueue.length === 0) return;
+        isSyncing = true;
+        var entry = window.offlineQueue[0];
+
+        google.script.run
+            .withSuccessHandler(function() {
+                window.offlineQueue.shift();
+                localStorage.setItem('fede_offline_queue', JSON.stringify(window.offlineQueue));
+                updateSyncBadge();
+                isSyncing = false;
+                if (window.offlineQueue.length > 0) processOfflineQueue();
+                else toast("✓ Todos los datos sincronizados");
+            })
+            .withFailureHandler(function() {
+                isSyncing = false; // Reintentar después
+            })
+            .addHistoryEntry(entry, activeSheetId);
+    }
+
+    /* ── GESTIÓN ABM ── */
+    function renderTree() {
+        var el = document.getElementById('tree-cats');
+        if (!el) return;
+        var sorted = Object.keys(CATS).sort(function(a, b) { return (CATS[a].order || 99) - (CATS[b].order || 99); });
+        var html = '';
+        for (var i = 0; i < sorted.length; i++) {
+            var cat = sorted[i];
+            var isOpen = treeOpen[cat];
+            var ec = encodeURIComponent(cat);
+            var prods = CATS[cat].prods.slice().sort();
+            
+            html += '<div class="tree-node">' +
+                    '<div class="tree-row" data-cat="' + ec + '" onclick="toggleTreeEl(this)">' +
+                        '<span class="tree-toggle ' + (isOpen ? 'open' : '') + '">+</span>' +
+                        '<i data-lucide="' + (CATS[cat].icon || 'package') + '" style="width:var(--icon-size-small);height:var(--icon-size-small);color:var(--gold);flex-shrink:0;"></i>' +
+                        '<span class="tree-label">' + cat + '</span>' +
+                        '<span style="font-size:11px;color:var(--dim);">' + CATS[cat].prods.length + ' items</span>' +
+                        '<button data-cat="' + ec + '" onclick="event.stopPropagation();openEditCatEl(this)" style="background:none;border:none;color:var(--text2);padding:5px;cursor:pointer;">✏️</button>' +
+                        '<button data-cat="' + ec + '" onclick="event.stopPropagation();deleteCatEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>' +
+                    '</div>' +
+                    '<div class="tree-children ' + (isOpen ? 'open' : '') + '">';
+            
+            for (var j = 0; j < prods.length; j++) {
+                var p = prods[j];
+                var ep = encodeURIComponent(p);
+                html += '<div class="tree-leaf">' +
+                            '<span>' + p + '</span>' +
+                            '<div style="display:flex;gap:5px;">' +
+                                '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="openEditProdEl(this)" class="tree-leaf-btn-edit">✏️</button>' +
+                                '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="deleteProdEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>' +
+                            '</div>' +
+                        '</div>';
+            }
+            
+            html += '<div class="tree-add-form">' +
+                        '<input data-cat="' + ec + '" class="tree-add-inp tree-prod-inp" placeholder="Nuevo producto..." onkeydown="if(event.key===\'Enter\') addProdInp(this)">' +
+                        '<button data-cat="' + ec + '" onclick="addProdBtn(this)" class="tree-add-btn">+ ADD</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        }
+        el.innerHTML = html;
+        setTimeout(function() { refreshIcons(); }, 50);
+    }
+
+    function toggleTreeEl(el) {
+        var cat = decodeURIComponent(el.dataset.cat);
+        treeOpen[cat] = !treeOpen[cat];
+        renderTree();
+    }
+
+    function addCat() {
+        var v = document.getElementById('new-cat-inp').value.trim();
+        if (!v) return toast("Ingresá un nombre");
+        if (CATS[v]) return toast("Ya existe");
+        google.script.run
+            .withSuccessHandler(function(r) {
+                if (r.success) { CATS = r.data; document.getElementById('new-cat-inp').value = ''; renderTree(); renderCatGrid(); toast("✓ Creada"); }
+                else toast("❌ " + r.error);
+            })
+            .withFailureHandler(function(err) { toast("❌ Error: " + err.message); })
+            .createCategory(v, 'package', activeSheetId);
+    }
+
+    function deleteCatEl(el) {
+        var cat = decodeURIComponent(el.dataset.cat);
+        if (!confirm('¿Borrar "' + cat + '"?')) return;
+        delete CATS[cat];
+        google.script.run.withSuccessHandler(function(r) { if (r.success) { CATS = r.data; renderTree(); renderCatGrid(); toast("✓ Eliminada"); } }).deleteCategory(cat, activeSheetId);
+    }
+
+    function addProdBtn(el) { _addProd(decodeURIComponent(el.dataset.cat), el.closest('.tree-children').querySelector('.tree-prod-inp')); }
+    function addProdInp(inp) { _addProd(decodeURIComponent(inp.dataset.cat), inp); }
+    function _addProd(cat, inp) {
+        var v = inp.value.trim();
+        if (!v || (CATS[cat] && CATS[cat].prods && CATS[cat].prods.indexOf(v) !== -1)) return;
+        google.script.run.withSuccessHandler(function(r) { if (r.success) { CATS = r.data; inp.value = ''; renderTree(); toast("✓ Añadido"); } }).createProduct(cat, v, activeSheetId);
+    }
+
+    function deleteProdEl(el) {
+        var cat = decodeURIComponent(el.dataset.cat), prod = decodeURIComponent(el.dataset.prod);
+        if (confirm('¿Eliminar "' + prod + '"?')) google.script.run.withSuccessHandler(function(r) { if (r.success) { CATS = r.data; renderTree(); toast("✓ Eliminado"); } }).deleteProduct(cat, prod, activeSheetId);
+    }
+
+    var editCatOld = null;
+    function openEditCatEl(el) {
+        var catName = decodeURIComponent(el.dataset.cat);
+        editCatOld = catName;
+        document.getElementById('modal-cat-name').value = catName;
+        document.getElementById('modal-cat-icon').value = CATS[catName] ? (CATS[catName].icon || 'package') : 'package';
+        document.getElementById('modal-cat-size').value = CATS[catName] ? (CATS[catName].iconSize || '') : '';
+        document.getElementById('modal-edit-cat').classList.add('open');
+    }
+    function closeEditCatModal(e) { if (!e || e.target === document.getElementById('modal-edit-cat')) document.getElementById('modal-edit-cat').classList.remove('open'); }
+    function handleEditCategory() {
+        var newName = document.getElementById('modal-cat-name').value.trim();
+        var newIcon = document.getElementById('modal-cat-icon').value.trim() || 'package';
+        var newSize = parseInt(document.getElementById('modal-cat-size').value, 10) || null;
+        google.script.run.withSuccessHandler(function(r) { if (r.success) { CATS = r.data; renderTree(); renderCatGrid(); toast("✓ Actualizada"); closeEditCatModal(); } }).updateCategory(editCatOld, newName, newIcon, newSize, activeSheetId);
+    }
+
+    var editProdCat = null, editProdOld = null, modalSelectedUnits = [];
+    function openEditProdEl(el) {
+        editProdCat = decodeURIComponent(el.dataset.cat); editProdOld = decodeURIComponent(el.dataset.prod);
+        document.getElementById('modal-prod-name').value = editProdOld;
+
+        modalSelectedUnits = (CUSTOM_UNITS[editProdOld] || []).slice();
+        renderModalUnits();
+
+        document.getElementById('modal-edit-prod').classList.add('open');
+    }
+
+    function renderModalUnits() {
+        var container = document.getElementById('modal-units-list');
+        if (!container) return;
+
+        var html = '';
+        for (var i = 0; i < units.length; i++) {
+            var u = units[i];
+            var isActive = modalSelectedUnits.indexOf(u) > -1;
+            var eu = encodeURIComponent(u);
+            html += '<div class="uchip ' + (isActive ? 'active' : '') + '" ' +
+                    'onclick="toggleModalUnit(\'' + eu + '\')" ' +
+                    'style="padding:10px 14px; font-size:13px; cursor:pointer; user-select:none;">' +
+                    u +
+                '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    function toggleModalUnit(uEnc) {
+        var u = decodeURIComponent(uEnc);
+        var idx = modalSelectedUnits.indexOf(u);
+        if (idx > -1) {
+            modalSelectedUnits.splice(idx, 1);
+        } else {
+            if (modalSelectedUnits.length < 6) {
+                modalSelectedUnits.push(u);
+            } else {
+                toast("Máximo 6 unidades por producto");
+            }
+        }
+        renderModalUnits();
+    }
+    function closeEditProdModal(e) { if (!e || e.target === document.getElementById('modal-edit-prod')) document.getElementById('modal-edit-prod').classList.remove('open'); }
+
+    function handleEditProduct() {
+        var newName = document.getElementById('modal-prod-name').value.trim();
+
+        // Guardar Unidades Seleccionadas
+        if (modalSelectedUnits.length > 0) CUSTOM_UNITS[newName] = modalSelectedUnits.slice();
+        else delete CUSTOM_UNITS[newName];
+
+        if (editProdOld !== newName && CUSTOM_UNITS[editProdOld]) delete CUSTOM_UNITS[editProdOld];
+
+        google.script.run.saveConfig('custom_units', CUSTOM_UNITS, activeSheetId);
+
+        // Guardar nombre y relocalizar en CATS
+        google.script.run.withSuccessHandler(function(r) {
+            if (r.success) {
+                CATS = r.data;
+                // Actualizar el DOM partial si es necesario y persistir local data
+                var oldData = relData[editProdOld];
+                if (oldData) { relData[newName] = oldData; delete relData[editProdOld]; saveDraft(); }
+                renderTree();
+                toast("✓ Actualizado");
+                closeEditProdModal();
+            }
+        }).updateProduct(editProdCat, editProdOld, newName, activeSheetId);
+    }
+
+    function handleDeleteProduct() {
+        if (!confirm('¿Eliminar "' + editProdOld + '"?')) return;
+        delete CUSTOM_UNITS[editProdOld];
+        google.script.run.saveConfig('custom_units', CUSTOM_UNITS, activeSheetId);
+        google.script.run
+            .withSuccessHandler(function(r) {
+                if (r.success) { CATS = r.data; renderTree(); toast("✓ Eliminado"); closeEditProdModal(); }
+                else toast("❌ " + r.error);
+            })
+            .withFailureHandler(function(err) { toast("❌ Error: " + err.message); })
+            .deleteProduct(editProdCat, editProdOld, activeSheetId);
+    }
+
+    /* ── DASHBOARD ── */
+    var DASH_CACHE = null;
+    var INTELL_CACHE = null;
+
+    function renderDashboard(force) {
+        if (force === undefined) force = false;
+        var loader = document.getElementById('dash-loader');
+        var content = document.getElementById('dash-content');
+
+        // Si tenemos cache y no forzamos, mostramos instantáneamente
+        if (DASH_CACHE && !force) {
+            if (loader) loader.classList.add('hidden');
+            if (content) content.classList.remove('hidden');
+            applyDashData(DASH_CACHE);
+            if (INTELL_CACHE) applyIntellData(INTELL_CACHE);
+            return;
+        }
+
+        if (loader) loader.classList.remove('hidden');
+        if (content) content.classList.add('hidden');
+
+        google.script.run
+            .withSuccessHandler(function(r) {
+                if (r && r.success) {
+                    DASH_CACHE = r.data;
+                    if (loader) loader.classList.add('hidden');
+                    if (content) content.classList.remove('hidden');
+                    applyDashData(r.data);
+
+                    google.script.run
+                        .withSuccessHandler(function(ra) {
+                            if (ra && ra.success) {
+                                INTELL_CACHE = ra;
+                                applyIntellData(ra);
+                            }
+                        })
+                        .getPredictiveAnalysis(activeSheetId, 30);
+                }
+            })
+            .getDashboardMetrics(activeSheetId);
+    }
+
+    function applyDashData(data) {
+        document.getElementById('card-totalitems').textContent = data.totalItems || '0';
+        document.getElementById('card-movtoday').textContent = data.movementsToday || '0';
+
+        var recentCatsEl = document.getElementById('dash-recent-cats');
+        if (data.recentCats && data.recentCats.length) {
+            var rcHtml = '';
+            for (var i = 0; i < data.recentCats.length; i++) {
+                var rc = data.recentCats[i];
+                var cat = CATS[rc.name] || {};
+                var icon = cat.icon || 'package';
+                rcHtml += '<div class="dash-card-glass" style="min-width:145px; flex-shrink:0; padding:20px; text-align:center;">' +
+                        '<div style="width:44px; height:44px; background:var(--s2); border:1.5px solid var(--bd2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">' +
+                            '<i data-lucide="' + icon + '" style="width:20px; color:var(--primary);"></i>' +
+                        '</div>' +
+                        '<div style="font-weight:900; font-size:12px; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">' + rc.name + '</div>' +
+                        '<div style="font-size:10px; color:var(--dim); font-weight:700;">' + new Date(rc.ts).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) + '</div>' +
+                        '<button class="wa-btn" style="width:100%; padding:8px; font-size:10px; margin-top:14px; background:var(--primary); color:#000; border-radius:10px; font-weight:800;" onclick="viewCatDetails(\'' + encodeURIComponent(rc.name) + '\')">DETALLES</button>' +
+                    '</div>';
+            }
+            recentCatsEl.innerHTML = rcHtml;
+        }
+
+        var rankingEl = document.getElementById('dash-product-ranking');
+        if (rankingEl && data.productRanking && data.productRanking.length) {
+            var maxCount = data.productRanking[0].count || 1; 
+            var rHtml = '';
+            for (var j = 0; j < data.productRanking.length; j++) {
+                var p = data.productRanking[j];
+                var w = (p.count / maxCount) * 100;
+                rHtml += '<div class="ranking-row" style="margin-bottom:20px;">' +
+                        '<span style="font-family:\'Outfit\',sans-serif; font-weight:900; font-size:13px; color:var(--primary); width:24px;">' + (j + 1) + '</span>' +
+                        '<div style="flex:1;">' +
+                            '<div style="display:flex; justify-content:space-between; margin-bottom:6px;">' +
+                                '<span style="font-weight:800; font-size:14px; color:var(--text);">' + p.name + '</span>' +
+                                '<span style="font-size:11px; font-weight:800; color:var(--dim); opacity:0.8;">' + p.count + ' <span style="font-size:9px;">MOV</span></span>' +
+                            '</div>' +
+                            '<div class="ranking-bar-bg">' +
+                                '<div class="ranking-bar-fill" style="width:' + w + '%"></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }
+            rankingEl.innerHTML = rHtml;
+        } else if (rankingEl) {
+            rankingEl.innerHTML = '<p style="color:var(--dim); font-size:12px; text-align:center; padding:20px;">No hay registros suficientes para el ranking.</p>';
+        }
+
+        setTimeout(function() { renderDashboardCalendar(data.calendar); }, 50);
+        refreshIcons();
+    }
+
+    function applyIntellData(ra) {
+        var intelEl = document.getElementById('dash-intelligence-list');
+        var html = '';
+
+        // 1. Predicciones AI de consumo
+        if (ra.predictions && ra.predictions.length) {
+            for (var i = 0; i < ra.predictions.length; i++) {
+                var p = ra.predictions[i];
+                var statusColor = (p.status || '').indexOf('CRÍTICO') !== -1 ? 'var(--error)' : 'var(--primary)';
+                
+                html += '<div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--bd2); margin-bottom:12px;">' +
+                    '<div style="max-width:70%;">' +
+                        '<div style="font-weight:800; font-size:14px; color:var(--text);">' + p.name + '</div>' +
+                        '<div style="font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px;">Stock: <b>' + p.currentStock + '</b> | ' + (p.status || '') + '</div>' +
+                    '</div>' +
+                    '<div style="text-align:right;">' +
+                        '<div style="font-size:15px; font-weight:900; color:' + statusColor + '; font-family:\'Outfit\',sans-serif;">+' + p.suggestion + '</div>' +
+                        '<div style="font-size:9px; color:var(--dim); font-weight:800;">REPOSICIÓN</div>' +
+                    '</div>' +
+                '</div>';
+            }
+        }
+
+        // 2. 🚨 HOLIDAY STOCK SUGGESTIONS (Legacy merge)
+        var sug = window.holidayHelper ? window.holidayHelper.getSuggestedReorders() : [];
+        if (sug.length > 0) {
+            var sugHtml = '';
+            for (var k = 0; k < sug.length; k++) {
+                var s = sug[k];
+                sugHtml += '<div style="background:rgba(224,82,82,0.1); border:1px solid var(--red); border-radius:12px; padding:15px; margin-bottom:12px;">' +
+                    '<div style="font-weight:900; font-size:11px; color:var(--red); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">⚠️ Sugerencia Feriado</div>' +
+                    '<div style="font-size:14px; font-weight:700; color:var(--text);">' + s.message + '</div>' +
+                    '<p style="font-size:11px; color:var(--dim); margin-top:4px;">Refuerzo sugerido en: <b>' + s.categories.join(', ') + '</b></p>' +
+                '</div>';
+            }
+            html = sugHtml + html;
+        }
+
+        if (!html) html = '<p style="color:var(--dim); font-size:12px;">No hay historial suficiente.</p>';
+        intelEl.innerHTML = html;
+        refreshIcons();
+    }
+
+    function viewCatDetails(catEnc) { enterMode('pedido'); selectCat(decodeURIComponent(catEnc)); }
+
+    function renderDashboardCalendar() {
+        var calEl = document.getElementById('dash-calendar');
+        if (!calEl) return;
+
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth();
+
+        // Días del mes actual
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        var firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
+
+        // Ajustar para empezar en Lunes (0 es Lunes, 6 es Domingo)
+        var emptyStartDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+        // Map history entries by date (YYYY-MM-DD) en hora local
+        var histByDate = {};
+        if (HIST && HIST.length) {
+            for (var k = 0; k < HIST.length; k++) {
+                var h = HIST[k];
+                var localD = new Date(h.fecha);
+                var y = localD.getFullYear();
+                var mInt = localD.getMonth() + 1;
+                var dInt = localD.getDate();
+                var mStr = mInt < 10 ? '0' + mInt : '' + mInt;
+                var dStr = dInt < 10 ? '0' + dInt : '' + dInt;
+                var dateKey = y + '-' + mStr + '-' + dStr;
+
+                var mode = (h.mode || 'stock').toLowerCase();
+                if (!histByDate[dateKey]) histByDate[dateKey] = [];
+                if (histByDate[dateKey].indexOf(mode) === -1) histByDate[dateKey].push(mode);
+            }
+        }
+
+        var html = '';
+        for (var i = 0; i < emptyStartDays; i++) {
+            html += '<div class="cal-day empty"></div>';
+        }
+
+        var tYear = now.getFullYear();
+        var tMonth = now.getMonth() + 1;
+        var tDay = now.getDate();
+        var todayStr = tYear + '-' + (tMonth < 10 ? '0' + tMonth : tMonth) + '-' + (tDay < 10 ? '0' + tDay : tDay);
+
+        for (var dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+            var mNum = month + 1;
+            var dStrKey = year + '-' + (mNum < 10 ? '0' + mNum : mNum) + '-' + (dayNum < 10 ? '0' + dayNum : dayNum);
+
+            var isToday = dStrKey === todayStr;
+            var activities = histByDate[dStrKey] || [];
+
+            var dotsHtml = '';
+            if (activities.indexOf('pedido') !== -1) dotsHtml += '<div class="cal-dot cal-dot-pedido"></div>';
+            if (activities.indexOf('stock') !== -1) dotsHtml += '<div class="cal-dot cal-dot-stock"></div>';
+            if (activities.indexOf('recepcion') !== -1 || activities.indexOf('entrante') !== -1) dotsHtml += '<div class="cal-dot cal-dot-recepcion"></div>';
+
+            html += '<div class="cal-day ' + (isToday ? 'today' : '') + '" onclick="openHistoryAtDate(\'' + dStrKey + '\')" ' + (!activities.length ? 'style="opacity:0.6;"' : '') + '>' +
+                '<div class="cal-date-num">' + dayNum + '</div>' +
+                '<div class="cal-indicators">' + dotsHtml + '</div>' +
+            '</div>';
+        }
+
+        calEl.innerHTML = html;
+        refreshIcons();
+    }
+
+    function openHistoryAtDate(dateStr) {
+        histFilters.from = dateStr;
+        histFilters.to = dateStr;
+        histFilters.mode = 'all'; // Asegurar que vemos todo
+
+        // Actualizar visualmente los inputs y selectores
+        var dateFrom = document.getElementById('hist-date-from');
+        var dateTo = document.getElementById('hist-date-to');
+        var modeFilter = document.getElementById('hist-mode-filter');
+
+        if (dateFrom) dateFrom.value = dateStr;
+        if (dateTo) dateTo.value = dateStr;
+        if (modeFilter) modeFilter.value = 'all';
+
+        // Ejecutar navegación y renderizado
+        goTab('historial');
+        renderHistory();
+
+        toast('📅 Filtro aplicado: ' + dateStr, 1500);
+    }
+
+    function renderFavs() {
+        var grid = document.getElementById('favs-grid'), container = document.getElementById('home-favs');
+        if (!grid || !container) return; 
+        if (!FAVS.length) { container.classList.add('hidden'); return; }
+        container.classList.remove('hidden');
+        
+        var favHtml = '';
+        var topFavs = FAVS.slice(0, 6);
+        for (var i = 0; i < topFavs.length; i++) {
+            var p = topFavs[i];
+            var cat = 'Otros';
+            var catKeys = Object.keys(CATS);
+            for (var k = 0; k < catKeys.length; k++) {
+                if (CATS[catKeys[k]].prods.indexOf(p) !== -1) { cat = catKeys[k]; break; }
+            }
+            var icon = (CATS[cat] && CATS[cat].icon) ? CATS[cat].icon : 'star';
+            favHtml += '<div class="dash-card" onclick="enterFav(\'' + encodeURIComponent(p) + '\')" style="margin-bottom:0; padding:12px 6px; text-align:center; cursor:pointer; background:rgba(212,168,67,0.05); border:1px solid rgba(212,168,67,0.15);">' +
+                    '<i data-lucide="' + icon + '" style="width:var(--icon-size-small); height:var(--icon-size-small); color:var(--gold); display:block; margin:0 auto 6px;"></i>' +
+                    '<div style="font-size:11px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + p + '</div>' +
+                '</div>';
+        }
+        grid.innerHTML = favHtml;
+        refreshIcons();
+    }
+
+    function enterFav(pEnc) {
+        var p = decodeURIComponent(pEnc); var cat = null;
+        var catKeys = Object.keys(CATS);
+        for (var k = 0; k < catKeys.length; k++) {
+            if (CATS[catKeys[k]].prods.indexOf(p) !== -1) { cat = catKeys[k]; break; }
+        }
+        if (!cat) return;
+        enterMode('pedido'); selectCat(cat);
+        setTimeout(function() {
+            var rows = document.querySelectorAll('.prow');
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i].querySelector('.pname').textContent === p) {
+                    rows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    break;
+                }
+            }
+        }, 600);
+    }
+
+    function toggleFav(pEnc) {
+        var p = decodeURIComponent(pEnc), idx = FAVS.indexOf(p);
+        if (idx > -1) FAVS.splice(idx, 1); else { FAVS.unshift(p); if (FAVS.length > 6) FAVS.pop(); }
+        updateProductRow(p); google.script.run.saveConfig('favs', FAVS, activeSheetId);
+    }
+
+    /* ── GLOBAL SEARCH ── */
+    function searchGlobalHome(q) {
+        var query = q.toLowerCase().trim();
+        var resEl = document.getElementById('home-search-res');
+        if (!query || query.length < 2) { resEl.classList.remove('active'); return; }
+
+        var results = [];
+        var catKeys = Object.keys(CATS);
+        for (var i = 0; i < catKeys.length; i++) {
+            var cat = catKeys[i];
+            for (var j = 0; j < CATS[cat].prods.length; j++) {
+                var p = CATS[cat].prods[j];
+                if (p.toLowerCase().indexOf(query) !== -1) results.push({ p: p, cat: cat });
+            }
+        }
+
+        if (results.length === 0) {
+            resEl.innerHTML = '<div style="padding:15px; color:var(--dim); font-size:12px; text-align:center;">No se encontraron productos.</div>';
+        } else {
+            var searchHtml = '';
+            var limitedResults = results.slice(0, 10);
+            for (var k = 0; k < limitedResults.length; k++) {
+                var r = limitedResults[k];
+                searchHtml += '<div class="gs-item" onclick="promptGlobalLoad(\'' + encodeURIComponent(r.p) + '\', \'' + encodeURIComponent(r.cat) + '\')">' +
+                    '<span class="gs-pname">' + r.p + '</span>' +
+                    '<span class="gs-pcat">' + r.cat + '</span>' +
+                '</div>';
+            }
+            resEl.innerHTML = searchHtml;
+        }
+        resEl.classList.add('active');
+    }
+
+    function handleHdrSearch(q) {
+        var query = q.toLowerCase().trim();
+        var resEl = document.getElementById('hdr-search-res');
+        if (!query || query.length < 2) { resEl.style.display = 'none'; return; }
+
+        var results = [];
+        var catKeys = Object.keys(CATS);
+        for (var i = 0; i < catKeys.length; i++) {
+            var cat = catKeys[i];
+            for (var j = 0; j < CATS[cat].prods.length; j++) {
+                var p = CATS[cat].prods[j];
+                if (p.toLowerCase().indexOf(query) !== -1) results.push({ p: p, cat: cat });
+            }
+        }
+
+        if (results.length === 0) {
+            resEl.innerHTML = '<div style="padding:12px; color:var(--dim); font-size:11px; text-align:center;">Sin resultados</div>';
+        } else {
+            var searchHtml = '';
+            var limitedResults = results.slice(0, 8);
+            for (var k = 0; k < limitedResults.length; k++) {
+                var r = limitedResults[k];
+                searchHtml += '<div class="gs-item" style="padding:10px 12px; border-bottom:1px solid var(--bd);" onclick="selectGlobalHdrResult(\'' + encodeURIComponent(r.p) + '\', \'' + encodeURIComponent(r.cat) + '\')">' +
+                    '<div style="font-weight:700; font-size:13px; color:var(--text);">' + r.p + '</div>' +
+                    '<div style="font-size:10px; color:var(--primary); font-weight:800; text-transform:uppercase;">' + r.cat + '</div>' +
+                '</div>';
+            }
+            resEl.innerHTML = searchHtml;
+        }
+        resEl.style.display = 'block';
+    }
+
+    function selectGlobalHdrResult(pEnc, catEnc) {
+        var p = decodeURIComponent(pEnc), cat = decodeURIComponent(catEnc);
+        document.getElementById('hdr-search-res').style.display = 'none';
+        document.getElementById('hdr-search-input').value = '';
+
+        if (!currentMode) {
+            promptGlobalLoad(pEnc, catEnc);
+        } else {
+            selectCat(cat);
+            setTimeout(function() {
+                var ep = encodeURIComponent(p);
+                var el = document.querySelector('[data-prow="' + ep + '"]');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.transition = 'background 0.3s, border-color 0.3s';
+                    el.style.background = 'var(--s3)';
+                    el.style.borderColor = 'var(--primary)';
+                    setTimeout(function() { el.style.background = ''; el.style.borderColor = ''; }, 1500);
+                }
+            }, 600);
+        }
+    }
+
+    var globalSelected = null;
+    function promptGlobalLoad(pEnc, catEnc) {
+        var p = decodeURIComponent(pEnc), cat = decodeURIComponent(catEnc);
+        var searchRes = document.getElementById('home-search-res');
+        if (searchRes) searchRes.classList.remove('active');
+        var homeSearch = document.getElementById('home-search');
+        if (homeSearch) homeSearch.value = '';
+
+        globalSelected = { p: p, cat: cat };
+        document.getElementById('as-pname').textContent = p;
+        document.getElementById('as-pcat').textContent = cat;
+
+        var d = localStorage.getItem('fede_draft');
+        document.getElementById('as-lbl-pedido').textContent = (currentMode === 'pedido' || (d && d.indexOf('"pedido"') !== -1)) ? 'Continuar Pedido Activo' : 'Nuevo Pedido';
+        document.getElementById('as-lbl-stock').textContent = (currentMode === 'stock' || (d && d.indexOf('"stock"') !== -1)) ? 'Continuar Control Activo' : 'Nuevo Control de Stock';
+
+        document.getElementById('global-action-sheet').classList.add('active');
+    }
+
+    function closeActionSheet(e) {
+        if (!e || e.target === document.getElementById('global-action-sheet')) {
+            document.getElementById('global-action-sheet').classList.remove('active');
+        }
+    }
+
+    function confirmGlobalLoad(mode) {
+        document.getElementById('global-action-sheet').classList.remove('active');
+        if (!globalSelected) return;
+
+        if (currentMode !== mode) initRelevamiento(mode);
+        else {
+            document.getElementById('home').classList.add('hidden');
+            document.getElementById('app').classList.add('visible');
+        }
+
+        setTimeout(function() {
+            selectCat(globalSelected.cat);
+            setTimeout(function() {
+                var ep = encodeURIComponent(globalSelected.p);
+                var el = document.querySelector('[data-prow="' + ep + '"]');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.transition = 'background 0.5s';
+                    el.style.background = 'var(--s3)';
+                    el.style.borderColor = 'var(--primary)';
+                    setTimeout(function() { el.style.background = ''; el.style.borderColor = ''; }, 1500);
+                }
+            }, 100);
+        }, 50);
+    }
+
+    /* ── DRAFT ── */
+    function saveDraft() { if (currentMode) localStorage.setItem('fede_draft', JSON.stringify({ mode: currentMode, items: relData, ts: Date.now() })); }
+    function checkDraft() {
+        var draft = JSON.parse(localStorage.getItem('fede_draft') || 'null');
+        var banner = document.getElementById('draft-banner');
+        var hasDraft = (draft && draft.items && Object.keys(draft.items).length > 0);
+        if (hasDraft) {
+            if (banner) banner.classList.remove('hidden');
+        } else {
+            if (banner) banner.classList.add('hidden');
+        }
+        updateActivityIndicators();
+    }
+    function restoreDraft() {
+        var draft = JSON.parse(localStorage.getItem('fede_draft') || 'null');
+        if (draft) {
+            relData = draft.items;
+            initRelevamiento(draft.mode);
+            renderFAB();
+        }
+    }
+    function discardDraft() { if (confirm("¿Borrar definitivamente?")) { localStorage.removeItem('fede_draft'); checkDraft(); updateActivityIndicators(); } }
+
+    /* ── HISTORIAL ── */
+    var histFilters = { mode: 'all', from: '', to: '', query: '' };
+    function setHistFilter(type, val, el) {
+        histFilters[type] = val;
+        if (el && el.parentNode) {
+            var btns = el.parentNode.querySelectorAll('button');
+            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+            el.classList.add('active');
+        }
+        renderHistory();
+    }
+
+    var histLimit = 20;
+    function renderHistory(loadMore) {
+        if (loadMore === undefined) loadMore = false;
+        if (!loadMore) histLimit = 20;
+        var list = document.getElementById('hist-list');
+        if (!list) return;
+
+        // Bloqueo sutil de UI para feedback
+        if (!loadMore) list.style.opacity = '0.5';
+
+        var filtered = HIST.slice().sort(function(a, b) { 
+            var dateA = new Date(a.fecha);
+            var dateB = new Date(b.fecha);
+            return dateB - dateA; 
+        });
+
+        // 1. Filtrar por Modo
+        if (histFilters.mode !== 'all') {
+            var modeToFilter = histFilters.mode;
+            var newList = [];
+            for (var i = 0; i < filtered.length; i++) {
+                var h = filtered[i];
+                var m = (h.mode || 'stock').toLowerCase();
+                var match = false;
+                if (modeToFilter === 'recepcion') match = (m === 'recepcion' || m === 'entrante');
+                else match = (m === modeToFilter);
+                if (match) newList.push(h);
+            }
+            filtered = newList;
+        }
+
+        // 2. Filtrar por Fechas usando hora local explícita
+        if (histFilters.from) {
+            var fromParts = histFilters.from.split('-');
+            var fromD = new Date(fromParts[0], fromParts[1] - 1, fromParts[2], 0, 0, 0, 0);
+            var newList = [];
+            for (var i = 0; i < filtered.length; i++) {
+                if (new Date(filtered[i].fecha) >= fromD) newList.push(filtered[i]);
+            }
+            filtered = newList;
+        }
+        if (histFilters.to) {
+            var toParts = histFilters.to.split('-');
+            var toD = new Date(toParts[0], toParts[1] - 1, toParts[2], 23, 59, 59, 999);
+            var newList = [];
+            for (var i = 0; i < filtered.length; i++) {
+                if (new Date(filtered[i].fecha) <= toD) newList.push(filtered[i]);
+            }
+            filtered = newList;
+        }
+
+        // 3. Filtrar por Búsqueda (Soporta producto o categoría)
+        var totalFound = filtered.length;
+        var visible = filtered.slice(0, histLimit);
+
+        if (!totalFound) {
+            list.innerHTML = '<p style="text-align:center;padding:40px;color:var(--dim);">No hay registros ' + (histFilters.mode !== 'all' ? ('de ' + histFilters.mode) : '') + ' aún.</p>';
+            list.style.opacity = '1';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < visible.length; i++) {
+            var h = visible[i];
+            var items = Array.isArray(h.items) ? h.items : [];
+            var _m = (h.mode || 'stock').toLowerCase();
+            var _ms;
+            if (_m === 'pedido') {
+                _ms = { color: 'var(--orange)', bg: 'var(--bg-alt)', border: 'var(--orange)', label: '🟠 PEDIDO' };
+            } else if (_m === 'stock') {
+                _ms = { color: 'var(--blue)', bg: 'var(--bg-alt)', border: 'var(--blue)', label: '🔵 STOCK' };
+            } else {
+                _ms = { color: 'var(--green)', bg: 'var(--bg-alt)', border: 'var(--green)', label: '🟢 RECEPCIÓN' };
+            }
+            
+            html += '<div class="dash-card" id="hist-card-' + h.id + '" onclick="toggleHistExpand(\'' + h.id + '\')">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                    '<span style="font-weight:800; color:' + _ms.color + '; background:' + _ms.bg + '; border:1px solid ' + _ms.border + '; padding:5px 14px; border-radius:14px; font-size:12px; font-family:\'Outfit\',sans-serif;">' + _ms.label + '</span>' +
+                    '<div style="display:flex; gap:8px;">' +
+                        '<button onclick="event.stopPropagation();editHistEntry(\'' + h.id + '\')" style="background:var(--s2); border:1px solid var(--bd); border-radius:8px; padding:6px 10px; color:var(--text); font-size:14px;">✏️</button>' +
+                        '<button onclick="event.stopPropagation();deleteHistEntryManual(\'' + h.id + '\')" style="background:rgba(224,82,82,0.1); border:1px solid var(--red); border-radius:8px; padding:6px 10px; color:var(--red); font-size:14px;">🗑️</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="font-weight:800; font-size:20px; font-family:\'Outfit\',sans-serif; color:var(--text);">' + h.total + ' <span style="font-size:14px; font-weight:600; color:var(--dim);">items</span></div>' +
+                '<div style="font-size:12px; color:var(--dim); font-weight:700; margin-top:2px;">' + new Date(h.fecha).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</div>' +
+                '<div id="hist-expanded-' + h.id + '" class="hidden" style="margin-top:16px; padding-top:16px; border-top:1.5px solid var(--bd2); transition: all 0.3s ease;">' +
+                    '<!-- Lazy loaded items here -->' +
+                '</div>' +
+            '</div>';
+        }
+
+        if (totalFound > histLimit) {
+            html += '<button onclick="histLimit += 20; renderHistory(true)" class="wa-btn" style="width:100%; margin-top:20px; background:var(--s2); border:1.5px solid var(--bd); color:var(--text2); font-size:12px; height:48px;">' +
+                'MOSTRAR MÁS (' + (totalFound - histLimit) + ' restantes)' +
+            '</button>';
+        }
+
+        list.innerHTML = html;
+        list.style.opacity = '1';
+        setTimeout(function() { refreshIcons(); }, 100);
+    }
+
+    function toggleHistExpand(id) {
+        var el = document.getElementById('hist-expanded-' + id);
+        if (!el) return;
+
+        var isOpening = el.classList.contains('hidden');
+        el.classList.toggle('hidden');
+
+        if (isOpening && el.innerHTML.indexOf('Lazy loaded') !== -1) {
+            var h = null;
+            for (var i = 0; i < HIST.length; i++) { if (String(HIST[i].id) === String(id)) { h = HIST[i]; break; } }
+            if (!h) return;
+            var items = Array.isArray(h.items) ? h.items : [];
+
+            var itemsHtml = '';
+            for (var j = 0; j < items.length; j++) {
+                var it = items[j];
+                itemsHtml += '<div class="edit-hist-row" style="display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:8px 6px; border-bottom:1px solid var(--bd2); transition: background 0.15s;">' +
+                            '<span style="color:var(--text2); font-weight:700;">' + it.prod + '</span>' +
+                            '<span style="font-weight:900; font-family:\'Outfit\',sans-serif; color:' + (it.qty === 86 ? 'var(--red)' : 'var(--primary)') + '">' +
+                                (it.qty === 86 ? '⛔ 86' : it.qty + ' ' + formatUnit(it.qty, it.unit)) +
+                            '</span>' +
+                        '</div>';
+            }
+
+            el.innerHTML = '<div style="display:flex; flex-direction:column; gap:0;">' + itemsHtml + '</div>' +
+                '<button onclick="sendHistWA(\'' + h.id + '\'); event.stopPropagation();" ' + 
+                    'style="width:100%; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:white; margin-top:16px; border-radius:12px; border:none; font-weight:900; font-size:13px; font-family:\'Outfit\',sans-serif; cursor:pointer;">' +
+                    '<i data-lucide="message-circle" style="width:18px;"></i> COMPARTIR POR WA' +
+                '</button>';
+            setTimeout(function() { refreshIcons(); }, 50);
+        }
+    }
+
+    function deleteHistEntryManual(id) {
+        if (!confirm("¿Eliminar este registro permanentemente?")) return;
+
+        google.script.run
+            .withSuccessHandler(function(r) {
+                if (r && r.success) {
+                    var newHist = [];
+                    for(var i=0; i<HIST.length; i++) { if(HIST[i].id != id) newHist.push(HIST[i]); }
+                    HIST = newHist;
+                    renderHistory();
+                    toast("✓ Registro eliminado del historial");
+                } else {
+                    toast("❌ Error al eliminar");
+                }
+            })
+            .deleteHistoryEntry(id, activeSheetId);
+    }
+
+    var editingHistId = null, editingHistItems = [], editingHistMode = 'stock';
+    function editHistEntry(id) {
+        var h = null;
+        for (var i = 0; i < HIST.length; i++) { if (HIST[i].id == id) { h = HIST[i]; break; } }
+        if (!h) return;
+        editingHistId = id;
+        editingHistItems = JSON.parse(JSON.stringify(h.items));
+        editingHistMode = (h.mode || 'stock').toLowerCase();
+        if (editingHistMode === 'entrante') editingHistMode = 'recepcion';
+        
+        var dateInput = document.getElementById('edit-hist-date');
+        if (dateInput && h.fecha) {
+            var d = new Date(h.fecha);
+            var local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            dateInput.value = local;
+        }
+
+        var sInput = document.getElementById('edit-hist-search');
+        if (sInput) sInput.value = '';
+        var sResults = document.getElementById('edit-hist-search-results');
+        if (sResults) { sResults.innerHTML = ''; sResults.style.display = 'none'; }
+        
+        renderEditHistItems();
+        document.getElementById('modal-edit-hist').classList.add('open');
+        setTimeout(function() { setEditMode(editingHistMode, false); }, 50);
+        setTimeout(function() { refreshIcons(); }, 100);
+    }
+
+    function setEditMode(m, save) {
+        if (save === undefined) save = true;
+        if (save) editingHistMode = m;
+        var active = save ? m : editingHistMode;
+        var modes = ['pedido', 'stock', 'recepcion'];
+        for (var i = 0; i < modes.length; i++) {
+            var mode = modes[i];
+            var btn = document.getElementById('edit-mode-' + mode);
+            if (!btn) continue;
+            var on = mode === active;
+            btn.style.border = '2px solid ' + (on ? 'var(--' + (mode === 'recepcion' ? 'green' : (mode === 'stock' ? 'blue' : 'orange')) + ')' : 'var(--bd2)');
+            btn.style.background = on ? 'var(--s2)' : 'var(--s1)';
+            btn.style.opacity = on ? '1' : '0.4';
+        }
+    }
+    function renderEditHistItems() {
+        var html = '';
+        for (var i = 0; i < editingHistItems.length; i++) {
+            var item = editingHistItems[i];
+            html += '<div class="edit-hist-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid var(--bd); transition: background 0.15s;">' +
+                '<div style="flex:1;"><div style="font-weight:700; font-size:14px; color:var(--text);">' + item.prod + '</div><div style="font-size:11px; color:var(--dim);">' + item.unit + '</div></div>' +
+                '<div style="display:flex; align-items:center; gap:10px; background:var(--s2); border-radius:8px; padding:4px;">' +
+                    '<button onclick="stepEditHistItem(' + i + ', -1)" style="background:none; border:none; color:var(--text); font-size:18px; width:30px; cursor:pointer;">−</button>' +
+                    '<span style="font-weight:800; min-width:30px; text-align:center; color:var(--text);">' + item.qty + '</span>' +
+                    '<button onclick="stepEditHistItem(' + i + ', 1)" style="background:none; border:none; color:var(--text); font-size:18px; width:30px; cursor:pointer;">+</button>' +
+                '</div>' +
+                '<button onclick="editingHistItems.splice(' + i + ', 1); renderEditHistItems();" style="background:none; border:none; color:var(--red); padding-left:10px; cursor:pointer; font-size:16px;">✕</button>' +
+            '</div>';
+        }
+        document.getElementById('edit-hist-body').innerHTML = html;
+    }
+    function stepEditHistItem(idx, dir) {
+        var item = editingHistItems[idx];
+        var step = (item.unit === 'kg' || item.unit === 'litro/s') ? 0.5 : 1;
+        item.qty = Math.max(0, parseFloat((item.qty + dir * step).toFixed(2)));
+        renderEditHistItems();
+    }
+    function saveHistoryEdit() {
+        var orig = null;
+        for (var i = 0; i < HIST.length; i++) { if (HIST[i].id == editingHistId) { orig = HIST[i]; break; } }
+        var dateInput = document.getElementById('edit-hist-date');
+        var newFecha = (dateInput && dateInput.value) ? new Date(dateInput.value).toISOString() : orig.fecha;
+        
+        var entry = {};
+        for(var k in orig) entry[k] = orig[k];
+        entry.mode = editingHistMode;
+        entry.items = editingHistItems;
+        entry.total = editingHistItems.length;
+        entry.fecha = newFecha;
+
+        toast('⏳ Guardando...');
+        google.script.run.withSuccessHandler(function() {
+            google.script.run.withSuccessHandler(function() {
+                loadConfigFromGAS();
+                closeEditHistModal();
+                toast('✓ Registro actualizado');
+            }).deleteHistoryEntry(editingHistId, activeSheetId);
+        }).addHistoryEntry(entry, activeSheetId);
+    }
+    function closeEditHistModal() { document.getElementById('modal-edit-hist').classList.remove('open'); }
+
+    function shareEditHistWA() {
+        if (!editingHistItems || !editingHistItems.length) return toast('No hay items para compartir');
+        var titleEl = document.getElementById('cfg-app-title');
+        var title = (titleEl && titleEl.value) ? titleEl.value : 'CIABATTA';
+        
+        var orig = null;
+        for (var i = 0; i < HIST.length; i++) { if (HIST[i].id == editingHistId) { orig = HIST[i]; break; } }
+        var dateInput = document.getElementById('edit-hist-date');
+        var d = (dateInput && dateInput.value) ? new Date(dateInput.value) : (orig ? new Date(orig.fecha) : new Date());
+        
+        var dateStr = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        var timeStr = d.toLocaleTimeString('es-AR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+
+        var msg = "*" + title + " - " + editingHistMode.toUpperCase() + "*\n";
+        msg += "_Fecha de registro: " + dateStr + " " + timeStr + "_\n\n";
+        var byCat = {};
+        for (var i = 0; i < editingHistItems.length; i++) {
+            var item = editingHistItems[i];
+            var cat = item.cat || 'Otros';
+            if (!byCat[cat]) byCat[cat] = [];
+            byCat[cat].push(item);
+        }
+        var catKeys = Object.keys(byCat).sort();
+        for (var j = 0; j < catKeys.length; j++) {
+            var cat = catKeys[j];
+            msg += "*" + cat.toUpperCase() + "*\n";
+            for (var k = 0; k < byCat[cat].length; k++) {
+                var it = byCat[cat][k];
+                msg += "• " + it.prod + ": " + (it.qty === 86 ? '⛔ 86' : it.qty + ' ' + formatUnit(it.qty, it.unit)) + "\n";
+            }
+            msg += '\n';
+        }
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    function searchEditHistProduct(q) {
+        var res = document.getElementById('edit-hist-search-results');
+        if (!q || q.length < 2) { if (res) res.style.display = 'none'; return; }
+        
+        var matches = [];
+        var query = q.toLowerCase();
+        
+        var catKeys = Object.keys(CATS);
+        for (var i = 0; i < catKeys.length; i++) {
+            var cat = catKeys[i];
+            for (var j = 0; j < CATS[cat].prods.length; j++) {
+                var p = CATS[cat].prods[j];
+                if (p.toLowerCase().indexOf(query) !== -1) {
+                    var found = false;
+                    for(var k=0; k<editingHistItems.length; k++) { if(editingHistItems[k].prod === p) { found = true; break; } }
+                    if (!found) matches.push({ prod: p, cat: cat });
+                }
+            }
+        }
+
+        if (!matches.length) { if (res) res.style.display = 'none'; return; }
+        
+        var matchHtml = '';
+        var limited = matches.slice(0, 10);
+        for (var l = 0; l < limited.length; l++) {
+            var m = limited[l];
+            matchHtml += '<div onclick="addHistEntryProduct(\'' + m.prod.replace(/'/g, "\\'") + '\', \'' + m.cat.replace(/'/g, "\\'") + '\')" ' + 
+                'style="padding:12px 16px; border-bottom:1px solid var(--bd2); cursor:pointer; font-size:14px; color:var(--text); font-weight:600; display:flex; justify-content:space-between; align-items:center;">' +
+                '<span>' + m.prod + '</span>' +
+                '<span style="font-size:10px; color:var(--primary); opacity:0.7;">' + m.cat + '</span>' +
+            '</div>';
+        }
+        if (res) {
+            res.innerHTML = matchHtml;
+            res.style.display = 'block';
+        }
+    }
+
+    function addHistEntryProduct(prod, cat) {
+        var productUnits = getUnitsForProduct(cat, prod);
+        var defaultUnit = productUnits[0];
+        editingHistItems.push({
+            prod: prod,
+            qty: 1,
+            unit: defaultUnit,
+            cat: cat
+        });
+        
+        UNIT_MEM.save(prod, defaultUnit);
+        
+        var sInput = document.getElementById('edit-hist-search');
+        if (sInput) sInput.value = '';
+        var sRes = document.getElementById('edit-hist-search-results');
+        if (sRes) sRes.style.display = 'none';
+        
+        renderEditHistItems();
+        toast("+ " + prod);
+    }
+
+    /* ── UTILIDADES ── */
+    function toast(m, d) { if (d === undefined) d = 2500; var t = document.getElementById('toast'); if (t) { t.textContent = m; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, d); } }
+
+    /* ── FULLSCREEN ── */
+    var fsCurrentCat = null, fsProducts = [], fsCurrentIdx = 0;
+    function enterFullscreenMode() { if (!activeCat) return toast("Selecciona categoría"); fsCurrentCat = activeCat; fsProducts = (CATS[fsCurrentCat].prods || []).slice().sort(); fsCurrentIdx = 0; document.getElementById('prod-fullscreen').classList.add('active'); renderFSProduct(); }
+    function exitFullscreenMode() { document.getElementById('prod-fullscreen').classList.remove('active'); saveDraft(); renderFAB(); }
+    function renderFSProduct() {
+        var prod = fsProducts[fsCurrentIdx];
+        var d = relData[prod] || { qty: 0, unit: getUnitsForProduct(fsCurrentCat, prod)[0] };
+        document.getElementById('prod-fs-cat').textContent = fsCurrentCat.toUpperCase();
+        document.getElementById('prod-fs-name-sm').textContent = prod;
+        document.getElementById('prod-fs-name').textContent = prod;
+        
+        var lastUsed = UNIT_MEM.get(prod);
+        var pUnits = getUnitsForProduct(fsCurrentCat, prod);
+        var unitHtml = '';
+        for (var i = 0; i < pUnits.length; i++) {
+            var u = pUnits[i];
+            unitHtml += '<div class="prod-fs-uchip ' + (d.unit === u ? 'active' : '') + ' ' + (u === lastUsed ? 'is-preferred' : '') + '" ' +
+                 'onclick="fsSetUnit(\'' + u + '\', \'' + prod.replace(/'/g, "\\'") + '\')">' +
+                 (u === lastUsed ? '<i data-lucide="sparkles" style="width:10px;height:10px;margin-right:2px;"></i>' : '') + u +
+            '</div>';
+        }
+        document.getElementById('prod-fs-unit-row').innerHTML = unitHtml;
+        
+        setTimeout(function() { refreshIcons(); }, 50);
+
+        var v = document.getElementById('prod-fs-stepval');
+        if (d.qty === 86) { v.textContent = '86'; v.classList.add('is-86'); }
+        else { v.textContent = d.qty || '—'; v.classList.remove('is-86'); }
+        document.getElementById('prod-fs-counter').textContent = (fsCurrentIdx + 1) + ' / ' + fsProducts.length;
+    }
+    function fsSetUnit(u, prod) { 
+        if (!relData[prod]) relData[prod] = { qty: 0, unit: u }; 
+        else relData[prod].unit = u; 
+        UNIT_MEM.save(prod, u); 
+        renderFSProduct(); 
+        saveDraft(); 
+    }
+    function fsStepProd(dir) {
+        var prod = fsProducts[fsCurrentIdx]; 
+        if (!relData[prod]) relData[prod] = { qty: 0, unit: getUnitsForProduct(fsCurrentCat, prod)[0] };
+        var step = (relData[prod].unit === 'kg' || relData[prod].unit === 'litro/s') ? 0.5 : 1;
+        relData[prod].qty = Math.max(0, parseFloat((relData[prod].qty + dir * step).toFixed(2)));
+        if (relData[prod].qty === 0) delete relData[prod];
+        renderFSProduct(); saveDraft();
+    }
+    function fs86() { var p = fsProducts[fsCurrentIdx]; relData[p] = { qty: 86, unit: (relData[p] && relData[p].unit) || units[0] }; toast("⚠️ 86"); saveDraft(); setTimeout(function() { fsNext(); }, 500); }
+    function fsNext() { if (fsCurrentIdx < fsProducts.length - 1) { fsCurrentIdx++; renderFSProduct(); } else { exitFullscreenMode(); toast("✓ Fin"); } }
+    function fsPrev() { if (fsCurrentIdx > 0) { fsCurrentIdx--; renderFSProduct(); } }
+    function fsManualEntry() {
+        var p = fsProducts[fsCurrentIdx]; var val = prompt('Cantidad:', (relData[p] && relData[p].qty) || '');
+        if (val !== null) {
+            var n = parseFloat(val.replace(',', '.'));
+            if (!isNaN(n)) { relData[p] = { qty: n, unit: (relData[p] && relData[p].unit) || units[0] }; renderFSProduct(); saveDraft(); }
+        }
+    }
+
+    function updateDBLabel() {}
+
+    function clearCurrentRel() {
+        if (!confirm("¿Seguro que quieres borrar todo el relevamiento actual? Esta acción no se puede deshacer.")) return;
+
+        toast("🗑️ Borrando datos locales...");
+
+        setTimeout(function() {
+            relData = {};
+            localStorage.removeItem('fede_draft');
+
+            closeResumen();
+            goHome();
+
+            if (typeof renderProducts === 'function') renderProducts();
+            if (typeof renderFAB === 'function') renderFAB();
+
+            toast("✓ Relevamiento borrado correctamente");
+            updateActivityIndicators();
+        }, 600);
+    }
+
+    /**
+     * 🧠 NUEVA IMPLEMENTACIÓN: Resumen de Inteligencia en Home
+     */
+    function renderHomeSummary() {
+        var el = document.getElementById('home-intelligence-summary');
+        if (!el) return;
+
+        // Calcular métricas rápidas
+        var lowStockCount = 0;
+        var totalItems = 0;
+        Object.keys(CATS).forEach(function(c) {
+            totalItems += (CATS[c].prods || []).length;
+        });
+
+        // Procesa la mejor sugerencia
+        var bestP = PREDICTIONS[0];
+        var suggestionText = bestP ? (bestP.name + ' (+' + bestP.suggestion + ')') : "Todo al día";
+        if (suggestionText.length > 20) suggestionText = suggestionText.substring(0, 18) + "...";
+
+        var statusText = bestP ? (bestP.status || "Reponer") : "SISTEMA ONLINE";
+        var statusColor = (bestP && bestP.status.indexOf('CRÍTICO') !== -1) ? 'var(--error)' : 'var(--success)';
+
+        var html = 
+            '<div class="dash-card" onclick="enterDashboard()" style="margin-bottom:0; padding:16px; border:2px solid var(--primary); cursor:pointer; display:flex; flex-direction:column; gap:8px;">' +
+                '<div style="font-size:10px; font-weight:900; color:var(--primary); text-transform:uppercase;">IA Sugiere</div>' +
+                '<div style="font-size:16px; font-weight:800; color:var(--text); line-height:1.2;">' + suggestionText + '</div>' +
+                '<div style="font-size:10px; color:var(--dim);">Basado en stock real</div>' +
+            '</div>' +
+            '<div class="dash-card" onclick="enterDashboard()" style="margin-bottom:0; padding:16px; cursor:pointer; display:flex; flex-direction:column; gap:8px;">' +
+                '<div style="font-size:10px; font-weight:900; color:var(--dim); text-transform:uppercase;">Inventario</div>' +
+                '<div style="font-size:16px; font-weight:800; color:var(--text);">' + totalItems + ' <span style="font-size:11px; color:var(--dim);">ITEMS</span></div>' +
+                '<div style="font-size:10px; color:' + statusColor + ';">● ' + statusText + '</div>' +
+            '</div>';
+        
+        el.innerHTML = html;
+        refreshIcons(el);
+    }
+
+    /**
+     * 🧪 PRUEBA DE FUNCIONALIDADES: Suite de Test
+     */
+    function runSystemTest() {
+        var resEl = document.getElementById('test-results');
+        if (!resEl) return;
+        resEl.innerHTML = "Iniciando test...";
+        resEl.classList.remove('hidden');
+        
+        var log = [];
+        function addLog(msg, success) { log.push((success ? '✅ ' : '❌ ') + msg); }
+
+        try {
+            // 1. Integridad de Datos
+            var catCount = Object.keys(CATS).length;
+            addLog("Categorías cargadas: " + catCount, catCount > 0);
+
+            // 2. Conectividad Local
+            localStorage.setItem('fede_test_connection', 'ok');
+            var localTest = localStorage.getItem('fede_test_connection') === 'ok';
+            addLog("LocalStorage E/S: " + (localTest ? 'OK' : 'FALLO'), localTest);
+
+            // 3. Estado de Relevamiento
+            addLog("Estado relData: " + (Object.keys(relData).length === 0 ? 'Vacío' : 'Activo'), true);
+
+            // 4. Chequeo de IDs
+            var criticalIds = ['home', 'app', 'cat-grid', 'main-tabs'];
+            criticalIds.forEach(function(id) {
+                addLog("ID [" + id + "]: " + (document.getElementById(id) ? 'OK' : 'MISSING'), !!document.getElementById(id));
+            });
+
+            // 5. Versión de Script
+            addLog("v9.6.5 (ES5 Validated)", true);
+
+            toast("✓ Diagnóstico completado");
+        } catch (e) {
+            addLog("EXCEPCIÓN: " + e.message, false);
+        }
+
+        resEl.innerHTML = log.join('<br>');
+    }
+</script>

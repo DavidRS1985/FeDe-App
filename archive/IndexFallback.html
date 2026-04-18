@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FeDe Fallback</title>
+<style>body{font-family:Arial,Helvetica,sans-serif;background:#0f0f0d;color:#f0ece0;margin:0;padding:18px}h1{color:#d4a843}button{background:#d4a843;color:#1a1008;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}</style>
+</head>
+<body>
+  <h1>FeDe - Fallback</h1>
+  <p id="status">Cargando datos mínimos...</p>
+  <div id="cats"></div>
+  <script>
+    console.log('FEDE FALLBACK start');
+    function toast(m){ document.getElementById('status').textContent = m; }
+    if (!window.google || !google.script || !google.script.run) { toast('Backend no disponible'); }
+    else {
+      google.script.run.withSuccessHandler(data=>{
+        toast('Datos cargados');
+        const cats = data.config.cats || {};
+        const el = document.getElementById('cats');
+        const keys = Object.keys(cats).sort((a,b)=>(cats[a].order||99)-(cats[b].order||99));
+        el.innerHTML = keys.map(k=>`<div style="margin:8px 0;padding:10px;border:1px solid #333;border-radius:8px;background:#111">`+
+          `<strong style="color:#d4a843">${k}</strong><div style="color:#c8c4b4;margin-top:6px">${(cats[k].prods||[]).slice(0,8).join(', ')}</div></div>`).join('');
+      }).getAppState();
+    }
+  </script>
+</body>
+</html>
