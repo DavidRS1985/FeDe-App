@@ -75,9 +75,13 @@
 
 <body>
 
-    <!-- PANTALLA DE CARGA MODERNA - ANIMATED BOX LOADER -->
+    <!-- PANTALLA DE CARGA MODERNA -->
     <div id="loader" role="status" aria-live="polite" aria-label="Cargando aplicación">
-        <div class="loader"></div>
+        <div class="loader-wrapper">
+            <div class="loader-circle"></div>
+            <div id="loader-perc" class="loader-perc">0%</div>
+        </div>
+        <div id="loader-status" class="loader-status">Iniciando sistema...</div>
     </div>
 
 
@@ -124,13 +128,8 @@
                         <i data-lucide="maximize" style="color: var(--text); width: 20px;"></i>
                     </button>
 
-                    <button id="noti-bell" aria-label="Notificaciones" 
-                        onclick="if(window.holidayAlert) window.holidayAlert.togglePanel()"
-                        style="background: none; border: none; padding: 8px; cursor: pointer; position: relative; transition: transform 0.2s;">
-                        <i data-lucide="bell" style="color: var(--text); width: 22px;"></i>
-                        <div id="noti-badge" class="hidden"
-                            style="position: absolute; top: 4px; right: 4px; background: var(--error); width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--bg);"></div>
-                    </button>
+                    <!-- Campana eliminada: alertas consolidadas en tarjeta Home -->
+                    <div id="noti-badge" class="hidden" style="display:none;"></div>
 
                     <button onclick="enterAdmin()" aria-label="Ajustes"
                         style="background: var(--s1); border: 1.5px solid var(--bd2); width: 42px; height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
@@ -138,23 +137,11 @@
                 </div>
             </div>
 
-            <!-- Búsqueda Global -->
-            <div class="global-search-container"
-                style="width: 100%; max-width: 420px; position: relative; margin-bottom: 4px;">
-                <i data-lucide="search"
-                    style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--primary); width: var(--icon-size); z-index: 2;"></i>
-                <input type="text" id="home-search" class="global-search-input" placeholder="Buscar insumos..."
-                    oninput="searchGlobalHome(this.value)"
-                    style="width: 100%; padding: 18px 20px 18px 56px; border-radius: var(--r2); background: var(--s1); border: 2px solid var(--bd2); color: var(--text); font-family: inherit; font-size: 16px; font-weight: 500; outline: none; transition: all var(--trans-fast);">
-                <div id="home-search-res" class="global-search-results"
-                    style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 8px; background: var(--bg-alt); border: 2px solid var(--bd2); border-radius: var(--r2); max-height: 300px; overflow-y: auto; z-index: 100;">
-                </div>
-            </div>
 
-            <!-- NUEVO: Resumen de Inteligencia en Home (Bento Style) -->
-            <div id="home-intelligence-summary" 
-                 style="width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
-                <!-- Cargado dinámicamente -->
+
+            <!-- CENTRO DE ALERTAS OPERATIVAS -->
+            <div id="home-alerts-card" class="home-alerts-card">
+                <!-- Cargado dinámicamente por renderHomeSummary() -->
             </div>
 
 
@@ -231,6 +218,13 @@
                     </button>
                 </div>
 
+                <!-- BOTÓN MERMA / DESPERDICIO -->
+                <button onclick="initRelevamiento('merma')" aria-label="Registrar merma"
+                    style="width: 100%; max-width: 440px; padding: 16px 20px; border-radius: 16px; background: var(--s1); border: 2px solid var(--violet); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 6px 18px -4px rgba(139, 92, 246, 0.2); transition: all 0.2s; margin-bottom: 10px;">
+                    <i data-lucide="trash-2" style="color: var(--violet); width: 20px; height: 20px;"></i>
+                    <span style="font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Outfit', sans-serif;">Registrar Merma</span>
+                </button>
+
             </div> <!-- End Secondary Actions (94) -->
 
             <!-- 3. Metadata Inferior -->
@@ -260,28 +254,28 @@
             <div id="toast" class="toast" role="status" aria-live="polite" aria-label="Notificaciones del sistema">
             </div>
 
-
-            <!-- Header Global Search -->
-            <div style="flex:1; max-width:280px; position:relative;" id="hdr-search-container">
-                <i data-lucide="search"
-                    style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:14px; color:var(--primary); pointer-events:none;"></i>
-                <input type="text" id="hdr-search-input" placeholder="Buscar..." oninput="handleHdrSearch(this.value)"
-                    style="width:100%; padding:8px 12px 8px 32px; border-radius:10px; background:var(--s1); border:2px solid var(--bd2); color:var(--text); font-size:13px; outline:none; transition:all 0.2s; font-family:inherit;">
-                <div id="hdr-search-res"
-                    style="position:absolute; top:100%; left:0; right:0; margin-top:6px; background:var(--bg-alt); border:2px solid var(--bd2); border-radius:10px; max-height:280px; overflow-y:auto; z-index:2500; display:none; padding:4px;">
+            <!-- Búsqueda Expansiva PRO -->
+            <div id="hdr-search-container" class="hdr-search-hidden">
+                <div class="hdr-search-wrap">
+                    <i data-lucide="search" class="hdr-search-icon"></i>
+                    <input type="text" id="hdr-search-input" placeholder="Buscar insumo..." oninput="handleHdrSearch(this.value)" autocomplete="off">
+                    <button onclick="toggleHdrSearch(false)" class="hdr-search-close">
+                        <i data-lucide="x"></i>
+                    </button>
+                    <div id="hdr-search-res" class="hdr-search-results"></div>
                 </div>
             </div>
 
-            <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
+            <div style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+                <!-- BOTÓN LUPA (DISPARADOR) -->
+                <button id="hdr-search-trigger" onclick="toggleHdrSearch(true)" aria-label="Buscar"
+                    style="background: none; border: none; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+                    <i data-lucide="search" style="color: var(--dim); width: 22px;"></i>
+                </button>
+
                 <div id="hdr-activity-indicator" class="hidden"
                     style="width: 38px; height: 38px; border-radius: 50%; background: var(--text); border: 2.5px solid var(--bd2); display: flex; align-items: center; justify-content: center; animation: pulse-activity 2s infinite; box-shadow: 0 0 15px rgba(255,255,255,0.1);">
                     <i data-lucide="plus" style="width: 20px; color: var(--bg);"></i>
-                </div>
-                <div id="hdr-sync-badge" class="hidden" aria-label="Cambios pendientes de sincronización"
-                    style="background:var(--s1); border: 2px solid var(--bd2); color:var(--text); border-radius:8px; padding:4px 10px; font-size:10px; font-weight:800; display:flex; align-items:center; gap:4px; cursor:pointer; transition: all 0.2s ease;"
-                    onclick="processOfflineQueue()">
-                    <i data-lucide="refresh-cw" style="width:10px; height:10px;" aria-hidden="true"></i>
-                    <span id="sync-count">0</span>
                 </div>
             </div>
         </header>
@@ -310,7 +304,6 @@
                             MODO RÁPIDO
                         </button>
                     </div>
-
 
 
                     <div id="prod-list">
@@ -344,6 +337,9 @@
                     <button class="dash-period-btn" onclick="setHistFilter('mode', 'recepcion', this)"
                         style="flex-shrink:0; --btn-active-color: #fff; --btn-active-bg: var(--green); --btn-active-border: var(--green);">🟢
                         RECEPCIÓN</button>
+                    <button class="dash-period-btn" onclick="setHistFilter('mode', 'merma', this)"
+                        style="flex-shrink:0; --btn-active-color: #fff; --btn-active-bg: var(--violet); --btn-active-border: var(--violet);">🟣
+                        MERMA</button>
                 </div>
 
                 <div
@@ -587,9 +583,9 @@
                             style="width:8px; height:8px; background:var(--success); border-radius:50%; animation: pulse-activity 2s infinite;">
                         </div>
                         <span
-                            style="font-size:11px; font-weight:900; color:var(--text); letter-spacing:1.5px; text-transform:uppercase;">CIABATTA
+                            style="font-size:11px; font-weight:900; color:var(--text); letter-spacing:1.5px; text-transform:uppercase;">FOCACCIA
                             —
-                            v9.6.5 </span>
+                            v10.0.0 </span>
                         <span style="width:1px; height:12px; background:var(--bd2);"></span>
                         <span style="font-size:10px; font-weight:700; color:var(--dim);">(◕ᴥ◕ʋ)</span>
                     </div>
@@ -641,6 +637,18 @@
                 style="margin-bottom:24px;border:1px solid var(--bd);border-radius:var(--r2);padding:16px;background:var(--s1);max-height:45vh;overflow-y:auto;">
                 <!-- Content here -->
             </div>
+
+            <!-- MOTIVO DE MERMA (solo visible en modo merma) -->
+            <div id="merma-motivo-section" class="hidden" style="margin-bottom:16px;">
+                <label style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:10px;">Motivo (opcional)</label>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    <button class="motivo-btn" data-motivo="Vencimiento" onclick="selectMotivo(this)">Vencimiento</button>
+                    <button class="motivo-btn" data-motivo="Error elaboración" onclick="selectMotivo(this)">Error elaboración</button>
+                    <button class="motivo-btn" data-motivo="Rotura / Derrame" onclick="selectMotivo(this)">Rotura / Derrame</button>
+                    <button class="motivo-btn" data-motivo="Excedente" onclick="selectMotivo(this)">Excedente</button>
+                </div>
+            </div>
+
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <button class="wa-btn" onclick="sendWA()"
                     style="background:#25D366;color:white;font-size:15px;box-shadow:0 4px 20px rgba(37,211,102,0.3);">

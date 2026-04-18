@@ -1,6 +1,44 @@
 # Registro de Actualizaciones (Changelog) - FeDe App
-2: 
-3: ## [v9.6.5] - CIABATTA REBAKED - 2026-04-13
+
+## [v10.0.0] - FOCACCIA Edition - 2026-04-18
+
+### 🏠 Rediseño del Home — Centro de Control Operativo
+- **Eliminación de "IA Sugiere":** Tarjeta eliminada por mal funcionamiento y lógica confusa.
+- **Eliminación de "Inventario":** Tarjeta eliminada por redundancia con el Dashboard.
+- **Nuevo: Centro de Alertas Operativas:** Tarjeta de ancho completo con cruce de datos real:
+  - Control obligatorio de stock (domingos y martes).
+  - Feriados próximos (próximos 7 días).
+  - Días sin control de stock (alerta si ≥2 días).
+  - Días sin pedido (alerta si ≥3 días).
+  - Merma acumulada del día.
+  - Estado "Operación al día" cuando no hay alertas.
+- **Consolidación de notificaciones:** Campana (🔔) eliminada; alertas centralizadas en la tarjeta Home.
+
+### 🟣 Nuevo Modo: Merma / Desperdicio
+- **4to modo operativo** (`mode: 'merma'`) con tema violeta (`#8B5CF6`).
+- **Botón dedicado en Home:** Rectangular horizontal de ancho completo con icono `trash-2`.
+- **Motivo opcional:** Selector de motivo en el resumen (Vencimiento, Error elaboración, Rotura/Derrame, Excedente).
+- **Integración total:** WhatsApp incluye motivo, historial muestra badge 🟣 MERMA con motivo, calendario del Dashboard muestra punto violeta.
+- **Filtro en Historial:** Nuevo botón 🟣 MERMA en los filtros de modo.
+
+### ⚡ Nuevo Loader de Carga (Orbital)
+- **Rediseño completo del loader:** Anillo orbital con `conic-gradient` + porcentaje dinámico en tipografía Outfit Black.
+- **Inercia de progreso:** Sistema inteligente que sube rápido al inicio y desacelera suavemente mientras espera al servidor.
+- **Feedback de estado:** Mensajes dinámicos ("Iniciando sistema...", "Conectando con servidor...", "Sincronizado").
+- **Cross-platform:** Compatible con Chrome, Safari (iOS), y Firefox vía `-webkit-mask`.
+
+### 🐛 Correcciones
+- **Bug doble clic en Inicio:** Eliminada lógica de breadcrumb en `goHome()` que forzaba segundo clic.
+- **Lupa obsoleta en Historial:** Eliminado trigger de búsqueda del header cuando se navega al historial (ya tiene búsqueda embebida).
+- **Timeout de seguridad:** Aumentado de 5s a 7s para conexiones lentas.
+
+### 🎨 CSS & Estilos
+- `body.theme-merma { --primary: var(--violet); }` para tema violeta.
+- `.home-alerts-card` — estilos para la tarjeta de alertas.
+- `.motivo-btn` — botones de selección de motivo de merma.
+- `.loader-wrapper` / `.loader-circle` / `.loader-perc` — nuevo loader orbital.
+
+## [v9.6.5] - CIABATTA REBAKED - 2026-04-13
 ### 🛠️ Refactorización de Compatibilidad Crítica
 - **Soporte ES5 Total:** Se refactorizó todo el código JavaScript a ES5 para asegurar la compatibilidad con el motor de Google Apps Script y evitar cuelgues en la inicialización (loader infinito).
 - **Seguridad en Carga:** Implementación de un "Security Timeout" de 5 segundos en el loader oficial.
