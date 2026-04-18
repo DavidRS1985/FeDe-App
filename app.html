@@ -145,6 +145,20 @@
         };
     }
 
+    /* ── SISTEMA DE SINCRONIZACIÓN (SYNC OVERLAY) ── */
+    function toggleSync(show, text) {
+        var overlay = document.getElementById('sync-overlay');
+        var txtEl = document.getElementById('sync-text');
+        if (!overlay) return;
+        
+        if (show) {
+            if (txtEl) txtEl.textContent = (text || "Sincronizando...").toUpperCase();
+            overlay.classList.add('open');
+        } else {
+            overlay.classList.remove('open');
+        }
+    }
+
     function startInertiaProgress() {
         if (_loaderInterval) clearInterval(_loaderInterval);
         _loaderInterval = setInterval(function() {
@@ -1543,64 +1557,52 @@
         var now = new Date();
         var year = now.getFullYear();
         var month = now.getMonth();
+        var today = now.getDate();
 
-        // Días del mes actual
+        // Días del mes (Lunes a Domingo)
         var daysInMonth = new Date(year, month + 1, 0).getDate();
-        var firstDayIndex = new Date(year, month, 1).getDay(); // 0 is Sunday
-
-        // Ajustar para empezar en Lunes (0 es Lunes, 6 es Domingo)
+        var firstDayIndex = new Date(year, month, 1).getDay();
         var emptyStartDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
-        // Map history entries by date (YYYY-MM-DD) en hora local
+        // Map history entries
         var histByDate = {};
         if (HIST && HIST.length) {
             for (var k = 0; k < HIST.length; k++) {
                 var h = HIST[k];
-                var localD = new Date(h.fecha);
-                var y = localD.getFullYear();
-                var mInt = localD.getMonth() + 1;
-                var dInt = localD.getDate();
-                var mStr = mInt < 10 ? '0' + mInt : '' + mInt;
-                var dStr = dInt < 10 ? '0' + dInt : '' + dInt;
-                var dateKey = y + '-' + mStr + '-' + dStr;
-
-                var mode = (h.mode || 'stock').toLowerCase();
-                if (!histByDate[dateKey]) histByDate[dateKey] = [];
-                if (histByDate[dateKey].indexOf(mode) === -1) histByDate[dateKey].push(mode);
+                var dObj = new Date(h.fecha);
+                if (isNaN(dObj)) continue;
+                
+                var key = dObj.getFullYear() + '-' + 
+                          ((dObj.getMonth() + 1) < 10 ? '0' + (dObj.getMonth() + 1) : (dObj.getMonth() + 1)) + '-' + 
+                          (dObj.getDate() < 10 ? '0' + dObj.getDate() : dObj.getDate());
+                
+                if (!histByDate[key]) histByDate[key] = [];
+                var mode = (h.modo || h.mode || 'stock').toLowerCase();
+                if (histByDate[key].indexOf(mode) === -1) histByDate[key].push(mode);
             }
         }
 
         var html = '';
-        for (var i = 0; i < emptyStartDays; i++) {
-            html += '<div class="cal-day empty"></div>';
-        }
+        for (var i = 0; i < emptyStartDays; i++) html += '<div class="cal-day empty"></div>';
 
-        var tYear = now.getFullYear();
-        var tMonth = now.getMonth() + 1;
-        var tDay = now.getDate();
-        var todayStr = tYear + '-' + (tMonth < 10 ? '0' + tMonth : tMonth) + '-' + (tDay < 10 ? '0' + tDay : tDay);
-
-        for (var dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        for (var d = 1; d <= daysInMonth; d++) {
             var mNum = month + 1;
-            var dStrKey = year + '-' + (mNum < 10 ? '0' + mNum : mNum) + '-' + (dayNum < 10 ? '0' + dayNum : dayNum);
+            var curKey = year + '-' + (mNum < 10 ? '0' + mNum : mNum) + '-' + (d < 10 ? '0' + d : d);
+            var isToday = (d === today && month === now.getMonth() && year === now.getFullYear());
+            var activities = histByDate[curKey] || [];
+            
+            var dots = '';
+            if (activities.indexOf('pedido') !== -1) dots += '<div class="cal-dot cal-dot-pedido"></div>';
+            if (activities.indexOf('stock') !== -1) dots += '<div class="cal-dot cal-dot-stock"></div>';
+            if (activities.indexOf('recepcion') !== -1 || activities.indexOf('entrante') !== -1) dots += '<div class="cal-dot cal-dot-recepcion"></div>';
+            if (activities.indexOf('merma') !== -1) dots += '<div class="cal-dot cal-dot-merma"></div>';
 
-            var isToday = dStrKey === todayStr;
-            var activities = histByDate[dStrKey] || [];
-
-            var dotsHtml = '';
-            if (activities.indexOf('pedido') !== -1) dotsHtml += '<div class="cal-dot cal-dot-pedido"></div>';
-            if (activities.indexOf('stock') !== -1) dotsHtml += '<div class="cal-dot cal-dot-stock"></div>';
-            if (activities.indexOf('recepcion') !== -1 || activities.indexOf('entrante') !== -1) dotsHtml += '<div class="cal-dot cal-dot-recepcion"></div>';
-            if (activities.indexOf('merma') !== -1) dotsHtml += '<div class="cal-dot" style="background:var(--violet);"></div>';
-
-            html += '<div class="cal-day ' + (isToday ? 'today' : '') + '" onclick="openHistoryAtDate(\'' + dStrKey + '\')" ' + (!activities.length ? 'style="opacity:0.6;"' : '') + '>' +
-                '<div class="cal-date-num">' + dayNum + '</div>' +
-                '<div class="cal-indicators">' + dotsHtml + '</div>' +
-                '</div>';
+            html += '<div class="cal-day ' + (isToday ? 'today' : '') + '" onclick="openHistoryAtDate(\'' + curKey + '\')">' +
+                    '<span class="cal-date-num">' + d + '</span>' +
+                    '<div class="cal-indicators">' + dots + '</div>' +
+                    '</div>';
         }
-
         calEl.innerHTML = html;
-        refreshIcons();
     }
 
     function openHistoryAtDate(dateStr) {
@@ -2013,8 +2015,10 @@
             message: '¿Estás seguro de querer borrar este reporte permanentemente de la base de datos?',
             okText: 'ELIMINAR'
         }, function() {
+            toggleSync(true, 'Eliminando registro...');
             google.script.run
                 .withSuccessHandler(function (r) {
+                    toggleSync(false);
                     if (r && r.success) {
                         var newHist = [];
                         for (var i = 0; i < HIST.length; i++) { if (HIST[i].id != id) newHist.push(HIST[i]); }
