@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Ciabatta - Gestión de stock</title>
+    <title>FeDe Gastro Pro - FOCACCIA</title>
     <!-- FUENTES E ICONOS EXTERNOS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,9 +20,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Ciabatta">
-    <meta name="application-name" content="Ciabatta">
-    <meta name="theme-color" content="#09090b">
+    <meta name="apple-mobile-web-app-title" content="FOCACCIA">
+    <meta name="application-name" content="FOCACCIA">
+    <meta name="theme-color" content="#0f1115">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
     <!-- Iconos para Pantalla de Inicio -->
@@ -39,14 +39,14 @@
     // el manifiesto en memoria del navegador, en el MISMO origen de la página.
     (function() {
         var manifest = {
-            "id": "com.fede.ciabatta",
-            "name": "Ciabatta - Gestión Gastronómica",
-            "short_name": "Ciabatta",
+            "id": "com.fede.focaccia.v10",
+            "name": "FeDe Gastro Pro - FOCACCIA",
+            "short_name": "FOCACCIA",
             "start_url": window.location.href.split('?')[0],
             "display": "standalone",
-            "background_color": "#09090b",
-            "theme_color": "#06b6d2",
-            "description": "Sistema de gestión de stock y pedidos",
+            "background_color": "#0f1115",
+            "theme_color": "#ffffff",
+            "description": "Sistema de gestión operativa - FOCACCIA Edition v10.0.0",
             "icons": [
                 {
                     "src": "https://img.icons8.com/isometric/192/restaurant-membership-card.png",
@@ -109,10 +109,10 @@
                 <div style="text-align: left;">
                     <h1 id="app-title-display" class="home-logo"
                         style="font-size: 34px; font-weight: var(--fw-black); color: var(--text); letter-spacing: -1.5px; line-height: 0.9; margin: 0;">
-                        CIABATTA</h1>
+                        FEDE GASTRO PRO</h1>
                     <p id="app-subtitle-display"
                         style="font-size: 11px; color: var(--dim); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px; opacity: 0.8;">
-                        ARTISAN STOCK</p>
+                        FOCACCIA EDITION</p>
                 </div>
 
                 <div style="display: flex; gap: 12px; align-items: center;">
@@ -134,6 +134,7 @@
                     <button onclick="enterAdmin()" aria-label="Ajustes"
                         style="background: var(--s1); border: 1.5px solid var(--bd2); width: 42px; height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
                         <i data-lucide="settings-2" style="color: var(--dim); width: 20px;"></i>
+                    </button>
                 </div>
             </div>
 
@@ -460,40 +461,7 @@
                     </div>
                     <div class="dash-card" id="dash-product-ranking" style="padding:20px;"></div>
 
-                    <!-- INTELLIGENCE SECTION -->
-                    <div class="dash-card-smart">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-                            <h3
-                                style="font-size:16px; font-family:'Outfit', sans-serif; font-weight:800; color:var(--primary); display:flex; align-items:center; gap:12px; letter-spacing:1px; text-transform:uppercase;">
-                                <i data-lucide="brain-circuit" style="width:22px; color:var(--primary);"></i> Ciabatta
-                                AI
-                                <span class="tag-beta"
-                                    style="background:var(--primary); color:var(--bg); padding:2px 8px; border-radius:12px; font-size:10px; font-weight:900;">PRO</span>
-                            </h3>
-                            <button aria-label="Actualizar métricas" onclick="renderDashboard()"
-                                style="background:var(--s2); border:2px solid var(--bd2); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text); cursor:pointer; transition:all var(--trans-fast);"><i
-                                    data-lucide="refresh-cw" style="width:16px;"></i></button>
-                        </div>
-                        <div
-                            style="background:var(--s2); padding:16px 20px; border-radius:16px; margin-bottom:24px; border:2px solid var(--bd2);">
-                            <div
-                                style="font-size:11px; font-family:'Outfit', sans-serif; font-weight:800; color:var(--primary); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:6px;">
-                                <i data-lucide="info" style="width:14px; height:14px;"></i> Algoritmo Predictivo ROI
-                            </div>
-                            <p style="font-size:13px; color:var(--text2); line-height:1.5; margin:0; font-weight:400;">
-                                Analiza el historial local (30D) mediante de un algoritmo de <b>Promedio Móvil</b>.<br>
-                                <span
-                                    style="display:block; margin-top:8px; padding-left:12px; border-left:2px solid var(--primary);">Calcula
-                                    la tasa de rotación real de inventario.<br>
-                                    Suma de forma dinámica un <b>Buffer Logístico del +25%</b>.<br>
-                                    Detecta y filtra rupturas de stock (estado <b>86</b>) para no sesgar medias.</span>
-                            </p>
-                        </div>
-                        <div id="dash-intelligence-list">
-                            <!-- AI predictions here -->
-                        </div>
-                    </div>
+
                 </div>
                 <div class="bottom-spacer"></div>
             </div>

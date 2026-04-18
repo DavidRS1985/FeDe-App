@@ -76,14 +76,14 @@ function doGet(e) {
   if (e && e.parameter) {
     if (e.parameter.path === 'manifest.json') {
       var manifest = {
-        "id": "com.fede.ciabatta.v9",
-        "name": "Ciabatta - Gestión Gastronómica",
-        "short_name": "Ciabatta",
+        "id": "com.fede.focaccia.v10",
+        "name": "FeDe Gastro Pro - FOCACCIA",
+        "short_name": "FOCACCIA",
         "start_url": "./",
         "display": "standalone",
-        "background_color": "#09090b",
-        "theme_color": "#06b6d2",
-        "description": "Sistema de gestión de stock y pedidos - Serie Ciabatta v9.6.5",
+        "background_color": "#0f1115",
+        "theme_color": "#ffffff",
+        "description": "Sistema de gestión operativa - FOCACCIA Edition v10.0.0",
         "icons": [
           {
             "src": "https://img.icons8.com/isometric/512/restaurant-membership-card.png",
@@ -105,7 +105,7 @@ function doGet(e) {
     }
     
     if (e.parameter.path === 'sw.js') {
-      var swCode = 'var CACHE_NAME = \'ciabatta-v9-cache\'; ' +
+      var swCode = 'var CACHE_NAME = \'fede-focaccia-v10\'; ' +
         'self.addEventListener(\'install\', function(e) { ' +
         'e.waitUntil(caches.open(CACHE_NAME).then(function(cache) { return cache.addAll([\'./\']); })); ' +
         '}); ' +
@@ -120,7 +120,7 @@ function doGet(e) {
   // ── RENDERIZADO NORMAL ──
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
-    .setTitle('Ciabatta - Gestión de Stock')
+    .setTitle('FeDe Gastro Pro - FOCACCIA')
     .setFaviconUrl('https://img.icons8.com/isometric/512/restaurant-membership-card.png')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -384,8 +384,8 @@ function getOrCreateSheet(ss, name) {
 
 function initializeDefaultConfig(sheet) {
   var config = {
-    app_title: "Gastro Ciabatta",
-    app_subtitle: "Artisan Stock v9.2.0",
+    app_title: "FEDE GASTRO PRO",
+    app_subtitle: "FOCACCIA Edition v10.0.0",
     units: ['porción/es', 'kg', 'unidad', 'litro', 'botella', 'maple', 'caja', 'frasco', 'lata', 'tupper', 'bandeja', 'atado', 'bolsa', 'paquete'],
     favs: ["Ojo de bife", "Bondiola", "Peceto", "Pechuga", "Salmón", "Langostinos", "Burrata", "Queso Sardo", "Queso Gouda", "Queso parmesano", "Leche entera", "Manteca"],
     cats: {
@@ -473,36 +473,6 @@ function deleteProduct(catName, productName, targetId) {
   return {success: true, data: config.cats};
 }
 
-function getProductMovements(categoryName, days) {
-  try {
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), histSheet = getOrCreateSheet(ss, 'History'), config = getAppConfig().config;
-    var cutoff = new Date(new Date().getTime() - days * 24 * 60 * 60 * 1000);
-    var stats = {};
-    (config.cats[categoryName].prods || []).forEach(function(p) { stats[p] = 0; });
-    var lastRow = histSheet.getLastRow();
-    if (lastRow > 1) {
-      histSheet.getRange(2, 1, lastRow - 1, 6).getValues().forEach(function(row) {
-        var fecha = new Date(row[1]), items = JSON.parse(row[5] || '[]');
-        if (fecha >= cutoff && Array.isArray(items)) {
-          items.forEach(function(item) { 
-            if (item.cat === categoryName && stats.hasOwnProperty(item.prod)) {
-              if (item.qty === 86 || item.qty === "86") {
-                if (!stats[item.prod].isOut) stats[item.prod].outCount = 0;
-                stats[item.prod].isOut = true;
-                stats[item.prod].outCount = (stats[item.prod].outCount || 0) + 1;
-              } else {
-                stats[item.prod].qty = (stats[item.prod].qty || 0) + parseFloat(item.qty || 0);
-                stats[item.prod].unit = item.unit || "";
-              }
-            }
-          });
-        }
-      });
-    }
-    return {success: true, data: stats};
-  } catch(e) { return {success: false, error: e.message}; }
-}
-
 function getDashboardMetrics(targetId) {
   var config = getAppConfig(targetId), cats = config.config.cats, history = config.history || [];
   var totalItems = 0; 
@@ -556,100 +526,6 @@ function getDashboardMetrics(targetId) {
   });
 
   return { success: true, ssName: config.ssName, data: { totalItems: totalItems, movementsToday: movementsToday, allCategories: Object.keys(cats), recentCats: recentCats, productRanking: ranking, calendar: calendar } };
-}
-
-function getPredictiveAnalysis(targetId, period) {
-  if (period === undefined) period = 30;
-  try {
-    var ss = SpreadsheetApp.openById(getSheetId(targetId));
-    var sheet = getOrCreateSheet(ss, 'History');
-    var lastRow = sheet.getLastRow();
-    if (lastRow <= 1) return { success: true, predictions: [] };
-
-    // Obtenemos los últimos registros del periodo (últimos 300 para no saturar)
-    var numRows = Math.min(300, lastRow - 1);
-    var data = sheet.getRange(lastRow - numRows + 1, 1, numRows, 6).getValues();
-    
-    var stats = {}; // { prod: { totalOrdered: 0, lastStock: null, lastStockDate: null, unit: '', is86: false } }
-
-    data.forEach(function(row) {
-      var date = new Date(row[1]);
-      var mode = String(row[2]).toLowerCase();
-      var items = [];
-      try { items = JSON.parse(row[5] || '[]'); } catch(e) { return; }
-      if (!Array.isArray(items)) return;
-
-      items.forEach(function(it) {
-        if (!it.prod) return;
-        if (!stats[it.prod]) {
-          stats[it.prod] = { totalOrdered: 0, lastStock: null, lastStockDate: null, unit: it.unit || '', is86: false };
-        }
-
-        var qty = parseFloat(it.qty);
-        
-        if (mode === 'pedido') {
-          if (it.qty === 86 || it.qty === "86") {
-            stats[it.prod].is86 = true;
-          } else if (qty > 0) {
-            stats[it.prod].totalOrdered += qty;
-          }
-        } else if (mode === 'stock') {
-          // Guardar el stock más reciente (los registros vienen de viejo a nuevo en este bucle)
-          stats[it.prod].lastStock = it.qty === 86 ? 0 : qty;
-          stats[it.prod].lastStockDate = date;
-          if (it.qty === 86) stats[it.prod].is86 = true;
-          else stats[it.prod].is86 = false;
-        } else if (mode === 'recepcion') {
-          // La recepción anula el estado 86 si llega mercancía
-          if (qty > 0) stats[it.prod].is86 = false;
-        }
-      });
-    });
-
-    // Calcular sugerencias basadas en Inventario Real vs Consumo
-    var predictions = Object.keys(stats).map(function(name) {
-      var s = stats[name];
-      var dailyAvg = s.totalOrdered / period;
-      var safetyStock = Math.ceil(dailyAvg * 4); // Buffer para 4 días
-      
-      var currentStock = (s.lastStock !== null) ? s.lastStock : 0;
-      var suggestion = 0;
-      var status = "OK";
-
-      // LÓGICA DE DECISIÓN PRO
-      if (s.is86) {
-        suggestion = Math.max(Math.ceil(dailyAvg * 7), 5); // Sugerir stock para una semana si está en 86
-        status = "FALTANTE CRÍTICO (86)";
-      } else if (currentStock < (dailyAvg * 2.5)) { 
-        // Si el stock actual dura menos de 2.5 días (ampliado para mayor seguridad), sugerir reponer hasta el safety stock
-        suggestion = Math.max(0, safetyStock - currentStock);
-        status = "STOCK BAJO";
-      } else if (currentStock > (safetyStock * 3)) {
-        // Si el stock supera 3 veces el safety stock, es sobrestock
-        suggestion = 0;
-        status = "SOBRESTOCK";
-      } else {
-        suggestion = 0;
-        status = "STOCK SUFICIENTE";
-      }
-
-      return {
-        name: name,
-        avg: dailyAvg.toFixed(2),
-        currentStock: currentStock,
-        suggestion: Math.ceil(suggestion),
-        unit: s.unit,
-        status: status
-      };
-    })
-    .filter(function(p) { return p.suggestion > 0; }) // Solo mostrar lo que realmente hay que comprar
-    .sort(function(a, b) { return b.suggestion - a.suggestion; })
-    .slice(0, 10);
-
-    return { success: true, predictions: predictions };
-  } catch(e) {
-    return { success: false, error: e.message };
-  }
 }
 
 /**

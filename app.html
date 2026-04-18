@@ -28,9 +28,9 @@
         LIQUIDS: ["litro/s", "botella/s", "lata/s"],
         PRODUCE: ["kg", "atado/s", "unidad/es", "cajón/es", "bolsa/s", "gr"],
         BREADS: ["unidad/es", "kg", "gr"],
-        MEATS: ["kg", "piezas", "gr"],
+        MEATS: ["kg", "pieza/s", "gr"],
         FISH: ["kg", "penca/s", "porción/es", "gr"],
-        DAIRY: ["kg", "horma/s", "piezas", "gr", "unidad/es"],
+        DAIRY: ["kg", "horma/s", "pieza/s", "gr", "unidad/es"],
         DRY: ["kg", "bolsa/s", "paquete/s", "gr"],
         EGGS: ["unidad/es", "docena", "maple"],
         UNITS: ["unidad/es", "pack/s", "docena"],
@@ -227,16 +227,6 @@
         }
     }
 
-    var PREDICTIONS = [];
-    function loadPredictions() {
-        google.script.run.withSuccessHandler(function (r) {
-            if (r && r.success) {
-                PREDICTIONS = r.predictions || [];
-                renderProducts();
-                renderHomeSummary(); // Actualizar el resumen en home con la nueva data
-            }
-        }).getPredictiveAnalysis(activeSheetId);
-    }
 
     function loadConfigFromGAS() {
         console.log('⟳ [LOAD] Iniciando carga desde GAS...', activeSheetId);
@@ -306,7 +296,7 @@
 
         renderCatGrid();
         renderTree();
-        loadPredictions();
+
         
         // Finalizar loader con éxito
         if (_loaderInterval) clearInterval(_loaderInterval);
@@ -404,8 +394,8 @@
     }
 
     function refreshBrandingUI() {
-        var title = (document.getElementById('cfg-app-title') ? document.getElementById('cfg-app-title').value : null) || "CIABATTA";
-        var sub = (document.getElementById('cfg-app-subtitle') ? document.getElementById('cfg-app-subtitle').value : null) || "ARTISAN STOCK";
+        var title = (document.getElementById('cfg-app-title') ? document.getElementById('cfg-app-title').value : null) || 'FEDE GASTRO PRO';
+        var sub = (document.getElementById('cfg-app-subtitle') ? document.getElementById('cfg-app-subtitle').value : null) || "FOCACCIA EDITION";
 
         // Home
         var ht = document.getElementById('app-title-display');
@@ -746,7 +736,6 @@
             '<button onclick="toggleFav(\'' + ep + '\')" style="background:none; border:none; color:' + (isFav ? 'var(--gold)' : 'var(--dim2)') + '; cursor:pointer; font-size:24px; flex-shrink:0;">' + (isFav ? '★' : '☆') + '</button>' +
             '<div style="flex:1;">' +
             '<div class="pname">' + p + '</div>' +
-            (typeof PREDICTIONS !== "undefined" && PREDICTIONS[p] ? '<div style="font-size:10px; color:var(--blue); font-weight:800; margin-top:2px; text-transform:uppercase; letter-spacing:0.5px;">Sug: ' + PREDICTIONS[p] + ' ' + d.unit + '</div>' : '') +
             '</div>' +
             '</div>' +
 
@@ -816,23 +805,27 @@
     function formatUnit(q, u) {
         if (!u) return '';
         var pts = u.split('/');
-        var sing = pts[0].toLowerCase();
+        var sing = pts[0].trim();
+        var singLower = sing.toLowerCase();
 
+        // Si tiene formato con barra (ej: unidad/es), usamos la terminación
         var plur = pts.length > 1 ? sing + pts[1] : sing + 's';
 
-        // Excepciones y reglas de pluralización en español
+        // Si es automático (sin barra), aplicamos reglas semánticas
         if (pts.length === 1) {
-            if (sing === 'unidad') plur = 'unidades';
-            else if (sing === 'porción' || sing === 'porcion') plur = 'porciones';
-            else if (sing === 'bidón' || sing === 'bidon') plur = 'bidones';
-            else if (sing === 'cajón' || sing === 'cajon') plur = 'cajones';
-            else if (sing === 'horma') plur = 'hormas';
-            else if (sing === 'penca') plur = 'pencas';
-            else if (sing === 'luz') plur = 'luces'; // Por si acaso
+            // 1. Si ya termina en 's', no duplicar
+            if (singLower.slice(-1) === 's') {
+                plur = sing;
+            } 
+            // 2. Excepciones de terminaciones en español (unidad -> unidades)
+            else if (singLower === 'unidad') plur = 'unidades';
+            else if (singLower === 'porción' || singLower === 'porcion') plur = 'porciones';
+            else if (singLower === 'bidón' || singLower === 'bidon') plur = 'bidones';
+            else if (singLower === 'cajón' || singLower === 'cajon') plur = 'cajones';
+            else if (singLower === 'pan') plur = 'panes';
         }
 
-        var finalSing = pts[0]; // Mantener capitalización original para el singular
-        return q === 1 ? finalSing : plur;
+        return q === 1 ? sing : plur;
     }
 
     var UNIT_MAPPING = {
@@ -1053,7 +1046,7 @@
 
     function sendWA() {
         var titleEl = document.getElementById('cfg-app-title');
-        var title = (titleEl && titleEl.value) ? titleEl.value : 'CIABATTA';
+        var title = (titleEl && titleEl.value) ? titleEl.value : 'FEDE GASTRO PRO';
         var now = new Date();
         var dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         var timeStr = now.toLocaleTimeString('es-AR', { hour12: false, hour: '2-digit', minute: '2-digit' });
@@ -1096,7 +1089,7 @@
         if (!h) return;
         var items = Array.isArray(h.items) ? h.items : [];
         var titleEl = document.getElementById('cfg-app-title');
-        var title = (titleEl && titleEl.value) ? titleEl.value : 'CIABATTA';
+        var title = (titleEl && titleEl.value) ? titleEl.value : 'FEDE GASTRO PRO';
 
         var d = new Date(h.fecha);
         var dateStr = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -1406,7 +1399,6 @@
 
     /* ── DASHBOARD ── */
     var DASH_CACHE = null;
-    var INTELL_CACHE = null;
 
     function renderDashboard(force) {
         if (force === undefined) force = false;
@@ -1418,7 +1410,6 @@
             if (loader) loader.classList.add('hidden');
             if (content) content.classList.remove('hidden');
             applyDashData(DASH_CACHE);
-            if (INTELL_CACHE) applyIntellData(INTELL_CACHE);
             return;
         }
 
@@ -1432,15 +1423,6 @@
                     if (loader) loader.classList.add('hidden');
                     if (content) content.classList.remove('hidden');
                     applyDashData(r.data);
-
-                    google.script.run
-                        .withSuccessHandler(function (ra) {
-                            if (ra && ra.success) {
-                                INTELL_CACHE = ra;
-                                applyIntellData(ra);
-                            }
-                        })
-                        .getPredictiveAnalysis(activeSheetId, 30);
                 }
             })
             .getDashboardMetrics(activeSheetId);
@@ -1495,49 +1477,6 @@
         }
 
         setTimeout(function () { renderDashboardCalendar(data.calendar); }, 50);
-        refreshIcons();
-    }
-
-    function applyIntellData(ra) {
-        var intelEl = document.getElementById('dash-intelligence-list');
-        var html = '';
-
-        // 1. Predicciones AI de consumo
-        if (ra.predictions && ra.predictions.length) {
-            for (var i = 0; i < ra.predictions.length; i++) {
-                var p = ra.predictions[i];
-                var statusColor = (p.status || '').indexOf('CRÍTICO') !== -1 ? 'var(--error)' : 'var(--primary)';
-
-                html += '<div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--bd2); margin-bottom:12px;">' +
-                    '<div style="max-width:70%;">' +
-                    '<div style="font-weight:800; font-size:14px; color:var(--text);">' + p.name + '</div>' +
-                    '<div style="font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px;">Stock: <b>' + p.currentStock + '</b> | ' + (p.status || '') + '</div>' +
-                    '</div>' +
-                    '<div style="text-align:right;">' +
-                    '<div style="font-size:15px; font-weight:900; color:' + statusColor + '; font-family:\'Outfit\',sans-serif;">+' + p.suggestion + '</div>' +
-                    '<div style="font-size:9px; color:var(--dim); font-weight:800;">REPOSICIÓN</div>' +
-                    '</div>' +
-                    '</div>';
-            }
-        }
-
-        // 2. 🚨 HOLIDAY STOCK SUGGESTIONS (Legacy merge)
-        var sug = window.holidayHelper ? window.holidayHelper.getSuggestedReorders() : [];
-        if (sug.length > 0) {
-            var sugHtml = '';
-            for (var k = 0; k < sug.length; k++) {
-                var s = sug[k];
-                sugHtml += '<div style="background:rgba(224,82,82,0.1); border:1px solid var(--red); border-radius:12px; padding:15px; margin-bottom:12px;">' +
-                    '<div style="font-weight:900; font-size:11px; color:var(--red); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">⚠️ Sugerencia Feriado</div>' +
-                    '<div style="font-size:14px; font-weight:700; color:var(--text);">' + s.message + '</div>' +
-                    '<p style="font-size:11px; color:var(--dim); margin-top:4px;">Refuerzo sugerido en: <b>' + s.categories.join(', ') + '</b></p>' +
-                    '</div>';
-            }
-            html = sugHtml + html;
-        }
-
-        if (!html) html = '<p style="color:var(--dim); font-size:12px;">No hay historial suficiente.</p>';
-        intelEl.innerHTML = html;
         refreshIcons();
     }
 
@@ -2114,7 +2053,7 @@
     function shareEditHistWA() {
         if (!editingHistItems || !editingHistItems.length) return toast('No hay items para compartir');
         var titleEl = document.getElementById('cfg-app-title');
-        var title = (titleEl && titleEl.value) ? titleEl.value : 'CIABATTA';
+        var title = (titleEl && titleEl.value) ? titleEl.value : 'FEDE GASTRO PRO';
 
         var orig = null;
         for (var i = 0; i < HIST.length; i++) { if (HIST[i].id == editingHistId) { orig = HIST[i]; break; } }
@@ -2355,6 +2294,7 @@
             alerts.push({ icon: 'trending-down', color: 'var(--violet)', title: 'Merma registrada hoy', desc: mermaItemsToday + ' items perdidos' });
         }
 
+
         // Render
         var html = '<div class="alert-header"><i data-lucide="activity" style="width:14px; color:var(--dim);"></i> Centro Operativo</div>';
 
@@ -2390,40 +2330,55 @@
     function runSystemTest() {
         var resEl = document.getElementById('test-results');
         if (!resEl) return;
-        resEl.innerHTML = "Iniciando test...";
+        resEl.innerHTML = "Iniciando diagnóstico profundo...";
         resEl.classList.remove('hidden');
 
         var log = [];
-        function addLog(msg, success) { log.push((success ? '✅ ' : '❌ ') + msg); }
+        function addLog(msg, success) { 
+            log.push('<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05);">' +
+                '<span>' + msg + '</span>' +
+                '<span style="font-weight:900; color:' + (success ? 'var(--green)' : 'var(--red)') + '">' + (success ? 'OK' : 'FAIL') + '</span>' +
+                '</div>');
+            resEl.innerHTML = log.join('');
+        }
 
         try {
-            // 1. Integridad de Datos
+            // 1. Integridad de Datos Local
             var catCount = Object.keys(CATS).length;
-            addLog("Categorías cargadas: " + catCount, catCount > 0);
+            addLog("Categorías cargadas (" + catCount + ")", catCount > 0);
 
-            // 2. Conectividad Local
-            localStorage.setItem('fede_test_connection', 'ok');
-            var localTest = localStorage.getItem('fede_test_connection') === 'ok';
-            addLog("LocalStorage E/S: " + (localTest ? 'OK' : 'FALLO'), localTest);
+            // 2. Persistencia Local
+            localStorage.setItem('fede_diag_test', '1');
+            var localOK = localStorage.getItem('fede_diag_test') === '1';
+            addLog("LocalStorage R/W", localOK);
 
-            // 3. Estado de Relevamiento
-            addLog("Estado relData: " + (Object.keys(relData).length === 0 ? 'Vacío' : 'Activo'), true);
-
-            // 4. Chequeo de IDs
-            var criticalIds = ['home', 'app', 'cat-grid', 'main-tabs'];
-            criticalIds.forEach(function (id) {
-                addLog("ID [" + id + "]: " + (document.getElementById(id) ? 'OK' : 'MISSING'), !!document.getElementById(id));
+            // 3. Estructura DOM
+            var missing = [];
+            ['home', 'app', 'cat-grid', 'main-tabs', 'home-alerts-card'].forEach(function(id) {
+                if (!document.getElementById(id)) missing.push(id);
             });
+            addLog("Estructura UI", missing.length === 0);
 
-            // 5. Versión de Script
+            // 4. Versión y Build
             addLog("v10.0.0 FOCACCIA", true);
 
-            toast("✓ Diagnóstico completado");
+            // 5. Conectividad con Servidor (Async)
+            addLog("Verificando Cloud...", true);
+            
+            google.script.run
+                .withSuccessHandler(function(r) {
+                    addLog("Servidor GAS (Conexión OK)", true);
+                    addLog("ID Planilla: " + (activeSheetId.length > 20 ? 'VÁLIDO' : 'DE TEST/DEFAULT'), true);
+                    toast("✓ Diagnóstico completado");
+                })
+                .withFailureHandler(function(err) {
+                    addLog("Servidor GAS: " + err.message, false);
+                })
+                .getAppState(activeSheetId);
+
         } catch (e) {
             addLog("EXCEPCIÓN: " + e.message, false);
         }
-
-        resEl.innerHTML = log.join('<br>');
     }
     /**
      * 🔍 SISTEMA DE BÚSQUEDA EXPANSIVA PRO
