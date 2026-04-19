@@ -2580,6 +2580,49 @@
     var ORDER_DATA = null;    // Respuesta del backend (cacheada)
     var ORDER_ANCHORS = {};   // Anclajes en edición temporal
 
+    var ORDER_DRAFT_KEY = 'fede_order_draft';   // localStorage key para las cantidades del borrador
+    var ORDER_DATA_KEY  = 'fede_order_data';    // localStorage key para los datos del backend
+
+    function saveOrderDraft() {
+        try {
+            localStorage.setItem(ORDER_DRAFT_KEY, JSON.stringify(ORDER_QTY));
+        } catch(e) {}
+    }
+
+    function loadOrderDraft() {
+        try {
+            var saved = localStorage.getItem(ORDER_DRAFT_KEY);
+            return saved ? JSON.parse(saved) : {};
+        } catch(e) { return {}; }
+    }
+
+    function saveOrderDataCache(data) {
+        try {
+            // Guardar junto con timestamp del día (YYYY-MM-DD) para invalidar al día siguiente
+            var today = new Date().toISOString().slice(0, 10);
+            localStorage.setItem(ORDER_DATA_KEY, JSON.stringify({ date: today, data: data }));
+        } catch(e) {}
+    }
+
+    function loadOrderDataCache() {
+        try {
+            var raw = localStorage.getItem(ORDER_DATA_KEY);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            var today = new Date().toISOString().slice(0, 10);
+            // Solo válido si es del mismo día
+            if (parsed.date === today) return parsed.data;
+            return null;
+        } catch(e) { return null; }
+    }
+
+    function clearOrderDraft() {
+        try {
+            localStorage.removeItem(ORDER_DRAFT_KEY);
+            localStorage.removeItem(ORDER_DATA_KEY);
+        } catch(e) {}
+    }
+
     // ── INICIALIZAR BOTÓN SEGÚN DÍA DE LA SEMANA ──
     function initOrderButtonState() {
         var day = new Date().getDay(); // 0=Dom, 1=Lun ... 4=Jue
@@ -2628,10 +2671,7 @@
 
         if (!overlay) return;
 
-        ORDER_QTY = {};
         overlay.classList.remove('hidden');
-        loading.style.display = 'flex';
-        content.classList.add('hidden');
 
         // Badge con fecha actual y día del pedido
         var now = new Date();
@@ -2640,12 +2680,38 @@
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
+        // ── Intentar restaurar borrador existente ──
+        var cachedData = loadOrderDataCache();
+        var savedQty   = loadOrderDraft();
+
+        if (cachedData && Object.keys(savedQty).length > 0) {
+            // Tenemos datos del día y cantidades guardadas: restaurar sin llamar al backend
+            ORDER_DATA = cachedData;
+            ORDER_QTY  = savedQty;
+            loading.style.display = 'none';
+            content.classList.remove('hidden');
+            renderOrderModule(cachedData);
+            // Reaplicar cantidades guardadas sobre lo renderizado
+            Object.keys(savedQty).forEach(function(prod) {
+                var el = document.getElementById('oval-' + encodeURIComponent(prod));
+                if (el) el.textContent = savedQty[prod];
+            });
+            showToast('📋 Borrador restaurado');
+            return;
+        }
+
+        // Sin caché válida: cargar del backend
+        ORDER_QTY = {};
+        loading.style.display = 'flex';
+        content.classList.add('hidden');
+
         toggleSync(true, 'Analizando historial...');
         google.script.run
             .withSuccessHandler(function(res) {
                 toggleSync(false);
                 if (res && res.success) {
                     ORDER_DATA = res;
+                    saveOrderDataCache(res);
                     renderOrderModule(res);
                 } else {
                     loading.style.display = 'none';
@@ -2685,13 +2751,16 @@
             var missingHtml = '';
             for (var m = 0; m < res.missingProds.length; m++) {
                 var mp = res.missingProds[m];
-                var daysAgo = Math.round((new Date() - new Date(mp.lastSeen)) / (24 * 3600 * 1000));
-                missingHtml += '• ' + mp.prod + ' <span style="color:var(--red);">(+' + daysAgo + ' días sin actividad)</span><br>';
+                var missDays = Math.round((new Date() - new Date(mp.lastSeen)) / (24 * 3600 * 1000));
+                missingHtml += '• ' + mp.prod + ' <span style="color:var(--red);">(' + missDays + ' días sin actividad)</span><br>';
             }
             if (missingListEl) missingListEl.innerHTML = missingHtml;
         } else {
             missingAlert.classList.add('hidden');
         }
+
+        // Cargar borrador guardado para precargar cantidades editadas
+        var savedQty = loadOrderDraft();
 
         // Lista agrupada por categoría
         var grouped = res.grouped || {};
@@ -2711,14 +2780,40 @@
 
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
-                var initQty = item.qty;
+
+                // Cantidad: respetar borrador guardado, sino usar sugerida del backend
+                var initQty = (savedQty[item.prod] !== undefined) ? savedQty[item.prod] : item.qty;
                 ORDER_QTY[item.prod] = initQty;
 
-                var badge = '';
+                // ── Badge de tipo ──
+                var itemBadge = '';
                 if (item.isAnchored) {
-                    badge = '<span class="order-item-badge badge-anchor">📌 Anclado</span>';
+                    itemBadge = '<span class="order-item-badge badge-anchor">📌 Anclado</span>';
                 } else if (item.dataPoints > 0) {
-                    badge = '<span class="order-item-badge badge-avg">~prom.</span>';
+                    itemBadge = '<span class="order-item-badge badge-avg">~prom.</span>';
+                }
+
+                // ── Chip de STOCK ACTUAL (color según frescura del dato) ──
+                var stockChip = '';
+                if (item.lastStock !== null && item.lastStock !== undefined) {
+                    var stockDaysAgo = item.lastStockDate
+                        ? Math.round((new Date() - new Date(item.lastStockDate)) / (24 * 3600 * 1000))
+                        : 999;
+                    var chipColor, chipBg, chipBorder;
+                    if (stockDaysAgo <= 3) {
+                        chipColor = '#166534'; chipBg = 'rgba(22,163,74,0.12)'; chipBorder = 'rgba(22,163,74,0.35)';
+                    } else if (stockDaysAgo <= 7) {
+                        chipColor = '#854d0e'; chipBg = 'rgba(234,179,8,0.12)'; chipBorder = 'rgba(234,179,8,0.35)';
+                    } else {
+                        chipColor = '#6b7280'; chipBg = 'rgba(107,114,128,0.1)'; chipBorder = 'rgba(107,114,128,0.25)';
+                    }
+                    var stockUnitStr = item.lastStockUnit || item.unit || '';
+                    stockChip = '<div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; border-radius:6px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; color:' + chipColor + '; font-size:10px; font-weight:800;">' +
+                        '📦 Stock: ' + item.lastStock + ' ' + stockUnitStr +
+                        ' <span style="opacity:0.7; font-weight:600;">(hace ' + stockDaysAgo + 'd)</span>' +
+                        '</div>';
+                } else {
+                    stockChip = '<div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; border-radius:6px; background:rgba(220,38,38,0.07); border:1px solid rgba(220,38,38,0.2); color:#9ca3af; font-size:10px; font-weight:700;">📦 Sin stock registrado</div>';
                 }
 
                 var subText = item.unit;
@@ -2726,7 +2821,7 @@
                 if (item.dataPoints > 0) subText += ' · ' + item.dataPoints + ' reg.';
 
                 html += '<div class="order-item-row" id="orow-' + encodeURIComponent(item.prod) + '">';
-                html += '<div class="order-item-name">' + item.prod + ' ' + badge + '<div class="order-item-sub">' + subText + '</div></div>';
+                html += '<div class="order-item-name">' + item.prod + ' ' + itemBadge + '<div class="order-item-sub">' + subText + '</div>' + stockChip + '</div>';
                 html += '<div class="order-stepper">';
                 html += '<button class="order-step-btn" onclick="orderStep(\'' + encodeURIComponent(item.prod) + '\', -1)">−</button>';
                 html += '<div class="order-step-val" id="oval-' + encodeURIComponent(item.prod) + '">' + initQty + '</div>';
@@ -2746,25 +2841,27 @@
 
         if (listEl) listEl.innerHTML = html;
         if (typeof lucide !== 'undefined') lucide.createIcons();
+        // Guardar borrador inicial si no había uno previo
+        saveOrderDraft();
     }
+
 
     // ── CONTROLAR STEPPER DE UN ÍTEM ──
     function orderStep(prodEncoded, delta) {
         var prod = decodeURIComponent(prodEncoded);
         var current = ORDER_QTY[prod] || 0;
-        var next = Math.max(0, current + delta);
 
         // Incremento en 0.5 para cantidades < 5, en 1 para el resto
-        if (delta !== 0) {
-            var step = current < 5 ? 0.5 : 1;
-            next = Math.max(0, current + (delta > 0 ? step : -step));
-            // Redondear a 1 decimal
-            next = Math.round(next * 10) / 10;
-        }
+        var step = current < 5 ? 0.5 : 1;
+        var next = Math.max(0, current + (delta > 0 ? step : -step));
+        next = Math.round(next * 10) / 10;
 
         ORDER_QTY[prod] = next;
         var el = document.getElementById('oval-' + prodEncoded);
         if (el) el.textContent = next;
+
+        // Persistir en localStorage inmediatamente
+        saveOrderDraft();
     }
 
     // ── ENVIAR PEDIDO POR WHATSAPP ──
@@ -2817,6 +2914,9 @@
         var msg = lines.join('\n');
         var waUrl = 'https://wa.me/?text=' + encodeURIComponent(msg);
         window.open(waUrl, '_blank');
+        // Limpiar borrador después de enviar
+        clearOrderDraft();
+        showToast('✅ Pedido enviado — borrador limpiado');
     }
 
     /* ── GESTIÓN DE ANCLAJES ── */

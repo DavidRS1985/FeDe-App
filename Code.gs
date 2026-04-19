@@ -587,24 +587,45 @@ function getSmartOrderSuggestions(targetId) {
       prods.forEach(function(p) { prodCatMap[p] = catName; });
     });
 
-    // ── 3. Leer historial de los últimos 30 días ──
+    // ── 3. Leer historial de los últimos 30 días (recepcion/pedido) y 90 días (stock) ──
     var now = new Date();
     var cutoff30 = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+    var cutoff90 = new Date(now.getTime() - 90 * 24 * 3600 * 1000);
     var cutoff15 = new Date(now.getTime() - 15 * 24 * 3600 * 1000);
     var lastRow = histSheet.getLastRow();
 
-    // productData[prodName] = { w1: qty, w2: qty, w3: qty, w4: qty, lastSeen: Date, lastUnit: str }
+    // productData[prodName] = { w1:qty, w2:qty, w3:qty, w4:qty, lastUnit:str, count:int }
     var productData = {};
-    var lastSeenMap = {}; // Última vez que apareció cualquier modo
+    var lastSeenMap = {};   // Última vez que apareció en recepcion/pedido
+    // stockMap[prodName] = { qty: number, date: Date, unit: str }
+    var stockMap = {};
 
     if (lastRow > 1) {
       var histData = histSheet.getRange(2, 1, lastRow - 1, 6).getValues();
       histData.forEach(function(row) {
         var fecha = new Date(row[1]);
-        if (isNaN(fecha.getTime()) || fecha < cutoff30) return;
+        if (isNaN(fecha.getTime())) return;
 
         var mode = String(row[2]).toLowerCase();
+
+        // ── Capturar último stock por producto (hasta 90 días atrás) ──
+        if (mode === 'stock' && fecha >= cutoff90) {
+          var stockItems = [];
+          try { stockItems = JSON.parse(row[5] || '[]'); } catch(e) {}
+          stockItems.forEach(function(item) {
+            if (!item.prod) return;
+            var qty = parseFloat(item.qty);
+            if (isNaN(qty)) return;
+            if (!stockMap[item.prod] || fecha > stockMap[item.prod].date) {
+              stockMap[item.prod] = { qty: qty, date: fecha, unit: item.unit || '' };
+            }
+          });
+          return; // No procesar stock como consumo
+        }
+
+        // ── Procesar recepcion/pedido para cálculo de consumo (últimos 30 días) ──
         if (mode !== 'recepcion' && mode !== 'pedido') return;
+        if (fecha < cutoff30) return;
 
         var items = [];
         try { items = JSON.parse(row[5] || '[]'); } catch(e) {}
@@ -619,7 +640,6 @@ function getSmartOrderSuggestions(targetId) {
 
         // Peso según semana (decreciente por recencia)
         var weights = { 1: 1.0, 2: 0.5, 3: 0.25, 4: 0.25 };
-        var w = weights[week];
 
         items.forEach(function(item) {
           if (!item.prod) return;
@@ -664,6 +684,7 @@ function getSmartOrderSuggestions(targetId) {
         finalQty = anchor.qty;
       }
 
+      var stockEntry = stockMap[prod] || null;
       suggestions[prod] = {
         prod: prod,
         cat: cat,
@@ -672,13 +693,17 @@ function getSmartOrderSuggestions(targetId) {
         unit: d.lastUnit,
         isAnchored: !!(anchor && anchor.qty > 0),
         anchorMin: anchor ? anchor.qty : 0,
-        dataPoints: d.count
+        dataPoints: d.count,
+        lastStock: stockEntry ? stockEntry.qty : null,
+        lastStockDate: stockEntry ? stockEntry.date.toISOString() : null,
+        lastStockUnit: stockEntry ? stockEntry.unit : null
       };
     });
 
     // ── 5. Agregar anclajes que no aparecieron en historial ──
     Object.keys(anchors).forEach(function(prod) {
       if (!suggestions[prod] && anchors[prod].qty > 0) {
+        var stockEntry2 = stockMap[prod] || null;
         suggestions[prod] = {
           prod: prod,
           cat: prodCatMap[prod] || 'Anclado',
@@ -687,7 +712,10 @@ function getSmartOrderSuggestions(targetId) {
           unit: anchors[prod].unit || 'unidad/es',
           isAnchored: true,
           anchorMin: anchors[prod].qty,
-          dataPoints: 0
+          dataPoints: 0,
+          lastStock: stockEntry2 ? stockEntry2.qty : null,
+          lastStockDate: stockEntry2 ? stockEntry2.date.toISOString() : null,
+          lastStockUnit: stockEntry2 ? stockEntry2.unit : null
         };
       }
     });
