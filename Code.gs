@@ -496,19 +496,7 @@ function getDashboardMetrics(targetId) {
     }).slice(0, 4);
   }
   
-  var productUsage = {};
-  history.forEach(function(h) { 
-    var items = Array.isArray(h.items) ? h.items : [];
-    items.forEach(function(item) { 
-        if (item.prod) productUsage[item.prod] = (productUsage[item.prod] || 0) + 1; 
-    }); 
-  });
-  
-  var ranking = Object.keys(productUsage).map(function(name) {
-    return {name: name, count: productUsage[name]};
-  }).sort(function(a,b) { 
-    return b.count - a.count; 
-  }).slice(0, 10);
+
   
   var calendar = {};
   var currentMonth = new Date().getMonth();
@@ -525,7 +513,7 @@ function getDashboardMetrics(targetId) {
     }
   });
 
-  return { success: true, ssName: config.ssName, data: { totalItems: totalItems, movementsToday: movementsToday, allCategories: Object.keys(cats), recentCats: recentCats, productRanking: ranking, calendar: calendar } };
+  return { success: true, ssName: config.ssName, data: { totalItems: totalItems, movementsToday: movementsToday, allCategories: Object.keys(cats), recentCats: recentCats, calendar: calendar } };
 }
 
 /**
@@ -562,3 +550,210 @@ function deduplicateHistory(targetId) {
     return { success: false, error: e.message };
   }
 }
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ASISTENTE DE PEDIDOS INTELIGENTE — Promedio Ponderado por Recencia
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Analiza los últimos 30 días de historial (modos 'recepcion' y 'pedido')
+ * para sugerir cantidades a pedir. Usa pesos decrecientes para priorizar
+ * los datos más recientes sobre el historial antiguo, permitiendo que el
+ * sistema se adapte rápidamente a cambios de carta o estacionalidad.
+ */
+function getSmartOrderSuggestions(targetId) {
+  try {
+    var sheetId = getSheetId(targetId);
+    var ss = SpreadsheetApp.openById(sheetId);
+    var configSheet = getOrCreateSheet(ss, 'Config');
+    var histSheet = getOrCreateSheet(ss, 'History');
+
+    // ── 1. Leer configuración de categorías y anclajes ──
+    var configData = configSheet.getDataRange().getValues();
+    var cats = {};
+    var anchors = {};
+    configData.forEach(function(row) {
+      if (row[0] === 'cats') {
+        try { cats = JSON.parse(row[1]); } catch(e) {}
+      }
+      if (row[0] === 'orderAnchors') {
+        try { anchors = JSON.parse(row[1]); } catch(e) {}
+      }
+    });
+
+    // ── 2. Construir mapa de productos por nombre → categoría ──
+    var prodCatMap = {};
+    Object.keys(cats).forEach(function(catName) {
+      var prods = cats[catName].prods || [];
+      prods.forEach(function(p) { prodCatMap[p] = catName; });
+    });
+
+    // ── 3. Leer historial de los últimos 30 días ──
+    var now = new Date();
+    var cutoff30 = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+    var cutoff15 = new Date(now.getTime() - 15 * 24 * 3600 * 1000);
+    var lastRow = histSheet.getLastRow();
+
+    // productData[prodName] = { w1: qty, w2: qty, w3: qty, w4: qty, lastSeen: Date, lastUnit: str }
+    var productData = {};
+    var lastSeenMap = {}; // Última vez que apareció cualquier modo
+
+    if (lastRow > 1) {
+      var histData = histSheet.getRange(2, 1, lastRow - 1, 6).getValues();
+      histData.forEach(function(row) {
+        var fecha = new Date(row[1]);
+        if (isNaN(fecha.getTime()) || fecha < cutoff30) return;
+
+        var mode = String(row[2]).toLowerCase();
+        if (mode !== 'recepcion' && mode !== 'pedido') return;
+
+        var items = [];
+        try { items = JSON.parse(row[5] || '[]'); } catch(e) {}
+
+        // Determinar a qué semana pertenece (1=más reciente, 4=más antigua)
+        var msAgo = now.getTime() - fecha.getTime();
+        var daysAgo = msAgo / (24 * 3600 * 1000);
+        var week = 1;
+        if (daysAgo > 7 && daysAgo <= 14) week = 2;
+        else if (daysAgo > 14 && daysAgo <= 21) week = 3;
+        else if (daysAgo > 21) week = 4;
+
+        // Peso según semana (decreciente por recencia)
+        var weights = { 1: 1.0, 2: 0.5, 3: 0.25, 4: 0.25 };
+        var w = weights[week];
+
+        items.forEach(function(item) {
+          if (!item.prod) return;
+          var qty = parseFloat(item.qty) || 1;
+          var prod = item.prod;
+
+          // Actualizar lastSeen para detectar faltantes
+          if (!lastSeenMap[prod] || fecha > lastSeenMap[prod]) {
+            lastSeenMap[prod] = fecha;
+          }
+
+          if (!productData[prod]) {
+            productData[prod] = { w1:0, w2:0, w3:0, w4:0, lastUnit: item.unit || 'unidad/es', count: 0 };
+          }
+          productData[prod]['w' + week] += qty;
+          productData[prod].count++;
+          if (item.unit) productData[prod].lastUnit = item.unit;
+        });
+      });
+    }
+
+    // ── 4. Calcular consumo semanal ponderado por producto ──
+    // Formula: (w1*1.0 + w2*0.5 + w3*0.25 + w4*0.25) / totalWeight
+    // Total weight = 1.0 + 0.5 + 0.25 + 0.25 = 2.0
+    var suggestions = {};
+    Object.keys(productData).forEach(function(prod) {
+      var d = productData[prod];
+      var weighted = (d.w1 * 1.0) + (d.w2 * 0.5) + (d.w3 * 0.25) + (d.w4 * 0.25);
+      var totalWeight = 2.0;
+      var weeklyAvg = weighted / totalWeight;
+
+      // Redondear a 1 decimal si < 10, entero si >= 10
+      var suggested = weeklyAvg < 10 ? Math.round(weeklyAvg * 2) / 2 : Math.ceil(weeklyAvg);
+      if (suggested <= 0) suggested = 0;
+
+      var cat = prodCatMap[prod] || 'Otros';
+      var anchor = anchors[prod] || null;
+
+      // El sugerido final es el mayor entre la inteligencia y el anclaje
+      var finalQty = suggested;
+      if (anchor && anchor.qty && anchor.qty > finalQty) {
+        finalQty = anchor.qty;
+      }
+
+      suggestions[prod] = {
+        prod: prod,
+        cat: cat,
+        qty: finalQty,
+        suggested: suggested,
+        unit: d.lastUnit,
+        isAnchored: !!(anchor && anchor.qty > 0),
+        anchorMin: anchor ? anchor.qty : 0,
+        dataPoints: d.count
+      };
+    });
+
+    // ── 5. Agregar anclajes que no aparecieron en historial ──
+    Object.keys(anchors).forEach(function(prod) {
+      if (!suggestions[prod] && anchors[prod].qty > 0) {
+        suggestions[prod] = {
+          prod: prod,
+          cat: prodCatMap[prod] || 'Anclado',
+          qty: anchors[prod].qty,
+          suggested: 0,
+          unit: anchors[prod].unit || 'unidad/es',
+          isAnchored: true,
+          anchorMin: anchors[prod].qty,
+          dataPoints: 0
+        };
+      }
+    });
+
+    // ── 6. Detectar productos con baja actividad (> 15 días sin aparecer) ──
+    var missingProds = [];
+    Object.keys(lastSeenMap).forEach(function(prod) {
+      if (lastSeenMap[prod] < cutoff15) {
+        missingProds.push({ prod: prod, lastSeen: lastSeenMap[prod].toISOString() });
+      }
+    });
+
+    // ── 7. Agrupar por categoría ──
+    var grouped = {};
+    Object.keys(suggestions).forEach(function(prod) {
+      var s = suggestions[prod];
+      if (!grouped[s.cat]) grouped[s.cat] = [];
+      grouped[s.cat].push(s);
+    });
+
+    // Ordenar cada grupo alfabéticamente
+    Object.keys(grouped).forEach(function(cat) {
+      grouped[cat].sort(function(a, b) {
+        return a.prod < b.prod ? -1 : 1;
+      });
+    });
+
+    return {
+      success: true,
+      grouped: grouped,
+      anchors: anchors,
+      missingProds: missingProds,
+      generatedAt: new Date().toISOString()
+    };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Guarda los anclajes de pedido (mínimos fijos) en Config
+ */
+function saveOrderAnchors(anchorsObj, targetId) {
+  try {
+    return saveConfig('orderAnchors', anchorsObj, targetId);
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Obtiene los anclajes guardados
+ */
+function getOrderAnchors(targetId) {
+  try {
+    var ss = SpreadsheetApp.openById(getSheetId(targetId));
+    var sheet = getOrCreateSheet(ss, 'Config');
+    var data = sheet.getDataRange().getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (data[i][0] === 'orderAnchors') {
+        try { return { success: true, anchors: JSON.parse(data[i][1]) }; } catch(e) {}
+      }
+    }
+    return { success: true, anchors: {} };
+  } catch(e) {
+    return { success: false, error: e.message, anchors: {} };
+  }
+}
+

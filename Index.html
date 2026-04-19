@@ -226,6 +226,16 @@
                     <span style="font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Outfit', sans-serif;">Registrar Merma</span>
                 </button>
 
+                <!-- BOTÓN REALIZAR PEDIDO (Visible Jue-Dom, color adaptativo) -->
+                <button id="btn-realizar-pedido" onclick="openOrderModule()" aria-label="Realizar pedido semanal"
+                    class="hidden"
+                    style="width: 100%; max-width: 440px; padding: 16px 20px; border-radius: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s; margin-bottom: 10px; border: 2px solid #ca8a04; background: rgba(234,179,8,0.12); color: #854d0e; box-shadow: 0 6px 18px -4px rgba(234,179,8,0.25);">
+                    <i id="btn-pedido-icon" data-lucide="truck" style="width: 20px; height: 20px; color: #854d0e;"></i>
+                    <span id="btn-pedido-label" style="font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; font-family: 'Outfit', sans-serif;">Realizar Pedido</span>
+                </button>
+
+
+
             </div> <!-- End Secondary Actions (94) -->
 
             <!-- 3. Metadata Inferior -->
@@ -457,12 +467,7 @@
                         </div>
                     </div>
 
-                    <!-- RANKING SECTION -->
-                    <div class="dash-section-title">
-                        <h3>Top 10 Más Frecuentes</h3>
-                        <div style="font-size:10px; color:var(--primary); font-weight:900;">IMPACTO</div>
-                    </div>
-                    <div class="dash-card" id="dash-product-ranking" style="padding:20px;"></div>
+                    <!-- END DASHBOARD CONTENT -->
 
 
                 </div>
@@ -849,7 +854,96 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MÓDULO DE PEDIDOS INTELIGENTE - OVERLAY FULLSCREEN
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div id="order-module-overlay" class="order-overlay hidden">
+
+        <!-- HEADER -->
+        <div class="order-header">
+            <div>
+                <div style="font-size:10px; font-weight:900; color:var(--dim); text-transform:uppercase; letter-spacing:2px; margin-bottom:2px;">Asistente Inteligente</div>
+                <h2 style="font-family:'Outfit',sans-serif; font-size:22px; font-weight:900; color:var(--text); letter-spacing:-0.5px; margin:0;">Realizar Pedido</h2>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div id="order-date-badge" style="font-size:10px; font-weight:900; padding:6px 12px; border-radius:20px; background:var(--s2); border:1.5px solid var(--bd2); color:var(--dim); text-transform:uppercase;"></div>
+                <button onclick="closeOrderModule()" style="background:var(--s2); border:1.5px solid var(--bd2); width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text);">
+                    <i data-lucide="x" style="width:18px;"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- LOADING STATE -->
+        <div id="order-loading" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+            <div class="sync-spinner" style="width:48px; height:48px;"></div>
+            <div style="font-family:'Outfit',sans-serif; font-size:12px; font-weight:900; color:var(--dim); text-transform:uppercase; letter-spacing:2px;">Analizando historial...</div>
+        </div>
+
+        <!-- CONTENT -->
+        <div id="order-content" class="hidden" style="flex:1; overflow-y:auto; padding:0 16px 120px;">
+
+            <!-- ALERTA DE PRODUCTOS FALTANTES -->
+            <div id="order-missing-alert" class="hidden" style="margin-bottom:16px; padding:14px 16px; border-radius:14px; background:rgba(220,38,38,0.08); border:1.5px solid rgba(220,38,38,0.3); display:flex; gap:12px; align-items:flex-start;">
+                <i data-lucide="alert-triangle" style="width:18px; color:var(--red); flex-shrink:0; margin-top:1px;"></i>
+                <div>
+                    <div style="font-size:12px; font-weight:900; color:var(--red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Productos sin actividad reciente</div>
+                    <div id="order-missing-list" style="font-size:12px; color:var(--dim); font-weight:600; line-height:1.6;"></div>
+                </div>
+            </div>
+
+            <!-- INFO BANNER -->
+            <div style="margin-bottom:16px; padding:12px 14px; border-radius:12px; background:var(--s1); border:1.5px solid var(--bd2); display:flex; gap:10px; align-items:center;">
+                <i data-lucide="info" style="width:16px; color:var(--primary); flex-shrink:0;"></i>
+                <div style="font-size:11px; color:var(--dim); font-weight:600; line-height:1.5;">Basado en historial de recepciones de los últimos <strong style="color:var(--text);">30 días</strong>. Editá las cantidades antes de enviar.</div>
+            </div>
+
+            <!-- LISTA DE PEDIDOS (por categoría) -->
+            <div id="order-items-list"></div>
+
+            <!-- PRODUCTOS ANCLADOS SIN MOVIMIENTO -->
+            <div id="order-anchors-section" class="hidden">
+                <div style="font-size:10px; font-weight:900; color:var(--dim); text-transform:uppercase; letter-spacing:2px; margin:20px 0 10px; padding:0 4px;">📌 Anclados (Mínimos Fijos)</div>
+                <div id="order-anchors-list"></div>
+            </div>
+        </div>
+
+        <!-- FOOTER FIJO -->
+        <div class="order-footer">
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button onclick="openOrderAnchorsConfig()" style="flex:1; padding:14px; border-radius:14px; background:var(--s2); border:1.5px solid var(--bd2); color:var(--dim); font-family:'Outfit',sans-serif; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; text-transform:uppercase;">
+                    <i data-lucide="pin" style="width:14px;"></i> Anclajes
+                </button>
+                <button onclick="sendOrderByWA()" style="flex:3; padding:14px; border-radius:14px; background:#25D366; border:none; color:#fff; font-family:'Outfit',sans-serif; font-weight:900; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; text-transform:uppercase; box-shadow:0 4px 20px rgba(37,211,102,0.3);">
+                    <i data-lucide="send" style="width:16px;"></i> Enviar por WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIGURACIÓN DE ANCLAJES -->
+    <div id="order-anchors-modal" class="confirm-overlay" onclick="closeOrderAnchorsConfig(event)">
+        <div class="confirm-modal" onclick="event.stopPropagation()" style="max-height:80vh; overflow-y:auto; text-align:left; padding:28px 24px;">
+            <h3 style="font-family:'Outfit',sans-serif; font-size:18px; font-weight:900; color:var(--text); margin-bottom:4px;">📌 Anclajes de Pedido</h3>
+            <p style="font-size:12px; color:var(--dim); margin-bottom:20px;">Productos que siempre deben aparecer en el pedido con una cantidad mínima.</p>
+
+            <div id="anchors-list-config" style="max-height:300px; overflow-y:auto; margin-bottom:16px;"></div>
+
+            <div style="display:flex; gap:8px; margin-bottom:20px;">
+                <div style="position:relative; flex:1;">
+                    <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; color:var(--primary); pointer-events:none;"></i>
+                    <input type="text" id="anchor-search-inp" placeholder="Buscar producto..." oninput="searchAnchorProduct(this.value)" autocomplete="off"
+                        style="width:100%; padding:12px 12px 12px 36px; border-radius:12px; border:1.5px solid var(--bd2); background:var(--s1); color:var(--text); font-family:'Outfit',sans-serif; font-size:13px; outline:none; box-sizing:border-box;">
+                </div>
+            </div>
+            <div id="anchor-search-results" style="background:var(--s1); border-radius:12px; max-height:200px; overflow-y:auto; display:none; border:1.5px solid var(--bd2); margin-bottom:16px;"></div>
+
+            <button onclick="saveAnchors()" style="width:100%; padding:16px; border-radius:14px; background:var(--primary); color:#000; border:none; font-family:'Outfit',sans-serif; font-weight:900; font-size:14px; cursor:pointer; text-transform:uppercase; margin-bottom:10px;">GUARDAR ANCLAJES</button>
+            <button onclick="closeOrderAnchorsConfig()" style="width:100%; padding:12px; background:none; border:none; color:var(--dim); cursor:pointer; font-weight:700; font-size:13px;">CANCELAR</button>
+        </div>
+    </div>
+
     <!-- SYNC OVERLAY -->
+
     <div id="sync-overlay" class="sync-overlay">
         <div class="sync-spinner"></div>
         <div class="sync-text" id="sync-text">SINCRONIZANDO...</div>
