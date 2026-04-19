@@ -244,7 +244,18 @@
     body {
         height: 100%;
         overflow: hidden;
-        background: var(--bg);
+        background-color: var(--bg);
+        /* Pattern from css-pattern.com (Cubes Illusion) - Adaptado para FeDe */
+        --s: 140px; 
+        --c1: var(--bg);
+        --c2: var(--bg-alt);
+        --c3: var(--s1);
+        background-image:
+            conic-gradient(from 150deg at 50% 33%,#0000 5%,var(--c1) 0 32%,var(--c2) 0 62%,var(--c3) 0 95%,#0000 0),
+            conic-gradient(from 150deg at 50% 33%,#0000 5%,var(--c1) 0 32%,var(--c2) 0 62%,var(--c3) 0 95%,#0000 0)
+            calc(var(--s)/2) calc(var(--s)/3.46);
+        background-size: var(--s) calc(var(--s)/1.73);
+        background-attachment: fixed;
     }
 
     body {
