@@ -1441,13 +1441,25 @@
 
     /* 📊 RELEVAMIENTO VIEW (Operational Module) */
     #view-relevamiento,
-    .view-relevamiento,
-    .view.scroll {
+    .view-relevamiento {
         background: var(--mcf-bg) !important;
-        padding-top: 110px !important; /* Extra room for top tabs in MCF mode */
-        padding-bottom: 160px !important; /* Safe zone for Command Deck + Context Bar */
-        display: flex !important;
+        padding-top: 110px !important; 
+        padding-bottom: 160px !important; 
+        display: none; /* Default to hidden, handled by .active */
         flex-direction: column !important;
+    }
+
+    /* Only show Relevamiento when active */
+    #view-relevamiento.active,
+    .view-relevamiento.active {
+        display: flex !important;
+    }
+
+    /* Reset legacy scroll-content padding that was causing double-spacing */
+    .view.scroll .scroll-content {
+        padding-bottom: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     /* 🏠 HOME VIEW OVERRIDE (Fixes inline style interference) */
