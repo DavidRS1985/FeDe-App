@@ -112,6 +112,34 @@ var FeDe_Services = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// DOMAIN LAYER (Pure Business Logic)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * DOMAIN LAYER: Core business logic, agnostic of infrastructure or frameworks.
+ */
+var FeDe_Domain = {
+  OrderSuggestion: {
+    /**
+     * Calcula la cantidad sugerida de pedido basada en un promedio ponderado de 4 semanas.
+     * @returns {number} La cantidad final sugerida, respetando anclajes.
+     */
+    calculateQuantity: function(w1, w2, w3, w4, anchorQty) {
+      var weighted = (w1 * 1.0) + (w2 * 0.5) + (w3 * 0.25) + (w4 * 0.25);
+      var weeklyAvg = weighted / 2.0;
+
+      var suggested = weeklyAvg < 10 ? Math.round(weeklyAvg * 2) / 2 : Math.ceil(weeklyAvg);
+      if (suggested <= 0) suggested = 0;
+
+      if (anchorQty && anchorQty > suggested) {
+        return anchorQty;
+      }
+      return suggested;
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // LOGGING, VALIDATION & UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -879,26 +907,27 @@ function getSmartOrderSuggestions(targetId) {
       });
     }
 
-    // ── 4. Generar sugerencias ──
+    // ── 4. Generar sugerencias (Usando Domain Layer) ──
     var suggestions = {};
     Object.keys(productData).forEach(function(prod) {
       var d = productData[prod];
+      var anchor = anchors[prod] || null;
+      var anchorQty = (anchor && anchor.qty) ? anchor.qty : 0;
+      
+      var finalQty = FeDe_Domain.OrderSuggestion.calculateQuantity(d.w1, d.w2, d.w3, d.w4, anchorQty);
+      
+      // Calculate suggested again just for metadata
       var weighted = (d.w1 * 1.0) + (d.w2 * 0.5) + (d.w3 * 0.25) + (d.w4 * 0.25);
       var weeklyAvg = weighted / 2.0;
-
-      var suggested = weeklyAvg < 10 ? Math.round(weeklyAvg * 2) / 2 : Math.ceil(weeklyAvg);
-      if (suggested <= 0) suggested = 0;
-
-      var anchor = anchors[prod] || null;
-      var finalQty = suggested;
-      if (anchor && anchor.qty && anchor.qty > finalQty) finalQty = anchor.qty;
+      var pureSuggested = weeklyAvg < 10 ? Math.round(weeklyAvg * 2) / 2 : Math.ceil(weeklyAvg);
+      if (pureSuggested <= 0) pureSuggested = 0;
 
       var stockEntry = stockMap[prod] || null;
       suggestions[prod] = {
         prod: prod,
         cat: prodCatMap[prod] || 'Otros',
         qty: finalQty,
-        suggested: suggested,
+        suggested: pureSuggested,
         unit: d.lastUnit,
         isAnchored: !!(anchor && anchor.qty > 0),
         anchorMin: anchor ? anchor.qty : 0,
