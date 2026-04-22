@@ -35,6 +35,8 @@
         /* Layout & Spacing */
         --mcf-tab-height: 70px;
         --mcf-header-height: 64px;
+        --mcf-view-pt: 10px;  /* Default Top Padding */
+        --mcf-view-pb: 80px;  /* Default Bottom Padding (Command Deck Safe Area) */
         --mcf-border: 4px solid var(--mcf-ink);
         --mcf-shadow: 6px 6px 0px var(--mcf-ink);
         --mcf-shadow-lg: 10px 10px 0px var(--mcf-ink);
@@ -87,7 +89,7 @@
         }
     }
 
-    body.theme-mcf :focus-visible {
+    body.theme-mcf :focus-visible:not(#hdr-search-input):not(#hist-search) {
         outline: 4px solid var(--mcf-amber) !important;
         outline-offset: 4px !important;
         z-index: 999999 !important;
@@ -129,52 +131,28 @@
         z-index: 20000 !important;
         display: none !important; 
         bottom: 16px !important; 
+        height: 72px !important; /* Fixed height for stability */
         background: var(--mcf-paper) !important;
         border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 10px 10px 0px var(--mcf-ink) !important;
+        box-shadow: 10px 10px 0px var(--mcf-ink) !important; /* Static State: Shadow ON */
+        transform: translate(0, 0); /* Static State: Position Normal */
         box-sizing: border-box;
         pointer-events: auto !important;
-        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.3s var(--mcf-snap) !important;
-        /* Internal Industrial Label */
-    }
-
-    .mcf-command-deck::before {
-        content: "COMMAND DECK V11.1";
-        position: absolute;
-        top: -12px;
-        left: 12px;
-        background: var(--mcf-ink);
-        color: var(--mcf-paper);
-        font-size: 8px;
-        font-weight: 900;
-        padding: 2px 8px;
-        letter-spacing: 1.5px;
-        z-index: 2;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.3s var(--mcf-snap), box-shadow 0.2s ease !important;
     }
 
     body.view-relevamiento .mcf-command-deck {
         display: block !important;
-        transform: translateY(0) !important; /* Force visible in Relevamiento */
+        transform: translateY(0) !important;
         pointer-events: auto !important;
         opacity: 1 !important;
         visibility: visible !important;
     }
 
-    /* Status LED indicator */
-    .mcf-deck-wrap::after {
-        content: "";
-        width: 8px;
-        height: 8px;
-        background: var(--mcf-sage);
-        position: absolute;
-        right: 16px;
-        top: 16px;
-        animation: mcf-led-pulse 1.5s infinite alternate;
-    }
-
-    @keyframes mcf-led-pulse {
-        from { opacity: 0.4; box-shadow: 0 0 0px var(--mcf-sage); }
-        to { opacity: 1; box-shadow: 0 0 8px var(--mcf-sage); }
+    /* ⚡ ACTIVE PRESSED STATE (On Focus) */
+    .mcf-command-deck:focus-within {
+        transform: translate(10px, 10px) !important;
+        box-shadow: none !important;
     }
 
     /* Dynamic Elevation: Above Contextual Bar when active */
@@ -196,16 +174,6 @@
         visibility: visible !important;
     }
 
-    .mcf-deck-wrap {
-        position: relative;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        height: 72px;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
 
     .mcf-deck-icon {
         width: 32px !important;
@@ -224,18 +192,31 @@
         font-weight: 950 !important;
         font-size: 1.15rem !important;
         flex: 1;
-        outline: none !important; /* Managed by .mcf-command-deck:focus-within */
+        outline: none !important; 
         text-transform: uppercase;
         letter-spacing: 1px;
+        box-shadow: none !important; /* Force shadow removal */
     }
 
     .mcf-deck-wrap input::placeholder {
         color: var(--mcf-ink-ghost) !important;
-        opacity: 0.6 !important;
+        opacity: 0.6;
+        transition: opacity 0.15s ease;
     }
 
-    .mcf-command-deck:focus-within {
-        border-color: var(--mcf-amber) !important;
+    /* Clear placeholder immediately on focus */
+    .mcf-deck-wrap input:focus::placeholder {
+        opacity: 0 !important;
+    }
+
+    .mcf-command-deck,
+    .mcf-command-deck *,
+    .mcf-command-deck:focus,
+    .mcf-command-deck:focus-within,
+    .mcf-command-deck *:focus,
+    .mcf-command-deck *:focus-visible {
+        outline: none !important;
+        -webkit-appearance: none !important;
     }
 
 
@@ -374,11 +355,6 @@
     .mcf-res-item:active {
         background: var(--mcf-amber) !important;
         transform: scale(0.98) !important;
-    }
-
-    .mcf-res-item:focus-visible {
-        outline: 2px solid var(--mcf-ink) !important;
-        outline-offset: -2px !important;
     }
 
     .mcf-res-name {
@@ -1313,6 +1289,7 @@
     }
 
     /* GLOBAL MCF SEARCH BOX (Industrial) */
+    /* 🔍 INDUSTRIAL SEARCH CHASSIS (Standard & Command Deck) */
     .mcf-search-box,
     .mcf-local-search-wrap {
         width: 100%;
@@ -1343,6 +1320,58 @@
         font-size: 18px !important;
         font-weight: 900 !important;
         background: transparent !important;
+        flex: 1 !important;
+        outline: none !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    /* 📅 HISTORY SPECIFIC: COMMAND DECK TWIN */
+    .mcf-hist-search-box {
+        width: calc(100% - 10px) !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 10px 10px 0px var(--mcf-ink) !important;
+        height: 64px !important;
+        position: relative !important;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+        margin: 0 6px 32px 0 !important;
+    }
+
+    .mcf-hist-search-box:focus-within {
+        transform: translate(10px, 10px) !important;
+        box-shadow: none !important;
+    }
+
+    .mcf-deck-wrap {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        padding: 0 18px !important;
+    }
+
+    .mcf-hist-search-box input {
+        flex: 1 !important;
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 16px !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink) !important;
+        text-transform: uppercase !important;
+        padding-left: 12px !important;
+    }
+
+    .mcf-hist-search-box i {
+        color: var(--mcf-ink) !important;
+        width: 20px !important;
+        stroke-width: 3px !important;
+    }
+
+    .mcf-hist-search-box input:focus::placeholder {
+        color: transparent !important;
+    }
         flex: 1 !important;
         outline: none !important;
         color: var(--mcf-ink) !important;
@@ -1454,13 +1483,6 @@
     }
 
     /* HISTORY FILTERS & SEARCH (Industrial Standardization) */
-    body.theme-mcf #view-historial .scroll-content>div:nth-child(3) {
-        border-radius: 0 !important;
-        border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 8px 8px 0px var(--mcf-slate) !important;
-        background: var(--mcf-paper) !important;
-        padding: 20px !important;
-    }
 
     body.theme-mcf #hist-date-from,
     body.theme-mcf #hist-date-to {
@@ -1568,9 +1590,11 @@
     #view-relevamiento,
     .view-relevamiento {
         background: var(--mcf-bg) !important;
-        padding-top: 70px !important; 
-        padding-bottom: 160px !important; 
+        padding-top: var(--mcf-view-pt) !important; 
+        padding-bottom: 40px !important; /* User requested 40px */
         flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
     }
 
     /* Only show Relevamiento when active */
@@ -1586,20 +1610,40 @@
 
     body.theme-mcf .view.active {
         display: flex !important; 
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
         background: var(--mcf-bg) !important;
     }
 
     /* Reset legacy scroll-content padding that was causing double-spacing */
     .view.scroll .scroll-content {
-        padding-bottom: 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+        padding: 0 8px 120px !important;
+        margin: 0 !important;
+    }
+
+    .bottom-spacer {
+        height: 0 !important;
+        display: none !important;
     }
 
     #view-historial,
-    #view-dashboard,
+    #view-dashboard {
+        background: var(--mcf-bg) !important;
+        padding-top: var(--mcf-view-pt) !important; 
+        padding-bottom: 40px !important; 
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+    }
+
     #view-datos {
-        padding-top: 70px !important;
+        background: var(--mcf-bg) !important;
+        padding-top: 5px !important; 
+        padding-bottom: 40px !important; 
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
     }
 
     #home-content {
@@ -1607,6 +1651,7 @@
         padding-bottom: 160px !important;
         padding-left: 24px !important;
         padding-right: 24px !important;
+        justify-content: flex-start !important;
     }
 
     /* Reset legacy scroll-content padding that was causing double-spacing */
@@ -1635,11 +1680,11 @@
         align-items: center !important;
         justify-content: flex-start !important;
         gap: 20px !important;
-        background: var(--cchip-bg, var(--mcf-paper)) !important;
+        background: var(--mode-color) !important;
         border: 4px solid var(--mcf-ink) !important;
         box-shadow: 8px 8px 0px var(--mcf-ink) !important;
         cursor: pointer !important;
-        transition: all 0.1s var(--mcf-snap) !important;
+        transition: transform 0.1s ease, box-shadow 0.1s ease !important;
         box-sizing: border-box !important;
     }
 
@@ -1649,7 +1694,7 @@
         width: 32px !important;
         height: 32px !important;
         stroke-width: 1.2px !important;
-        color: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -1662,21 +1707,20 @@
         font-weight: 950 !important;
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
-        color: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
         line-height: 1 !important;
         text-align: left !important;
         flex: 1 !important;
     }
 
+    .cchip:active,
     .cchip.active {
-        background: var(--mode-color, var(--mcf-amber)) !important;
-        color: var(--mcf-paper) !important;
         transform: translate(4px, 4px) !important;
         box-shadow: 4px 4px 0px var(--mcf-ink) !important;
     }
 
     .cchip.active i, .cchip.active span {
-        color: var(--mcf-ink) !important; /* Force Ink for contrast on mode colors */
+        color: var(--mcf-paper) !important; 
     }
 
     #prod-list {
@@ -1806,22 +1850,37 @@
 
     body.theme-mcf .mcf-header {
         width: 100% !important;
-        /* Full width for the bleed effect */
         max-width: 550px !important;
-        margin: 0 auto 24px !important;
-        background: var(--mcf-ink) !important;
+        margin: 0 auto 32px !important;
+        background: #1e1c1a !important; /* Light Ink Chassis */
         color: var(--mcf-paper) !important;
-        padding: 50px 24px 40px !important;
-        /* Increased top/bottom padding to avoid cutoff */
+        padding: 80px 24px 40px !important;
         border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 8px 8px 0px var(--mcf-amber) !important;
-        position: relative;
+        box-shadow: 10px 10px 0px var(--mcf-ink) !important;
+        position: relative !important;
         box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-end !important;
         min-height: 180px !important;
-        /* Forces enough height for all info */
+    }
+
+    body.theme-mcf .mcf-header .home-logo {
+        text-transform: none !important; /* Natural casing */
+        color: var(--mcf-bg) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 38px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+    }
+
+    body.theme-mcf .mcf-header .subtitle {
+        text-transform: uppercase !important;
+        font-size: 11px !important;
+        letter-spacing: 1px !important;
+        color: var(--mcf-ink-ghost) !important;
+        margin-top: 8px !important;
     }
 
     .mcf-header-controls {
@@ -1829,9 +1888,34 @@
         right: 16px !important;
         top: 16px !important;
         display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-end !important;
-        gap: 6px !important;
+        gap: 8px !important;
+    }
+
+    .mcf-mini-btn {
+        width: 54px !important;
+        height: 54px !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        padding: 0 !important;
+        border-radius: 0 !important; /* Rigid Geometry */
+    }
+
+    .mcf-mini-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-mini-btn i {
+        width: 28px !important;
+        height: 28px !important;
+        color: var(--mcf-ink) !important;
+        stroke-width: 2.5px !important;
     }
 
     .mcf-date-tag {
@@ -1974,10 +2058,10 @@
     body.theme-mcf .mcf-action-btn span {
         font-family: var(--mcf-font-display) !important;
         font-weight: 950 !important;
-        font-size: 14px !important;
+        font-size: 15px !important;
         /* Slightly larger for balance */
         text-transform: uppercase !important;
-        letter-spacing: 2px !important;
+        letter-spacing: 1px !important;
         line-height: 1 !important;
         color: var(--mcf-ink) !important;
         /* Absolute Ink Force */
@@ -1991,7 +2075,8 @@
         height: 68px !important;
         min-width: 68px !important;
         min-height: 68px !important;
-        stroke-width: 1.2px !important; /* Technical precision balance */
+        stroke-width: 1.0px !important; 
+        fill: none !important; /* Pure technical stroke */
         color: var(--mcf-ink) !important;
         display: flex !important;
         align-items: center !important;
@@ -2374,6 +2459,9 @@
     }
 
     /* Global visibility fixes for McFetridge */
+    .hidden { display: none !important; }
+    .visible { display: block !important; }
+
     /* 🏗️ APP CONTAINER OVERHAUL (McFetridge Totality) */
     body.theme-mcf #app {
         border: none !important;
@@ -2385,6 +2473,7 @@
     body.theme-mcf #app.visible {
         display: flex !important;
         flex-direction: column !important;
+        justify-content: flex-start !important;
         min-height: 100vh !important;
         position: relative !important;
         z-index: 1000 !important;
@@ -2808,73 +2897,361 @@
         border-top: 2px dashed var(--mcf-ink-ghost) !important;
     }
 
-    /* 🎛️ HISTORY FILTERS (Mechanical Toggles) */
-    .mcf-hist-filter-row {
-        display: flex !important;
-        gap: 10px !important;
-        overflow-x: auto !important;
-        padding: 4px 4px 12px !important;
-        margin-bottom: 16px !important;
+    /* 🎛️ HISTORY MODE VARIANTS (Solid Authority) */
+    .mcf-hist-card-pedido { background: var(--mcf-rose) !important; }
+    .mcf-hist-card-stock { background: var(--mcf-slate) !important; }
+    .mcf-hist-card-merma { background: var(--mcf-mauve) !important; }
+    .mcf-hist-card-recepcion { background: var(--mcf-sage) !important; }
+
+    /* Contrast Force for Solid Cards */
+    .mcf-hist-card[class*="mcf-hist-card-"] .mcf-hist-title,
+    .mcf-hist-card[class*="mcf-hist-card-"] .mcf-hist-time,
+    .mcf-hist-card[class*="mcf-hist-card-"] .mcf-hist-details {
+        color: var(--mcf-paper) !important;
     }
 
-    .mcf-hist-filter-btn {
-        flex-shrink: 0 !important;
+    .mcf-hist-card[class*="mcf-hist-card-"] .mcf-hist-mode-tag {
         background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
-        padding: 10px 16px !important;
+        color: var(--mcf-ink) !important;
+        border-color: var(--mcf-ink) !important;
+    }
+
+    .mcf-hist-card[class*="mcf-hist-card-"] .mcf-hist-details {
+        border-top: 2px dashed rgba(255,255,255,0.3) !important;
+    }
+
+    /* 🛠️ EDIT MODAL (Industrial Overhaul) */
+    .mcf-modal-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0,0,0,0.85) !important;
+        z-index: 50000 !important;
+        display: none !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        backdrop-filter: blur(4px) !important;
+    }
+
+    .mcf-modal-overlay.open { display: flex !important; }
+
+    .mcf-modal-content {
+        width: 100% !important;
+        max-width: 600px !important;
+        background: var(--mcf-bg) !important;
+        border-top: 4px solid var(--mcf-ink) !important;
+        border-left: 4px solid var(--mcf-ink) !important;
+        border-right: 4px solid var(--mcf-ink) !important;
+        padding: 24px !important;
+        padding-bottom: env(safe-area-inset-bottom, 24px) !important;
+        box-shadow: 0px -10px 0px var(--mcf-ink) !important;
+        animation: mcf-modal-slide-up 0.3s var(--mcf-snap) !important;
+    }
+
+    .mcf-modal-title {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 20px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        margin-bottom: 24px !important;
+        color: var(--mcf-ink) !important;
+        text-align: center !important;
+    }
+
+    .mcf-edit-section { margin-bottom: 24px !important; }
+
+    .mcf-edit-label {
+        font-size: 11px !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        color: var(--mcf-ink-ghost) !important;
+        margin-bottom: 10px !important;
+    }
+
+    .mcf-edit-mode-grid { display: flex !important; gap: 8px !important; }
+
+    .mcf-edit-mode-btn {
+        flex: 1 !important;
+        padding: 14px 8px !important;
+        background: var(--mcf-paper) !important;
+        border: 2px solid var(--mcf-ink) !important;
         font-size: 11px !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        color: var(--mcf-ink) !important;
         cursor: pointer !important;
         transition: all 0.1s var(--mcf-snap) !important;
     }
 
-    .mcf-hist-filter-btn.active {
-        background: var(--btn-active-bg, var(--mcf-ink)) !important;
-        color: var(--btn-active-color, var(--mcf-paper)) !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
-        transform: translate(-2px, -2px) !important;
-    }
+    .mcf-edit-mode-btn.active { color: var(--mcf-paper) !important; box-shadow: 4px 4px 0px var(--mcf-ink) !important; transform: translate(-2px, -2px) !important; }
+    .mcf-edit-mode-btn.mcf-btn-pedido.active { background: var(--mcf-rose) !important; }
+    .mcf-edit-mode-btn.mcf-btn-stock.active { background: var(--mcf-slate) !important; }
+    .mcf-edit-mode-btn.mcf-btn-recepc.active { background: var(--mcf-sage) !important; }
 
-    .mcf-hist-date-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12px !important;
-        padding: 20px !important;
-        background: var(--mcf-surface) !important;
-        border: 4px solid var(--mcf-ink) !important;
-        margin-bottom: 24px !important;
-    }
-
-    .mcf-hist-input-group {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 6px !important;
-    }
-
-    .mcf-hist-label {
-        font-size: 10px !important;
-        font-weight: 950 !important;
-        text-transform: uppercase !important;
-        color: var(--mcf-ink-muted) !important;
-    }
-
-    .mcf-hist-date-input {
+    .mcf-edit-input {
         width: 100% !important;
+        padding: 16px !important;
+        background: var(--mcf-surface) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        font-family: inherit !important;
+        font-weight: 800 !important;
+        font-size: 16px !important;
+        color: var(--mcf-ink) !important;
+        box-sizing: border-box !important;
+    }
+
+    .mcf-edit-list-container {
+        max-height: 300px !important;
+        overflow-y: auto !important;
+        margin-bottom: 24px !important;
+        border: 3px solid var(--mcf-ink) !important;
+        background: var(--mcf-surface) !important;
+        padding: 8px !important;
+    }
+
+    .mcf-edit-search-results {
+        display: none !important;
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: 100% !important;
+        z-index: 200 !important;
         background: var(--mcf-paper) !important;
         border: 3px solid var(--mcf-ink) !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+    }
+
+    /* Edit Rows & Steppers */
+    .mcf-edit-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         padding: 12px !important;
+        border-bottom: 2px solid var(--mcf-ink-ghost) !important;
+        background: var(--mcf-bg) !important;
+        margin-bottom: 4px !important;
+    }
+
+    .mcf-edit-row-info { flex: 1 !important; }
+    .mcf-edit-row-name { font-weight: 900 !important; font-size: 14px !important; color: var(--mcf-ink) !important; text-transform: uppercase !important; }
+    .mcf-edit-row-unit { font-size: 10px !important; font-weight: 800 !important; color: var(--mcf-ink-ghost) !important; text-transform: uppercase !important; }
+
+    .mcf-edit-stepper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        background: var(--mcf-paper) !important;
+        border: 2px solid var(--mcf-ink) !important;
+        padding: 2px !important;
+    }
+
+    .mcf-edit-step-btn {
+        background: none !important;
+        border: none !important;
+        color: var(--mcf-ink) !important;
+        width: 32px !important;
+        height: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+    }
+
+    .mcf-edit-step-btn:active { background: var(--mcf-surface) !important; }
+    .mcf-edit-step-btn i { width: 14px !important; stroke-width: 3px !important; }
+    /* 🎛️ HISTORY FILTERS (Mechanical Toggles) */
+    .mcf-hist-filter-row {
+        display: flex !important;
+        gap: 4px !important; /* Tight gap to fit everything */
+        padding: 8px 0 16px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow: hidden !important; /* No more scroll */
+    }
+
+    .mcf-hist-filter-btn {
+        flex: 1 !important; /* Each button takes equal space */
+        min-width: 0 !important;
+        background: var(--mcf-surface) !important;
+        border: none !important;
+        padding: 8px 2px !important;
+        font-size: 9px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: var(--mcf-ink-muted) !important;
+        border-radius: 4px !important;
+        transition: all 0.2s ease !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+
+    .mcf-hist-filter-btn.active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .mcf-hist-filter-btn.mcf-btn-pedido { background: var(--mcf-rose-lt) !important; color: var(--mcf-ink) !important; }
+    .mcf-hist-filter-btn.mcf-btn-stock { background: var(--mcf-slate-lt) !important; color: var(--mcf-ink) !important; }
+    .mcf-hist-filter-btn.mcf-btn-recepc { background: var(--mcf-sage-lt) !important; color: var(--mcf-ink) !important; }
+    .mcf-hist-filter-btn.mcf-btn-merma { background: var(--mcf-mauve-lt) !important; color: var(--mcf-ink) !important; }
+
+    .mcf-hist-filter-btn.mcf-btn-pedido.active { background: var(--mcf-rose) !important; color: var(--mcf-paper) !important; }
+    .mcf-hist-filter-btn.mcf-btn-stock.active { background: var(--mcf-slate) !important; color: var(--mcf-paper) !important; }
+    .mcf-hist-filter-btn.mcf-btn-recepc.active { background: var(--mcf-sage) !important; color: var(--mcf-paper) !important; }
+    .mcf-hist-filter-btn.mcf-btn-merma.active { background: var(--mcf-mauve) !important; color: var(--mcf-paper) !important; }
+
+    /* 📅 SURGICAL DATE STRIP (McFetridge Compact Feed) */
+    .mcf-hist-date-strip {
+        display: flex !important;
+        align-items: center !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        margin: 0 6px 24px 0 !important;
+        width: calc(100% - 8px) !important;
+        box-sizing: border-box !important;
+        height: 54px !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        overflow: hidden !important;
+    }
+
+    .mcf-date-pocket {
+        flex: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 0 12px !important;
+        gap: 10px !important;
+        position: relative !important;
+        min-width: 0 !important;
+    }
+
+    .mcf-date-display {
         font-family: var(--mcf-font-body) !important;
-        font-size: 13px !important;
-        font-weight: 700 !important;
+        font-size: 14px !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink) !important;
+        letter-spacing: 1px !important;
+    }
+
+    .mcf-date-hidden-input {
+        position: absolute !important;
+        opacity: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        left: 0 !important;
+        top: 0 !important;
+        cursor: pointer !important;
+        pointer-events: auto !important; /* CRITICAL FIX */
+        z-index: 10 !important;
+    }
+
+    .mcf-date-separator {
+        width: 32px !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-left: 2px solid var(--mcf-surface) !important;
+        border-right: 2px solid var(--mcf-surface) !important;
+        color: var(--mcf-ink) !important; /* FLECHA INK */
+    }
+
+    .mcf-edit-step-val {
+        font-weight: 950 !important;
+        min-width: 36px !important;
+        text-align: center !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 16px !important;
         color: var(--mcf-ink) !important;
     }
 
-    .mcf-hist-date-input:focus {
-        outline: none !important;
-        border-color: var(--mcf-amber) !important;
+    .mcf-edit-delete-btn {
+        background: none !important;
+        border: none !important;
+        color: var(--mcf-rose) !important;
+        padding: 0 0 0 12px !important;
+        cursor: pointer !important;
+    }
+
+    .mcf-edit-delete-btn i { width: 18px !important; stroke-width: 3px !important; }
+
+    /* Modal Footer Buttons */
+    .mcf-modal-footer {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        margin-top: 10px !important;
+    }
+
+    .mcf-edit-btn-save, .mcf-edit-btn-wa, .mcf-edit-btn-cancel {
+        width: 100% !important;
+        padding: 16px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        border: 4px solid var(--mcf-ink) !important;
+        cursor: pointer !important;
+        transition: all 0.1s var(--mcf-snap) !important;
+    }
+
+    .mcf-edit-btn-save {
+        background: var(--mcf-amber) !important;
+        color: var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-edit-btn-wa {
+        background: #25D366 !important;
+        color: var(--mcf-paper) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-edit-btn-cancel {
+        background: none !important;
+        border: none !important;
+        color: var(--mcf-ink-ghost) !important;
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+
+    .mcf-edit-btn-save:active, .mcf-edit-btn-wa:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: none !important;
+    }
+
+    @keyframes mcf-modal-slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    /* 🎛️ HISTORY FILTERS (Mechanical Toggles) */
+
+    .mcf-hist-filter-btn.mcf-btn-stock.active { background: var(--mcf-slate) !important; color: var(--mcf-paper) !important; }
+    .mcf-hist-filter-btn.mcf-btn-recepc.active { background: var(--mcf-sage) !important; color: var(--mcf-paper) !important; }
+    .mcf-hist-filter-btn.mcf-btn-merma.active { background: var(--mcf-mauve) !important; color: var(--mcf-paper) !important; }
+
+
+    .mcf-date-input-field::-webkit-calendar-picker-indicator {
+        opacity: 0 !important; /* Hide native icon to use Lucide */
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        cursor: pointer !important;
     }
 
     .dash-h-scroll::-webkit-scrollbar {

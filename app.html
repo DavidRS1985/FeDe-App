@@ -36,6 +36,20 @@
         generateEntryId: FeDe_Utils.generateEntryId
     };
 
+    function refreshIcons() { if (window.lucide) lucide.createIcons(); }
+
+    function formatRelativeTime(ts) {
+        if (!ts) return '';
+        var now = Date.now();
+        var diff = now - ts;
+        var mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'AHORA';
+        if (mins < 60) return 'HACE ' + mins + ' MIN';
+        var hours = Math.floor(mins / 60);
+        if (hours < 24) return 'HACE ' + hours + ' HR';
+        return new Date(ts).toLocaleDateString();
+    }
+
     /**
      * API ADAPTER (Interface Adapter): Centraliza llamadas al servidor.
      */
@@ -1718,8 +1732,14 @@
                     if (content) content.classList.remove('hidden');
                     
                     // RE-INIT LUCIDE
-                    if (window.lucide) lucide.createIcons();
+                    refreshIcons();
                 }
+            })
+            .withFailureHandler(function(err) {
+                console.error('Dash Error:', err);
+                if (loader) loader.classList.add('hidden');
+                if (content) content.classList.remove('hidden');
+                toast("Error al cargar dashboard: " + err.message);
             })
             .getDashboardMetrics();
     }
@@ -1956,12 +1976,26 @@
     var histFilters = { mode: 'all', from: '', to: '', query: '' };
     function setHistFilter(type, val, el) {
         histFilters[type] = val;
-        if (el && el.parentNode) {
+        if (el && el.parentNode && el.classList.contains('mcf-hist-filter-btn')) {
             var btns = el.parentNode.querySelectorAll('button');
             for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
             el.classList.add('active');
         }
         renderHistory();
+    }
+
+    function updateDateDisplay(type, val) {
+        setHistFilter(type, val);
+        const display = document.getElementById('display-date-' + type);
+        if (!display) return;
+        if (!val) {
+            display.innerText = 'DD/MM';
+            return;
+        }
+        const parts = val.split('-'); // YYYY-MM-DD
+        if (parts.length === 3) {
+            display.innerText = parts[2] + '/' + parts[1];
+        }
     }
 
     var histLimit = 20;
@@ -1986,7 +2020,7 @@
             var newList = [];
             for (var i = 0; i < filtered.length; i++) {
                 var h = filtered[i];
-                var m = (h.modo || h.mode || 'stock').toLowerCase();
+                var m = normalizeStr((h.modo || h.mode || 'stock').toLowerCase());
                 var match = false;
                 if (modeToFilter === 'recepcion') match = (m === 'recepcion' || m === 'entrante');
                 else match = (m === modeToFilter);
@@ -2093,7 +2127,7 @@
             var dateStr = dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }).toUpperCase();
             var timeStr = dateObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
-            html += '<div class="mcf-hist-card mcf-appear" style="--delay: ' + (i * 0.05) + 's" onclick="toggleHistExpand(\'' + h.id + '\')">' +
+            html += '<div class="mcf-hist-card mcf-appear mcf-hist-card-' + _m + '" style="--delay: ' + (i * 0.05) + 's" onclick="toggleHistExpand(\'' + h.id + '\')">' +
                 '<div class="mcf-hist-header">' +
                 '<div class="mcf-hist-mode-tag" style="border-color: ' + _color + '; background: ' + _color + '15; color: ' + _color + '">' + _label + '</div>' +
                 '<div class="mcf-hist-time">' + dateStr + ' // ' + timeStr + '</div>' +
@@ -2124,7 +2158,7 @@
 
         list.innerHTML = html;
         list.style.opacity = '1';
-        setTimeout(function () { if (window.lucide) lucide.createIcons(); }, 100);
+        setTimeout(function () { refreshIcons(); }, 100);
     }
 
     function toggleHistExpand(id) {
@@ -2156,7 +2190,7 @@
                 'class="mcf-hist-filter-btn active" style="width:100%; margin-top:20px; --btn-active-bg: #25D366; --btn-active-color: white;">' +
                 '<i data-lucide="message-circle" style="width:14px; margin-right:8px;"></i> COMPARTIR POR WA' +
                 '</button>';
-            setTimeout(function () { if (window.lucide) lucide.createIcons(); }, 50);
+            setTimeout(function () { refreshIcons(); }, 50);
         }
     }
 
@@ -2227,17 +2261,23 @@
         var html = '';
         for (var i = 0; i < editingHistItems.length; i++) {
             var item = editingHistItems[i];
-            html += '<div class="edit-hist-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid var(--bd); transition: background 0.15s;">' +
-                '<div style="flex:1;"><div style="font-weight:700; font-size:14px; color:var(--text);">' + item.prod + '</div><div style="font-size:11px; color:var(--dim);">' + item.unit + '</div></div>' +
-                '<div style="display:flex; align-items:center; gap:10px; background:var(--s2); border-radius:8px; padding:4px;">' +
-                '<button onclick="stepEditHistItem(' + i + ', -1)" style="background:none; border:none; color:var(--text); font-size:18px; width:30px; cursor:pointer;">−</button>' +
-                '<span style="font-weight:800; min-width:30px; text-align:center; color:var(--text);">' + item.qty + '</span>' +
-                '<button onclick="stepEditHistItem(' + i + ', 1)" style="background:none; border:none; color:var(--text); font-size:18px; width:30px; cursor:pointer;">+</button>' +
+            html += '<div class="mcf-edit-row">' +
+                '<div class="mcf-edit-row-info">' +
+                    '<div class="mcf-edit-row-name">' + item.prod + '</div>' +
+                    '<div class="mcf-edit-row-unit">' + item.unit + '</div>' +
                 '</div>' +
-                '<button onclick="editingHistItems.splice(' + i + ', 1); renderEditHistItems();" style="background:none; border:none; color:var(--red); padding-left:10px; cursor:pointer; font-size:16px;">✕</button>' +
+                '<div class="mcf-edit-stepper">' +
+                    '<button onclick="stepEditHistItem(' + i + ', -1)" class="mcf-edit-step-btn"><i data-lucide="minus"></i></button>' +
+                    '<span class="mcf-edit-step-val">' + item.qty + '</span>' +
+                    '<button onclick="stepEditHistItem(' + i + ', 1)" class="mcf-edit-step-btn"><i data-lucide="plus"></i></button>' +
+                '</div>' +
+                '<button onclick="editingHistItems.splice(' + i + ', 1); renderEditHistItems();" class="mcf-edit-delete-btn">' +
+                    '<i data-lucide="x"></i>' +
+                '</button>' +
                 '</div>';
         }
         document.getElementById('edit-hist-body').innerHTML = html;
+        if (window.lucide) lucide.createIcons();
     }
     function stepEditHistItem(idx, dir) {
         var item = editingHistItems[idx];
@@ -2558,10 +2598,22 @@
         html += '</div>';
 
         el.innerHTML = html;
-        if (window.lucide) lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-        function runSystemTest() {
+    /**
+     * Alterna la visibilidad de las alertas operativas
+     */
+    function toggleHomeAlerts() {
+        var el = document.getElementById('home-alerts-card');
+        if (!el) return;
+        el.classList.toggle('expanded');
+        
+        // Refrescar icono de flecha
+        renderHomeSummary();
+    }
+
+    function runSystemTest() {
         var resEl = document.getElementById('test-results');
         if (!resEl) return;
         resEl.innerHTML = "> INICIALIZANDO SECUENCIA DE DIAGNÓSTICO…<br>> ESPERANDO RESPUESTA DE NÚCLEO…";

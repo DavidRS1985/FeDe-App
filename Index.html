@@ -98,21 +98,15 @@
             <!-- HEADER COMANDO (McFetridge Aesthetic) -->
             <header class="mcf-header">
                 <div class="mcf-header-controls">
-                    <button id="btn-fullscreen" onclick="toggleAppFullscreen()" class="mcf-mini-btn" aria-label="Pantalla completa">
+                    <button onclick="toggleAppFullscreen()" class="mcf-mini-btn" aria-label="Fullscreen">
                         <i data-lucide="maximize"></i>
                     </button>
-                    <button id="btn-settings" onclick="goTab('datos')" class="mcf-mini-btn" aria-label="Ajustes">
+                    <button onclick="goTab('datos')" class="mcf-mini-btn" aria-label="Settings">
                         <i data-lucide="settings"></i>
                     </button>
                 </div>
                 <h1 id="app-title-display" class="home-logo">FEDE</h1>
                 <p id="app-subtitle-display" class="subtitle">GASTRO PRO</p>
-                
-                <div style="display: flex; align-items: center; gap: 8px; margin-top: 16px;">
-                    <span id="hdr-day" class="mcf-date-tag">LUNES 21/04</span>
-                    <span id="active-sheet-name" class="mcf-sheet-tag">SANDS</span>
-                    <i data-lucide="shield-check" style="width:14px; color:var(--mcf-sage);"></i>
-                </div>
             </header>
 
             <!-- PANEL DE ALERTAS OPERATIVAS (Brutalismo Industrial) -->
@@ -190,10 +184,8 @@
     <div id="app">
         <main id="view-relevamiento" class="view scroll">
             <div class="scroll-content">
-                <div style="margin-bottom:20px;">
-                    <div id="cat-grid" class="cat-grid"></div>
-                </div>
-
+                <div id="cat-grid" class="cat-grid"></div>
+                
                 <div id="prod-section" class="hidden">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0 10px;padding:0 4px;">
                         <h2 id="cat-title" style="font-family: inherit; font-size:24px; font-weight:900; text-transform:uppercase;">Categoría</h2>
@@ -205,7 +197,6 @@
                     <!-- Local Search removed by user request -->
                     <div id="prod-list"></div>
                 </div>
-                <div class="bottom-spacer"></div>
             </div>
         </main>
 
@@ -232,11 +223,7 @@
         <main id="view-historial" class="view scroll">
             <div class="scroll-content">
                 <!-- 🏗️ HISTORY HEADER (Mechanical Logs) -->
-                <header class="mcf-header" style="box-shadow: 8px 8px 0px var(--mcf-ink) !important; margin-bottom: 32px !important;">
-                    <div class="mcf-header-controls">
-                        <div class="mcf-date-tag">ARCHIVE v11</div>
-                        <div class="mcf-sheet-tag">SYSTEM LOGS</div>
-                    </div>
+                <header class="mcf-header">
                     <h2 class="home-logo">Historial</h2>
                     <p class="subtitle">REGISTROS OPERATIVOS & TRAZABILIDAD</p>
                 </header>
@@ -244,33 +231,36 @@
                 <!-- 🎛️ MODE FILTERS (Industrial Toggles) -->
                 <div class="mcf-hist-filter-row">
                     <button class="mcf-hist-filter-btn active" onclick="setHistFilter('mode', 'all', this)">TODO</button>
-                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'pedido', this)"
-                        style="--btn-active-bg: var(--mcf-rose);">PEDIDOS</button>
-                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'stock', this)"
-                        style="--btn-active-bg: var(--mcf-slate);">STOCK</button>
-                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'recepcion', this)"
-                        style="--btn-active-bg: var(--mcf-sage);">RECEPCIÓN</button>
-                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'merma', this)"
-                        style="--btn-active-bg: var(--mcf-mauve);">MERMA</button>
+                    <button class="mcf-hist-filter-btn mcf-btn-pedido" onclick="setHistFilter('mode', 'pedido', this)">PEDIDO</button>
+                    <button class="mcf-hist-filter-btn mcf-btn-stock" onclick="setHistFilter('mode', 'stock', this)">STOCK</button>
+                    <button class="mcf-hist-filter-btn mcf-btn-recepc" onclick="setHistFilter('mode', 'recepcion', this)">RECEP.</button>
+                    <button class="mcf-hist-filter-btn mcf-btn-merma" onclick="setHistFilter('mode', 'merma', this)">MERMA</button>
                 </div>
 
-                <!-- 📅 DATE FILTERS (Mechanical Grid) -->
-                <div class="mcf-hist-date-grid">
-                    <div class="mcf-hist-input-group">
-                        <label class="mcf-hist-label">Desde</label>
-                        <input type="date" id="hist-date-from" class="mcf-hist-date-input" onchange="setHistFilter('from', this.value)">
+                <!-- 📅 DATE FILTERS (McFetridge Surgical Strip) -->
+                <div class="mcf-hist-date-strip">
+                    <div class="mcf-date-pocket">
+                        <i data-lucide="calendar-days"></i>
+                        <span id="display-date-from" class="mcf-date-display">DD/MM</span>
+                        <input type="date" id="hist-date-from" class="mcf-date-hidden-input" onchange="updateDateDisplay('from', this.value)">
                     </div>
-                    <div class="mcf-hist-input-group">
-                        <label class="mcf-hist-label">Hasta</label>
-                        <input type="date" id="hist-date-to" class="mcf-hist-date-input" onchange="setHistFilter('to', this.value)">
+                    <div class="mcf-date-separator">
+                        <i data-lucide="arrow-right"></i>
+                    </div>
+                    <div class="mcf-date-pocket">
+                        <i data-lucide="calendar-check"></i>
+                        <span id="display-date-to" class="mcf-date-display">DD/MM</span>
+                        <input type="date" id="hist-date-to" class="mcf-date-hidden-input" onchange="updateDateDisplay('to', this.value)">
                     </div>
                 </div>
 
-                <!-- 🔍 SEARCH BAR (Industrial Seeker) -->
-                <div class="mcf-search-box" style="margin-bottom: 32px;">
-                    <i data-lucide="search" style="stroke-width: 1.5px;"></i>
-                    <input type="text" id="hist-search" placeholder="BUSCAR EN REPORTES..."
-                        oninput="setHistFilter('query', this.value)" style="font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+                <!-- 🔍 SEARCH BAR (McFetridge Command Deck Standard) -->
+                <div class="mcf-hist-search-box">
+                    <div class="mcf-deck-wrap">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="hist-search" placeholder="BUSCAR REPORTES..."
+                            oninput="setHistFilter('query', this.value)">
+                    </div>
                 </div>
                 <div id="hist-list">
                     <!-- Historial here -->
@@ -282,11 +272,7 @@
         <main id="view-dashboard" class="view scroll">
             <div class="scroll-content">
                 <!-- 🏗️ DASHBOARD HEADER (Mechanical Authority) -->
-                <header class="mcf-header" style="box-shadow: 8px 8px 0px var(--mcf-amber) !important; margin-bottom: 32px !important;">
-                    <div class="mcf-header-controls">
-                        <div class="mcf-date-tag">ANALYTICS v11</div>
-                        <div class="mcf-sheet-tag">LIVE FEED</div>
-                    </div>
+                <header class="mcf-header">
                     <h2 class="home-logo">Dashboard ROI</h2>
                     <span class="subtitle">INTELIGENCIA PREDICTIVA & MÉTRICAS</span>
                 </header>
@@ -382,11 +368,7 @@
         <main id="view-datos" class="view scroll">
             <div class="scroll-content">
                 <!-- 🏗️ SETTINGS HEADER (Mechanical Command) -->
-                <header class="mcf-header" style="box-shadow: 8px 8px 0px var(--mcf-ink) !important; margin-bottom: 32px !important;">
-                    <div class="mcf-header-controls">
-                        <div class="mcf-date-tag">CONTROL DECK</div>
-                        <div class="mcf-sheet-tag">MAINTENANCE</div>
-                    </div>
+                <header class="mcf-header">
                     <h2 class="home-logo">Ajustes</h2>
                     <p class="subtitle">CONFIGURACIÓN & DIAGNÓSTICO</p>
                 </header>
@@ -622,71 +604,50 @@
     </div>
 
     <!-- MODAL: EDITAR HISTORIAL -->
-    <div id="modal-edit-hist" class="shov" onclick="closeEditHistModal(event)">
-        <div class="sh" onclick="event.stopPropagation()">
-            <div class="sh-handle"></div>
-            <h2 style="margin-bottom:16px;">Editar Registro</h2>
-
+    <div id="modal-edit-hist" class="mcf-modal-overlay" onclick="closeEditHistModal(event)">
+        <div class="mcf-modal-content" onclick="event.stopPropagation()">
+            <div class="mcf-modal-handle"></div>
+            <h2 class="mcf-modal-title">EDITAR REGISTRO</h2>
+            
             <!-- Selector de tipo de registro -->
-            <div style="margin-bottom:20px;">
-                <div
-                    style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-                    Tipo de registro</div>
-                <div style="display:flex; gap:8px;">
-                    <button id="edit-mode-pedido" onclick="setEditMode('pedido')"
-                        style="flex:1; padding:12px 8px; border-radius:14px; border:1.5px solid rgba(234,88,12,0.3); background:rgba(234,88,12,0.08); color:var(--orange); font-family:'Outfit',sans-serif; font-weight:800; font-size:12px; cursor:pointer; transition:all 0.2s; text-transform:uppercase;">
-                        🟠 Pedido
-                    </button>
-                    <button id="edit-mode-stock" onclick="setEditMode('stock')"
-                        style="flex:1; padding:12px 8px; border-radius:14px; border:1.5px solid rgba(59,130,246,0.3); background:rgba(59,130,246,0.08); color:var(--blue); font-family:'Outfit',sans-serif; font-weight:800; font-size:12px; cursor:pointer; transition:all 0.2s; text-transform:uppercase;">
-                        🔵 Stock
-                    </button>
-                    <button id="edit-mode-recepcion" onclick="setEditMode('recepcion')"
-                        style="flex:1; padding:12px 8px; border-radius:14px; border:1.5px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.08); color:var(--green); font-family:'Outfit',sans-serif; font-weight:800; font-size:12px; cursor:pointer; transition:all 0.2s; text-transform:uppercase;">
-                        🟢 Recep.
-                    </button>
+            <div class="mcf-edit-section">
+                <div class="mcf-edit-label">Tipo de registro</div>
+                <div class="mcf-edit-mode-grid">
+                    <button id="edit-mode-pedido" class="mcf-edit-mode-btn mcf-btn-pedido" onclick="setEditMode('pedido')">PEDIDO</button>
+                    <button id="edit-mode-stock" class="mcf-edit-mode-btn mcf-btn-stock" onclick="setEditMode('stock')">STOCK</button>
+                    <button id="edit-mode-recepcion" class="mcf-edit-mode-btn mcf-btn-recepc" onclick="setEditMode('recepcion')">RECEP.</button>
                 </div>
             </div>
 
             <!-- Selector de fecha -->
-            <div style="margin-bottom:20px;">
-                <div
-                    style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-                    Fecha del registro</div>
-                <input type="datetime-local" id="edit-hist-date"
-                    style="width:100%; padding:12px 16px; border-radius:12px; border:1.5px solid var(--bd2); background:var(--s1); color:var(--text); font-family:'Outfit',sans-serif; font-weight:600; font-size:14px; outline:none;">
+            <div class="mcf-edit-section">
+                <div class="mcf-edit-label">Fecha del registro</div>
+                <input type="datetime-local" id="edit-hist-date" class="mcf-edit-input">
             </div>
 
-            <div id="edit-hist-body"
-                style="max-height: 340px; overflow-y: auto; margin-bottom: 16px; border: 1.5px solid var(--bd); border-radius: 12px; background: var(--s1);">
+            <div id="edit-hist-body" class="mcf-edit-list-container">
                 <!-- Items list here -->
             </div>
 
             <!-- Agregar ítems -->
-            <div style="margin-bottom:20px; position:relative;">
-                <div
-                    style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-                    Agregar ítem</div>
+            <div class="mcf-edit-section" style="position:relative;">
+                <div class="mcf-edit-label">Agregar ítem</div>
                 <div class="mcf-search-box">
                     <i data-lucide="search"></i>
                     <input type="text" id="edit-hist-search" placeholder="BUSCAR PRODUCTO..."
                         oninput="searchEditHistProduct(this.value)" autocomplete="off">
                 </div>
-                <div id="edit-hist-search-results"
-                    style="display:none; position:absolute; left:0; right:0; top:100%; z-index:200; background:var(--bg-alt); border:1.5px solid var(--bd2); border-radius:12px; max-height:200px; overflow-y:auto; margin-top:4px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
-                </div>
+                <div id="edit-hist-search-results" class="mcf-edit-search-results"></div>
             </div>
 
             <!-- Botones de acción -->
-            <button class="wa-btn" onclick="saveHistoryEdit()"
-                style="background:var(--primary); color:#000; font-weight:900; box-shadow:0 4px 16px rgba(6,182,210,0.3); border:none;">ACTUALIZAR
-                REGISTRO</button>
-            <button onclick="shareEditHistWA()" 
-                style="width:100%; height:48px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:var(--mcf-paper); margin-top:10px; border-radius:12px; border:none; font-weight:900; font-size:13px; font-family:'Outfit',sans-serif; cursor:pointer;"> 
-                <i data-lucide="message-circle" style="width:18px;"></i> ENVIAR POR WHATSAPP
-            </button>
-            <button onclick="closeEditHistModal()"
-                style="width:100%;background:none;border:none;color:var(--dim);padding:15px;cursor:pointer;">CANCELAR</button>
+            <div class="mcf-modal-footer">
+                <button onclick="saveHistoryEdit()" class="mcf-edit-btn-save">ACTUALIZAR REGISTRO</button>
+                <button onclick="shareEditHistWA()" class="mcf-edit-btn-wa">
+                    <i data-lucide="message-circle" style="width:16px;"></i> ENVIAR POR WHATSAPP
+                </button>
+                <button onclick="closeEditHistModal()" class="mcf-edit-btn-cancel">CANCELAR EDICIÓN</button>
+            </div>
         </div>
     </div>
 
@@ -878,7 +839,7 @@
         <div id="hdr-search-res" class="mcf-search-results-overlay"></div>
         <div class="mcf-deck-wrap">
             <i data-lucide="search" class="mcf-deck-icon"></i>
-            <input type="text" id="hdr-search-input" placeholder="BUSCAR ÍTEM…" oninput="handleHdrSearch(this.value)" autocomplete="off" onfocus="this.value && handleHdrSearch(this.value)">
+            <input type="text" id="hdr-search-input" placeholder="Buscar ítem..." oninput="handleHdrSearch(this.value)" autocomplete="off" onfocus="this.value && handleHdrSearch(this.value)">
         </div>
     </div>
 
