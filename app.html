@@ -870,7 +870,7 @@
             var encoded = encodeURIComponent(cat);
             var safeCat = FeDe_Utils.sanitize(cat);
             var bgColor = getModeBgColor();
-            var styleStr = 'background-color: ' + bgColor + ';';
+            var styleStr = '--cchip-bg: ' + bgColor + ';';
             if (size) styleStr += ' --cat-icon-size: ' + size + 'px;';
             
             return '<div class="cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" style="' + styleStr + '">' +
