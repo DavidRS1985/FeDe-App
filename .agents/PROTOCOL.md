@@ -12,7 +12,7 @@ Cualquier agente debe validar sus propuestas contra estos tokens:
 *   **Superficies**: Planas (Flat), sin gradientes ni sombras suaves.
 *   **Bordes**: Siempre `0px` radius. Grosor constante de `3px` a `5px` (Ink).
 *   **Color**: Paleta Pastel Desactivada (Muted Pastels) sobre fondo Crema (`#F4F0E5`).
-*   **Iconografía**: Lucide SVG con `stroke-width: 3px`. Estilo de sello o diagrama técnico.
+*   **Iconografía**: Lucide SVG con `stroke-width: 2px`. Estilo de sello o diagrama técnico.
 
 ### 3. MANDATO "MOBILE-FIRST"
 Toda modificación de UI debe seguir estas reglas:

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "design-consistency-auditor": {
+      "source": "shipshitdev/library",
+      "sourceType": "github",
+      "computedHash": "d1bd0c4b4332a7206ee95e3440fad37de7785612bcf091cd5816aeff51d38b58"
+    }
+  }
+}

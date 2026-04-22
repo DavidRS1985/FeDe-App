@@ -1,9 +1,10 @@
+<? var st = (typeof theme !== 'undefined') ? theme : 'mcf'; ?>
 <!DOCTYPE html>
 <html lang="es" data-icon-size="medium" class="theme-<?= st ?>">
 
 <head>
     <meta charset="UTF-8">
-    <title>FeDe Gastro Pro - FOCACCIA v11.0.17</title>
+    <title>FeDe Gastro Pro - FOCACCIA v11.1.0</title>
     <!-- FUENTES E ICONOS EXTERNOS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +15,6 @@
 
     <!-- ESTILOS (SISTEMA MODULAR GAS) -->
     <?!= include('styles'); ?>
-    <? var st = (typeof theme !== 'undefined') ? theme : 'zinc'; ?>
     <? if (st === 'mcf') { ?>
       <?!= include('styles_mcfetridge'); ?>
     <? } ?>
@@ -45,13 +45,13 @@
     (function() {
         var manifest = {
             "id": "com.fede.focaccia.v10",
-            "name": "FeDe Gastro Pro - v11.0.17 — CSS RESPONSIVO & ERGONÓMICO",
+            "name": "FeDe Gastro Pro - v11.1.0 — CSS RESPONSIVO & ERGONÓMICO",
             "short_name": "FOCACCIA",
             "start_url": window.location.href,
             "display": "standalone",
             "background_color": "<?= (st === 'mcf' ? '#1A1816' : '#0f1115') ?>",
             "theme_color": "<?= (st === 'mcf' ? '#1A1816' : '#0f1115') ?>",
-            "description": "Sistema de gestión operativa - FOCACCIA Edition v11.0.17",
+            "description": "Sistema de gestión operativa - FOCACCIA Edition v11.1.0",
             "icons": [
                 {
                     "src": "https://img.icons8.com/isometric/192/restaurant-membership-card.png",
@@ -93,7 +93,7 @@
     <div id="home" style="position:relative; min-height:100vh; background: transparent; overflow-x: hidden;">
 
         <main id="home-content" class="view active"
-            style="display: flex; flex-direction: column; align-items: center; padding: 40px 24px; min-height: 100vh; position: relative; z-index: 2;">
+            style="display: flex; flex-direction: column; align-items: center; padding: 40px 24px; min-height: 100vh; position: relative; z-index: 10; pointer-events: auto !important;">
 
             <!-- HEADER COMANDO (McFetridge Aesthetic) -->
             <header class="mcf-header">
@@ -133,7 +133,7 @@
             </div>
 
             <!-- MODOS DE RELEVAMIENTO (2x2 Matrix) -->
-            <div class="mcf-grid-v2" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+            <div class="mcf-grid-v2">
                 <div class="mcf-action-btn mcf-btn-pedido" onclick="initRelevamiento('pedido')">
                     <i data-lucide="package"></i>
                     <span>Pedido</span>
@@ -180,7 +180,7 @@
                         <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--mcf-ink);"></i>
                         <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 0.5px;">SISTEMA ACTIVO</span>
                     </div>
-                    <div style="font-size: 10px; font-weight: 950; background: var(--mcf-ink); color: var(--mcf-bg); padding: 4px 10px; letter-spacing: 1px;">v11.0.17</div>
+                    <div style="font-size: 10px; font-weight: 950; background: var(--mcf-ink); color: var(--mcf-bg); padding: 4px 10px; letter-spacing: 1px;">v11.1.0</div>
                 </div>
             </div>
         </main>
@@ -197,7 +197,7 @@
                 <div id="prod-section" class="hidden">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0 10px;padding:0 4px;">
                         <h2 id="cat-title" style="font-family: inherit; font-size:24px; font-weight:900; text-transform:uppercase;">Categoría</h2>
-                        <button onclick="enterFullscreenMode()" class="mcf-mode-btn">
+                        <button onclick="enterFullscreenMode()" class="mcf-mode-btn" aria-label="Activar modo rápido de carga">
                             <i data-lucide="zap" style="width: 14px; fill: var(--mcf-ink);"></i> MODO RÁPIDO
                         </button>
                     </div>
@@ -231,53 +231,46 @@
 
         <main id="view-historial" class="view scroll">
             <div class="scroll-content">
-                <header style="margin-bottom:20px;">
-                    <h2
-                        style="font-family:'Outfit', sans-serif; font-size:32px; font-weight:900; color:var(--text); letter-spacing:-0.5px; margin-bottom:4px;">
-                        Historial</h2>
-                    <p style="font-size:13px; color:var(--dim); font-weight:500;">Registros de pedidos, stock y
-                        recepciones.</p>
+                <!-- 🏗️ HISTORY HEADER (Mechanical Logs) -->
+                <header class="mcf-header" style="box-shadow: 8px 8px 0px var(--mcf-ink) !important; margin-bottom: 32px !important;">
+                    <div class="mcf-header-controls">
+                        <div class="mcf-date-tag">ARCHIVE v11</div>
+                        <div class="mcf-sheet-tag">SYSTEM LOGS</div>
+                    </div>
+                    <h2 class="home-logo">Historial</h2>
+                    <p class="subtitle">REGISTROS OPERATIVOS & TRAZABILIDAD</p>
                 </header>
 
-                <!-- Filtros de modo con color por tipo -->
-                <div style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px;">
-                    <button class="dash-period-btn active" onclick="setHistFilter('mode', 'all', this)"
-                        style="flex-shrink:0;">TODO</button>
-                    <button class="dash-period-btn" onclick="setHistFilter('mode', 'pedido', this)"
-                        style="flex-shrink:0; --btn-active-color: var(--mcf-paper); --btn-active-bg: var(--orange); --btn-active-border: var(--orange);">🟠
-                        PEDIDOS</button>
-                    <button class="dash-period-btn" onclick="setHistFilter('mode', 'stock', this)"
-                        style="flex-shrink:0; --btn-active-color: var(--mcf-paper); --btn-active-bg: var(--blue); --btn-active-border: var(--blue);">🔵
-                        STOCK</button>
-                    <button class="dash-period-btn" onclick="setHistFilter('mode', 'recepcion', this)"
-                        style="flex-shrink:0; --btn-active-color: var(--mcf-paper); --btn-active-bg: var(--green); --btn-active-border: var(--green);">🟢
-                        RECEPCIÓN</button>
-                    <button class="dash-period-btn" onclick="setHistFilter('mode', 'merma', this)"
-                        style="flex-shrink:0; --btn-active-color: var(--mcf-paper); --btn-active-bg: var(--violet); --btn-active-border: var(--violet);">🟣
-                        MERMA</button>
+                <!-- 🎛️ MODE FILTERS (Industrial Toggles) -->
+                <div class="mcf-hist-filter-row">
+                    <button class="mcf-hist-filter-btn active" onclick="setHistFilter('mode', 'all', this)">TODO</button>
+                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'pedido', this)"
+                        style="--btn-active-bg: var(--mcf-rose);">PEDIDOS</button>
+                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'stock', this)"
+                        style="--btn-active-bg: var(--mcf-slate);">STOCK</button>
+                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'recepcion', this)"
+                        style="--btn-active-bg: var(--mcf-sage);">RECEPCIÓN</button>
+                    <button class="mcf-hist-filter-btn" onclick="setHistFilter('mode', 'merma', this)"
+                        style="--btn-active-bg: var(--mcf-mauve);">MERMA</button>
                 </div>
 
-                <div
-                    style="background:var(--s1); border:2px solid var(--bd2); border-radius:18px; padding:16px; margin-bottom:20px;">
-                    <div style="display:flex; gap:10px; margin-bottom:12px;">
-                        <div style="flex:1;">
-                            <label
-                                style="font-size:10px; font-weight:800; color:var(--dim); display:block; margin-bottom:4px; text-transform:uppercase;">Desde</label>
-                            <input type="date" id="hist-date-from" onchange="setHistFilter('from', this.value)"
-                                style="width:100%; background:var(--s2); border:2px solid var(--bd2); border-radius:10px; padding:10px; color:var(--text); font-family:inherit; font-size:13px;">
-                        </div>
-                        <div style="flex:1;">
-                            <label
-                                style="font-size:10px; font-weight:800; color:var(--dim); display:block; margin-bottom:4px; text-transform:uppercase;">Hasta</label>
-                            <input type="date" id="hist-date-to" onchange="setHistFilter('to', this.value)"
-                                style="width:100%; background:var(--s2); border:2px solid var(--bd2); border-radius:10px; padding:10px; color:var(--text); font-family:inherit; font-size:13px;">
-                        </div>
+                <!-- 📅 DATE FILTERS (Mechanical Grid) -->
+                <div class="mcf-hist-date-grid">
+                    <div class="mcf-hist-input-group">
+                        <label class="mcf-hist-label">Desde</label>
+                        <input type="date" id="hist-date-from" class="mcf-hist-date-input" onchange="setHistFilter('from', this.value)">
                     </div>
-                    <div class="mcf-search-box">
-                        <i data-lucide="search"></i>
-                        <input type="text" id="hist-search" placeholder="BUSCAR EN REPORTES..."
-                            oninput="setHistFilter('query', this.value)">
+                    <div class="mcf-hist-input-group">
+                        <label class="mcf-hist-label">Hasta</label>
+                        <input type="date" id="hist-date-to" class="mcf-hist-date-input" onchange="setHistFilter('to', this.value)">
                     </div>
+                </div>
+
+                <!-- 🔍 SEARCH BAR (Industrial Seeker) -->
+                <div class="mcf-search-box" style="margin-bottom: 32px;">
+                    <i data-lucide="search" style="stroke-width: 1.5px;"></i>
+                    <input type="text" id="hist-search" placeholder="BUSCAR EN REPORTES..."
+                        oninput="setHistFilter('query', this.value)" style="font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
                 </div>
                 <div id="hist-list">
                     <!-- Historial here -->
@@ -288,233 +281,206 @@
 
         <main id="view-dashboard" class="view scroll">
             <div class="scroll-content">
-                <header style="margin-bottom:24px;">
-                    <h2
-                        style="font-size:32px;font-weight:900;color:var(--text);margin-bottom:8px;font-family:'Outfit', sans-serif;letter-spacing:-1px;">
-                        Dashboard ROI</h2>
-                    <p style="font-size:14px;color:var(--dim);font-weight:500;">Inteligencia predictiva y métricas clave
-                        rápidas.</p>
+                <!-- 🏗️ DASHBOARD HEADER (Mechanical Authority) -->
+                <header class="mcf-header" style="box-shadow: 8px 8px 0px var(--mcf-amber) !important; margin-bottom: 32px !important;">
+                    <div class="mcf-header-controls">
+                        <div class="mcf-date-tag">ANALYTICS v11</div>
+                        <div class="mcf-sheet-tag">LIVE FEED</div>
+                    </div>
+                    <h2 class="home-logo">Dashboard ROI</h2>
+                    <span class="subtitle">INTELIGENCIA PREDICTIVA & MÉTRICAS</span>
                 </header>
 
                 <div id="dash-loader" class="hidden" style="text-align:center; padding:60px;">
-                    <div class="spinner" style="margin: 0 auto 16px;"></div>
-                    <div
-                        style="font-size:12px; font-weight:800; font-family:'Outfit', sans-serif; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">
-                        Sincronizando Data...</div>
+                    <div class="spinner" style="margin: 0 auto 16px; border-radius: 0; border-width: 4px; border-color: var(--mcf-ink) transparent var(--mcf-ink) transparent;"></div>
+                    <div style="font-size:12px; font-weight:950; font-family:var(--mcf-font-display); color:var(--mcf-ink); text-transform:uppercase; letter-spacing:2px;">Sincronizando Data...</div>
                 </div>
 
                 <div id="dash-content">
-                    <div class="dash-metric-grid">
-                        <div class="dash-metric-card">
-                            <div class="dash-metric-header">
-                                <span class="dash-metric-label">Inventario</span>
-                                <div class="dash-metric-icon"><i data-lucide="package"
-                                        style="width:18px; color:var(--primary);"></i></div>
+                    <!-- 📊 KEY PERFORMANCE INDICATORS (Tectonic Grid) -->
+                    <div class="mcf-grid-v2">
+                        <div class="dash-card mcf-appear" style="--delay: 0.1s; background: var(--mcf-paper); border: 4px solid var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-ink);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mcf-ink-ghost);">Inventario</span>
+                                <i data-lucide="package" style="width: 24px; height: 24px; stroke-width: 1.2px; color: var(--mcf-ink);"></i>
                             </div>
-                            <div id="card-totalitems" class="dash-metric-value">—</div>
-                            <div class="dash-metric-footer">Surtido de Items</div>
+                            <div id="card-totalitems" style="font-family: var(--mcf-font-display); font-size: 42px; font-weight: 950; color: var(--mcf-ink); line-height: 1;">—</div>
+                            <div style="font-size: 10px; font-weight: 950; text-transform: uppercase; color: var(--mcf-ink-ghost); margin-top: 8px;">Items Activos</div>
                         </div>
-                        <div class="dash-metric-card">
-                            <div class="dash-metric-header">
-                                <span class="dash-metric-label">Hoy</span>
-                                <div class="dash-metric-icon" style="border-color:var(--blue);"><i
-                                        data-lucide="activity" style="width:18px; color:var(--blue);"></i></div>
+
+                        <div class="dash-card mcf-appear" style="--delay: 0.2s; background: var(--mcf-paper); border: 4px solid var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-sky);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mcf-ink-ghost);">Hoy</span>
+                                <i data-lucide="activity" style="width: 24px; height: 24px; stroke-width: 1.2px; color: var(--mcf-ink);"></i>
                             </div>
-                            <div id="card-movtoday" class="dash-metric-value">—</div>
-                            <div class="dash-metric-footer">Movimientos</div>
-                        </div>
-                    </div>
-
-                    <!-- RECENT CATEGORIES SECTION -->
-                    <div class="dash-section-title">
-                        <h3>Actualización Secciones</h3>
-                        <div style="font-size:10px; color:var(--dim); font-weight:900;">RECIENTE</div>
-                    </div>
-                    <div id="dash-recent-cats" class="dash-h-scroll" style="margin-bottom:24px;"></div>
-
-                    <div class="dash-card" style="padding:0; overflow:hidden;">
-                        <div style="padding:20px; background:linear-gradient(to bottom, var(--s1), var(--bg));">
-                            <h3
-                                style="font-size:18px; font-family:'Outfit',sans-serif; font-weight:900; margin-bottom:4px; color:var(--text);">
-                                Calendario Actividad</h3>
-                            <p style="font-size:12px; color:var(--dim); margin-bottom:20px;">Frecuencia y consistencia
-                                de registros.</p>
-
-                            <div
-                                style="display:flex; justify-content:center; gap:16px; margin-bottom:20px; font-size:9px; font-weight:900; border-bottom: 2px solid var(--bd2); padding-bottom: 16px; flex-wrap:wrap;">
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <div class="cal-dot-pedido" style="width:6px;height:6px;border-radius:50%;"></div> PEDIDOS
-                                </div>
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <div class="cal-dot-stock" style="width:6px;height:6px;border-radius:50%;"></div> STOCK
-                                </div>
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <div class="cal-dot-recepcion" style="width:6px;height:6px;border-radius:50%;"></div> REC
-                                </div>
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <div class="cal-dot-merma" style="width:6px;height:6px;border-radius:50%;"></div> MERMA
-                                </div>
-                            </div>
-
-                            <div class="cal-grid" style="opacity:0.6;">
-                                <div class="cal-header-day">L</div>
-                                <div class="cal-header-day">M</div>
-                                <div class="cal-header-day">X</div>
-                                <div class="cal-header-day">J</div>
-                                <div class="cal-header-day">V</div>
-                                <div class="cal-header-day">S</div>
-                                <div class="cal-header-day">D</div>
-                            </div>
-                            <div id="dash-calendar" class="cal-grid" style="margin-top:0;"></div>
+                            <div id="card-movtoday" style="font-family: var(--mcf-font-display); font-size: 42px; font-weight: 950; color: var(--mcf-ink); line-height: 1;">—</div>
+                            <div style="font-size: 10px; font-weight: 950; text-transform: uppercase; color: var(--mcf-ink-ghost); margin-top: 8px;">Movimientos</div>
                         </div>
                     </div>
 
-                    <!-- NUEVA SECCION: GOOGLE CALENDAR -->
-                    <div class="dash-section-title" style="margin-top:24px;">
-                        <h3>Eventos Próximos</h3>
-                        <div style="font-size:10px; color:var(--blue); font-weight:900;">GOOGLE CALENDAR</div>
+                    <!-- ⏱️ RECENT UPDATES (Industrial Log) -->
+                    <div class="mcf-section-title" style="margin-bottom: 16px;">
+                        <h3 style="font-family: var(--mcf-font-display); font-weight: 950; text-transform: uppercase; letter-spacing: 1.5px; font-size: 14px;">Actualización Secciones</h3>
+                        <div style="font-size: 10px; font-weight: 950; background: var(--mcf-ink); color: var(--mcf-bg); padding: 2px 8px;">HISTORIAL RECIENTE</div>
                     </div>
-                    <div class="dash-card" style="padding:20px; border-style:dashed; opacity:0.9;">
-                        <div id="dash-gcal-list">
-                            <div style="font-size:12px; color:var(--dim); text-align:center; padding:20px;">
-                                <i data-lucide="loader-2" class="spin" style="width:20px; margin-bottom:8px;"></i><br>
-                                Conectando con Google Calendar...
+                    <div id="dash-recent-cats" class="dash-h-scroll mcf-appear" style="--delay: 0.3s; margin-bottom: 32px; display: flex; gap: 12px; overflow-x: auto; padding: 4px;">
+                        <!-- Dinámico -->
+                    </div>
+
+                    <!-- 📅 ACTIVITY CALENDAR (The Heatmap) -->
+                    <div class="dash-card mcf-appear" style="--delay: 0.4s; background: var(--mcf-paper); border: 4px solid var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-ink); padding: 24px; margin-bottom: 32px;">
+                        <div style="margin-bottom: 24px; border-bottom: 3px solid var(--mcf-ink); padding-bottom: 16px;">
+                            <h3 style="font-family: var(--mcf-font-display); font-size: 20px; font-weight: 950; text-transform: uppercase; margin-bottom: 4px;">Calendario Actividad</h3>
+                            <p style="font-size: 11px; font-weight: 700; color: var(--mcf-ink-ghost); text-transform: uppercase; letter-spacing: 1px;">Frecuencia y consistencia de registros</p>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:20px; font-size:9px; font-weight:950; flex-wrap:wrap; background: var(--mcf-bg); padding: 12px; border: 2px solid var(--mcf-ink);">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div class="cal-dot-pedido" style="width:8px; height:8px; border: 1.5px solid var(--mcf-ink);"></div> PEDIDOS
                             </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div class="cal-dot-stock" style="width:8px; height:8px; border: 1.5px solid var(--mcf-ink);"></div> STOCK
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div class="cal-dot-recepcion" style="width:8px; height:8px; border: 1.5px solid var(--mcf-ink);"></div> REC
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div class="cal-dot-merma" style="width:8px; height:8px; border: 1.5px solid var(--mcf-ink);"></div> MERMA
+                            </div>
+                        </div>
+
+                        <div class="cal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px;">
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">L</div>
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">M</div>
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">X</div>
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">J</div>
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">V</div>
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">S</div>
+                            <div class="cal-header-day" style="font-size: 10px; font-weight: 950; text-align: center; color: var(--mcf-ink-ghost);">D</div>
+                        </div>
+                        <div id="dash-calendar" class="cal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+                            <!-- Calendario Dinámico -->
                         </div>
                     </div>
 
-                    <!-- END DASHBOARD CONTENT -->
-
-
-                </div>
+                    <!-- 🌐 EXTERNAL EVENTS (Google Calendar Integration) -->
+                    <div class="mcf-section-title" style="margin-top:24px; margin-bottom: 16px;">
+                        <h3 style="font-family: var(--mcf-font-display); font-weight: 950; text-transform: uppercase; letter-spacing: 1.5px; font-size: 14px;">Eventos Próximos</h3>
+                        <div style="font-size: 10px; font-weight: 950; background: var(--mcf-sky); color: var(--mcf-ink); padding: 2px 8px;">SYNC OK</div>
+                    </div>
+                    
+                    <div id="dash-gcal-list" class="mcf-appear" style="--delay: 0.5s; display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px;">
+                        <div style="font-size:12px; color:var(--mcf-ink-ghost); text-align:center; padding:30px; border: 3px dashed var(--mcf-ink-ghost);">
+                            <i data-lucide="loader-2" class="spin" style="width:24px; margin-bottom:12px; color: var(--mcf-ink);"></i><br>
+                            Sincronizando con Google Calendar...
+                    </div>
+                    </div> <!-- End dash-content -->
                 <div class="bottom-spacer"></div>
-            </div>
+            </div> <!-- End scroll-content -->
         </main>
 
         <main id="view-datos" class="view scroll">
             <div class="scroll-content">
-                <header class="mcf-settings-intro">
-                    <h2>AJUSTES</h2>
-                    <p>MANTENIMIENTO DEL SISTEMA</p>
+                <!-- 🏗️ SETTINGS HEADER (Mechanical Command) -->
+                <header class="mcf-header" style="box-shadow: 8px 8px 0px var(--mcf-ink) !important; margin-bottom: 32px !important;">
+                    <div class="mcf-header-controls">
+                        <div class="mcf-date-tag">CONTROL DECK</div>
+                        <div class="mcf-sheet-tag">MAINTENANCE</div>
+                    </div>
+                    <h2 class="home-logo">Ajustes</h2>
+                    <p class="subtitle">CONFIGURACIÓN & DIAGNÓSTICO</p>
                 </header>
 
-
-
-                <!-- SECCIÓN: IDENTIDAD -->
-                <div class="dash-card">
-                    <h3
-                        style="font-size:14px; font-family:'Outfit', sans-serif; font-weight:800; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:1px;">
-                        <i data-lucide="signature" style="width:18px; color:var(--primary);"></i>Identidad de la App
-                    </h3>
-                    <div style="display:grid; gap:15px; margin-bottom:10px;">
-                        <div>
-                            <label
-                                style="font-size:11px; color:var(--dim); font-weight:700; text-transform:uppercase; display:block; margin-bottom:6px;">Nombre
-                                Principal</label>
-                            <input type="text" id="cfg-app-title" placeholder="Ej: Gastro Root-Z" class="tree-add-inp"
-                                style="width:100%;" onchange="updateAppIdentity()">
-                        </div>
-                        <div>
-                            <label
-                                style="font-size:11px; color:var(--dim); font-weight:700; text-transform:uppercase; display:block; margin-bottom:6px;">Subtítulo
-                                / Eslogan</label>
-                            <input type="text" id="cfg-app-subtitle" placeholder="Ej: Senzu-Stock v9.2.0"
-                                class="tree-add-inp" style="width:100%;" onchange="updateAppIdentity()">
-                        </div>
-                    </div> <!-- End Grid -->
-                </div> <!-- End Dash Card Identidad -->
-
-                <!-- SECCIÓN: SISTEMA DE DISEÑO -->
-                <div class="dash-card">
-                    <h3 style="font-size:14px; font-family:'Outfit', sans-serif; font-weight:800; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:1px;">
-                        <i data-lucide="palette" style="width:18px; color:var(--magenta);"></i>Sistema de Diseño
-                    </h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                        <button id="theme-btn-zinc" class="wa-btn" 
-                            style="background:var(--s2); border:2px solid var(--bd); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;"
-                            onclick="setSystemTheme('zinc')">
-                            <div style="width:100%; height:40px; border-radius:8px; background:linear-gradient(135deg, #27272a, #09090b); border:1px solid #3f3f46;"></div>
-                            <span style="font-size:12px; font-weight:800;">ZINC (CLASSIC)</span>
-                        </button>
-                        <button id="theme-btn-mcf" class="wa-btn" 
-                            style="background:var(--s2); border:2px solid var(--bd); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;"
-                            onclick="setSystemTheme('mcf')">
-                            <div style="width:100%; height:40px; border-radius:0; background:#F4F0E5; border:2px solid #1a1a1a;"></div>
-                            <span style="font-size:12px; font-weight:800;">McFETRIDGE</span>
-                        </button>
+                <!-- 🪪 IDENTITY SECTION -->
+                <div class="mcf-set-card">
+                    <div class="mcf-set-title">
+                        <i data-lucide="signature"></i> Identidad de la App
                     </div>
-                    <p style="font-size:10px; color:var(--dim); margin-top:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Nota: El cambio reiniciará la aplicación.</p>
+                    <div style="display:grid; gap:20px;">
+                        <div>
+                            <label class="mcf-set-label">Nombre Principal</label>
+                            <input type="text" id="cfg-app-title" placeholder="FEDE GASTRO PRO" class="mcf-set-input" onchange="updateAppIdentity()">
+                        </div>
+                        <div>
+                            <label class="mcf-set-label">Subtítulo / Versión</label>
+                            <input type="text" id="cfg-app-subtitle" placeholder="v11.1.0" class="mcf-set-input" onchange="updateAppIdentity()">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- SECCIÓN: LOGÍSTICA -->
-                <div class="dash-card">
-                    <h3 style="font-size:14px; font-family:'Outfit', sans-serif; font-weight:800; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:1px;">
-                        <i data-lucide="truck" style="width:18px; color:var(--orange);"></i>Logística y Pedidos
-                    </h3>
-                    <p style="font-size:12px; color:var(--dim); margin-bottom:12px;">Días programados para realizar pedidos:</p>
+                <!-- 🎨 DESIGN SYSTEM SECTION -->
+                <div class="mcf-set-card">
+                    <div class="mcf-set-title">
+                        <i data-lucide="palette"></i> Sistema de Diseño
+                    </div>
+                    <div class="mcf-set-grid">
+                        <button id="theme-btn-zinc" class="mcf-set-theme-btn" onclick="setSystemTheme('zinc')" aria-label="Cambiar a tema Zinc">
+                            <div class="mcf-set-theme-preview" style="background: linear-gradient(135deg, #27272a, #09090b);"></div>
+                            <div class="mcf-set-label" style="margin:0; text-align:center;">ZINC (CLASSIC)</div>
+                        </button>
+                        <button id="theme-btn-mcf" class="mcf-set-theme-btn" onclick="setSystemTheme('mcf')" aria-label="Cambiar a tema McFetridge">
+                            <div class="mcf-set-theme-preview" style="background: #F4F0E5; border-color: #1a1a1a;"></div>
+                            <div class="mcf-set-label" style="margin:0; text-align:center;">McFETRIDGE</div>
+                        </button>
+                    </div>
+                    <div style="margin-top:16px; padding:12px; background:var(--mcf-surface); border:2px dashed var(--mcf-ink-ghost); font-size:9px; font-weight:900; color:var(--mcf-ink-ghost); text-align:center;">
+                        NOTA: EL CAMBIO REINICIARÁ LA INTERFAZ
+                    </div>
+                </div>
+
+                <!-- 🚚 LOGISTICS SECTION -->
+                <div class="mcf-set-card">
+                    <div class="mcf-set-title">
+                        <i data-lucide="truck"></i> Logística y Pedidos
+                    </div>
+                    <label class="mcf-set-label" style="margin-bottom:12px;">Días programados para realizar pedidos:</label>
                     <div id="cfg-order-days" style="display:flex; flex-wrap:wrap; gap:8px;">
                         <!-- Días cargados dinámicamente -->
                     </div>
                 </div>
 
-                <!-- SECCIÓN: ESTRUCTURA -->
-                <div class="dash-card">
-                    <h3
-                        style="font-size:14px; font-family:'Outfit', sans-serif; font-weight:800; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:1px;">
-                        <i data-lucide="layout-grid" style="width:18px; color:var(--primary);"></i>Editar categorías
-                    </h3>
-                    <div class="mcf-settings-action-row">
-                        <input type="text" id="new-cat-inp" placeholder="NUEVA CATEGORÍA...">
-                        <button class="mcf-mini-btn" onclick="addCat()">
+                <!-- 📐 STRUCTURE SECTION -->
+                <div class="mcf-set-card">
+                    <div class="mcf-set-title">
+                        <i data-lucide="layout-grid"></i> Estructura de Categorías
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                        <input type="text" id="new-cat-inp" placeholder="NUEVA CATEGORÍA..." class="mcf-set-input">
+                        <button class="mcf-set-action-btn" onclick="addCat()" style="width:64px; box-shadow:none;" aria-label="Añadir nueva categoría">
                             <i data-lucide="plus"></i>
                         </button>
                     </div>
                     <div id="tree-cats">
-                        <!-- La estructura de árbol cargada dinámicamente -->
+                        <!-- Árbol dinámico -->
                     </div>
                 </div>
 
-                <!-- SECCIÓN: PRUEBAS DE SISTEMA (NUEVO) -->
-                <div class="dash-card">
-                    <h3 style="font-size:14px; font-family:'Outfit', sans-serif; font-weight:800; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:1px;">
-                        <i data-lucide="shield-check" style="width:18px; color:var(--primary);"></i>Diagnóstico
-                    </h3>
-                    <p style="font-size:12px; color:var(--dim); margin-bottom:16px;">Verifica la integridad de los datos y la conexión con el servidor.</p>
-                    <button class="wa-btn" onclick="runSystemTest()" style="background:var(--s2); border:1.5px solid var(--bd); color:var(--text);">
-                        EJECUTAR TEST DE FUNCIONALIDAD
+                <!-- 📡 DIAGNOSTIC SECTION -->
+                <div class="mcf-set-card">
+                    <div class="mcf-set-title">
+                        <i data-lucide="shield-check"></i> Terminal de Diagnóstico
+                    </div>
+                    <button class="mcf-set-action-btn" onclick="runSystemTest()">
+                        <i data-lucide="terminal"></i> EJECUTAR TEST DE INTEGRIDAD
                     </button>
-                    <div id="test-results" class="hidden" style="margin-top:16px; padding:12px; border-radius:12px; background:var(--bg); border:1.5px solid var(--bd2); font-family:monospace; font-size:10px; line-height:1.4; color:var(--dim);">
+                    <div id="test-results" class="hidden mcf-set-terminal">
                     </div>
                 </div>
 
-
-                <div class="bottom-spacer"></div>
-
-                <!-- SECCIÓN VERSIÓN: PRO CUTE STYLE -->
-                <div
-                    style="margin-top:40px; text-align:center; padding:30px 20px; border-top:1px dashed var(--bd2); opacity:0.8;">
-                    <div
-                        style="display:inline-flex; align-items:center; gap:12px; padding:10px 20px; background:var(--s1); border:1.5px solid var(--bd2); border-radius:40px; box-shadow: var(--sh-sm);">
-                        <div
-                            style="width:8px; height:8px; background:var(--success); border-radius:50%; animation: pulse-activity 2s infinite;">
-                        </div>
-                        <span
-                            style="font-size:11px; font-weight:900; color:var(--text); letter-spacing:1.5px; text-transform:uppercase;">FOCACCIA
-                            —
-                            v11.0.17 </span>
-                        <span style="width:1px; height:12px; background:var(--bd2);"></span>
-                        <span style="font-size:10px; font-weight:700; color:var(--dim);">(◕ᴥ◕ʋ)</span>
+                <!-- 🛠️ VERSION FOOTER -->
+                <div class="mcf-set-footer">
+                    <div style="display:inline-block; border:4px solid var(--mcf-ink); padding:12px 24px; background:var(--mcf-paper); box-shadow: 6px 6px 0px var(--mcf-ink);">
+                        <div style="font-family:var(--mcf-font-display); font-size:14px; font-weight:950; color:var(--mcf-ink); letter-spacing:2px;">FOCACCIA v11.1.0</div>
+                        <div style="font-size:10px; font-weight:800; color:var(--mcf-ink-ghost); margin-top:4px;">INDUSTRIAL OPERATING SYSTEM</div>
                     </div>
-                    <p
-                        style="margin-top:14px; font-size:10px; color:var(--dim); font-weight:600; letter-spacing:0.5px;">
-                        Un humano argentino • Antigravity</p>
+                    <p style="margin-top:24px; font-size:10px; font-weight:900; color:var(--mcf-ink-ghost); letter-spacing:1px;">BY ANTIGRAVITY // 2026</p>
                 </div>
-
                 <div class="bottom-spacer"></div>
             </div>
         </main>
+    </div> <!-- End #app -->
 
-        <footer class="tabs" id="main-tabs">
+    <footer class="tabs" id="main-tabs">
             <button class="tab active" id="tab-home" onclick="goHome()" aria-label="Inicio">
                 <i data-lucide="home"></i>INICIO
             </button>
@@ -531,7 +497,6 @@
 
         <!-- BARRA CONTEXTUAL: activa solo durante un relevamiento -->
         <footer class="ctx-bar hidden" id="ctx-bar" role="toolbar" aria-label="Acciones del relevamiento">
-
             <button class="ctx-btn ctx-exit" onclick="goHome()" aria-label="Salir del relevamiento">
                 <i data-lucide="chevron-left" style="width:16px;"></i> SALIR
             </button>
@@ -539,23 +504,19 @@
                 aria-label="Enviar relevamiento">
                 FINALIZAR <span class="ctx-count" id="ctx-count">0</span>
             </button>
-        </footer>
-
-    </div>
-
-    <!-- OVERLAY: RESUMEN (SHEET) -->
+    </footer>
     <div id="sheet-overlay" class="shov" onclick="closeResumen(event)">
         <div class="sh" onclick="event.stopPropagation()">
             <div class="sh-handle"></div>
             <h2 id="sh-title">Resumen</h2>
-            <div id="sh-body"
-                style="margin-bottom:24px;border:1px solid var(--bd);border-radius:var(--r2);padding:16px;background:var(--s1);max-height:45vh;overflow-y:auto;">
+            
+            <div id="sh-body">
                 <!-- Content here -->
             </div>
 
             <!-- MOTIVO DE MERMA (solo visible en modo merma) -->
-            <div id="merma-motivo-section" class="hidden" style="margin-bottom:16px;">
-                <label style="font-size:11px; font-weight:800; color:var(--dim); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:10px;">Motivo (opcional)</label>
+            <div id="merma-motivo-section" class="hidden" style="margin-bottom:24px;">
+                <label style="font-size:10px; font-weight:950; color:var(--mcf-ink-muted); text-transform:uppercase; letter-spacing:1.5px; display:block; margin-bottom:12px;">MOTIVO DE REGISTRO</label>
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
                     <button class="motivo-btn" data-motivo="Vencimiento" onclick="selectMotivo(this)">Vencimiento</button>
                     <button class="motivo-btn" data-motivo="Error elaboración" onclick="selectMotivo(this)">Error elaboración</button>
@@ -564,21 +525,19 @@
                 </div>
             </div>
 
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <button class="wa-btn" onclick="sendWA()"
-                    style="background:#25D366;color:white;font-size:15px;box-shadow:0 4px 20px rgba(37,211,102,0.3);">
-                    <i data-lucide="send" style="width:18px;height:18px;"></i>ENVIAR POR WHATSAPP
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button class="mcf-sheet-btn mcf-btn-wa" onclick="sendWA()" aria-label="Enviar por WhatsApp">
+                    <i data-lucide="send" style="width:20px;"></i> ENVIAR WHATSAPP
                 </button>
-                <button class="wa-btn" onclick="saveToCloud()"
-                    style="background:var(--primary);color:var(--mcf-paper);box-shadow:0 4px 20px rgba(234,88,12,0.3);">
-                    <i data-lucide="cloud" style="width:18px;height:18px;"></i>GUARDAR EN LA NUBE
+                <button class="mcf-sheet-btn mcf-btn-cloud" onclick="saveToCloud()" aria-label="Guardar en la nube">
+                    <i data-lucide="cloud" style="width:20px;"></i> GUARDAR EN NUBE
                 </button>
-                <button class="wa-btn" onclick="clearCurrentRel()"
-                    style="background:rgba(239, 68, 68, 0.1);border:1px solid rgba(239,68,68,0.4);color:var(--error);">
-                    <i data-lucide="trash-2" style="width:18px;height:18px;"></i>BORRAR RELEVAMIENTO
+                <button class="mcf-sheet-btn mcf-btn-danger-alt" onclick="clearCurrentRel()" aria-label="Borrar relevamiento actual">
+                    <i data-lucide="trash-2" style="width:20px;"></i> BORRAR RELEVAMIENTO
                 </button>
-                <button onclick="closeResumen()"
-                    style="padding:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;">CANCELAR</button>
+                <button class="mcf-sheet-btn mcf-btn-cancel-alt" onclick="closeResumen()" aria-label="Cerrar resumen">
+                    CANCELAR OPERACIÓN
+                </button>
             </div>
         </div>
     </div>
@@ -740,17 +699,24 @@
                     CATEGORÍA</div>
                 <div id="prod-fs-name-sm" style="font-size:18px; font-weight:900; color:inherit;">Nombre del Producto</div>
             </div>
-            <button class="prod-fs-close" onclick="exitFullscreenMode()">✕</button>
+            <button class="prod-fs-close" onclick="exitFullscreenMode()" aria-label="Cerrar modo rápido">
+                <i data-lucide="x"></i>
+            </button>
         </div>
+
         <div class="prod-fs-body">
             <h1 id="prod-fs-name" class="prod-fs-name">Nombre</h1>
             <div id="prod-fs-unit-row" class="prod-fs-unit-row">
                 <!-- Unit chips here -->
             </div>
             <div class="prod-fs-stepper">
-                <button class="prod-fs-step-btn" onclick="fsStepProd(-1)">−</button>
+                <button class="prod-fs-step-btn" onclick="fsStepProd(-1)" aria-label="Disminuir cantidad">
+                    <i data-lucide="minus"></i>
+                </button>
                 <div id="prod-fs-stepval" class="prod-fs-step-val" onclick="fsManualEntry()">0</div>
-                <button class="prod-fs-step-btn" onclick="fsStepProd(1)">+</button>
+                <button class="prod-fs-step-btn" onclick="fsStepProd(1)" aria-label="Aumentar cantidad">
+                    <i data-lucide="plus"></i>
+                </button>
             </div>
             <div class="prod-fs-action-row">
                 <button class="prod-fs-btn prod-fs-btn-86" onclick="fs86()">86</button>
@@ -766,7 +732,7 @@
         </div>
     </div>
 
-    <div id="toast"></div>
+    <div id="toast" aria-live="polite"></div>
 
     </div> <!-- FIN CONTENEDOR APP -->
 
@@ -912,7 +878,7 @@
         <div id="hdr-search-res" class="mcf-search-results-overlay"></div>
         <div class="mcf-deck-wrap">
             <i data-lucide="search" class="mcf-deck-icon"></i>
-            <input type="text" id="hdr-search-input" placeholder="BUSCAR ÍTEM..." oninput="handleHdrSearch(this.value)" autocomplete="off" onfocus="this.value && handleHdrSearch(this.value)">
+            <input type="text" id="hdr-search-input" placeholder="BUSCAR ÍTEM…" oninput="handleHdrSearch(this.value)" autocomplete="off" onfocus="this.value && handleHdrSearch(this.value)">
         </div>
     </div>
 

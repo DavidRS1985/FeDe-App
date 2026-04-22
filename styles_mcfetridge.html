@@ -39,6 +39,8 @@
         --mcf-shadow: 6px 6px 0px var(--mcf-ink);
         --mcf-shadow-lg: 10px 10px 0px var(--mcf-ink);
         --mcf-gap: 16px;
+        --mcf-snap: cubic-bezier(0.4, 0, 0.2, 1);
+        --mcf-fluid: cubic-bezier(0.16, 1, 0.3, 1);
 
         /* Bridge to Legacy */
         --text: var(--mcf-ink);
@@ -50,27 +52,45 @@
         --r2: 0px !important;
     }
 
-    /* 🏛️ GLOBAL RESET & SCOPING */
     html.theme-mcf {
-        background: var(--mcf-ink) !important;
-        height: 100%;
+        background: var(--mcf-bg) !important;
+        min-height: 100vh !important;
+        margin: 0;
+        padding: 0;
     }
 
     body.theme-mcf {
         background: var(--mcf-bg) !important;
+        background-image: none !important;
         color: var(--mcf-ink) !important;
         font-family: var(--mcf-font-body) !important;
         margin: 0;
         width: 100%;
+        min-height: 100vh;
         overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     body.theme-mcf * {
         box-sizing: border-box !important;
         border-radius: 0 !important;
         -webkit-tap-highlight-color: transparent;
-        backdrop-filter: none !important;
-        text-shadow: none !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body.theme-mcf * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
+    body.theme-mcf :focus-visible {
+        outline: 4px solid var(--mcf-amber) !important;
+        outline-offset: 4px !important;
+        z-index: 999999 !important;
     }
 
     /* Theme-Mode Semantic Mapping */
@@ -99,38 +119,81 @@
         --mode-bg: var(--mcf-paper);
     }
 
-    /* 🏷️ TACTICAL METADATA (Home Labels) */
-    .mcf-date-tag {
-        background: var(--mcf-paper) !important;
-        color: var(--mcf-ink) !important;
-        padding: 3px 10px !important;
-        font-size: 11px !important;
-        font-weight: 850 !important;
-        margin-right: 8px !important;
-        border: 2px solid var(--mcf-ink) !important;
-    }
+    /* Unified Tags logic handled in adaptive sections below */
 
-    .mcf-sheet-tag {
-        background: var(--mcf-ink) !important;
-        color: var(--mcf-paper) !important;
-        padding: 2px 8px !important;
-        font-size: 11px !important;
-        font-weight: 950 !important;
-    }
-
-    /* 🏙️ ADAPTIVE COMMAND SYSTEMS (Search) */
+    /* 🏙️ ADAPTIVE COMMAND SYSTEMS (Search) - FRONTEND DESIGN V2 */
     .mcf-command-deck {
         position: fixed !important;
-        bottom: calc(var(--mcf-tab-height) + 12px) !important;
         left: 16px !important;
         right: 16px !important;
-        z-index: 5000 !important;
+        z-index: 20000 !important;
+        display: none !important; 
+        bottom: 16px !important; 
         background: var(--mcf-paper) !important;
         border: 4px solid var(--mcf-ink) !important;
         box-shadow: 10px 10px 0px var(--mcf-ink) !important;
         box-sizing: border-box;
         pointer-events: auto !important;
-        transition: transform 0.3s var(--mcf-snap), border-color 0.2s;
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.3s var(--mcf-snap) !important;
+        /* Internal Industrial Label */
+    }
+
+    .mcf-command-deck::before {
+        content: "COMMAND DECK V11.1";
+        position: absolute;
+        top: -12px;
+        left: 12px;
+        background: var(--mcf-ink);
+        color: var(--mcf-paper);
+        font-size: 8px;
+        font-weight: 900;
+        padding: 2px 8px;
+        letter-spacing: 1.5px;
+        z-index: 2;
+    }
+
+    body.view-relevamiento .mcf-command-deck {
+        display: block !important;
+        transform: translateY(0) !important; /* Force visible in Relevamiento */
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    /* Status LED indicator */
+    .mcf-deck-wrap::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--mcf-sage);
+        position: absolute;
+        right: 16px;
+        top: 16px;
+        animation: mcf-led-pulse 1.5s infinite alternate;
+    }
+
+    @keyframes mcf-led-pulse {
+        from { opacity: 0.4; box-shadow: 0 0 0px var(--mcf-sage); }
+        to { opacity: 1; box-shadow: 0 0 8px var(--mcf-sage); }
+    }
+
+    /* Dynamic Elevation: Above Contextual Bar when active */
+    body.theme-mcf .ctx-bar:not(.hidden) ~ .mcf-command-deck,
+    body.theme-mcf .ctx-bar:not(.hidden) ~ #app .mcf-command-deck {
+        bottom: 86px !important;
+    }
+
+    .mcf-command-deck.hdr-search-hidden {
+        transform: translateY(180%) !important;
+        pointer-events: none !important;
+    }
+
+    .mcf-command-deck.hdr-search-active,
+    .mcf-command-deck.hdr-search-persistent {
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     .mcf-deck-wrap {
@@ -159,9 +222,9 @@
         color: var(--mcf-ink) !important;
         font-family: var(--mcf-font-display) !important;
         font-weight: 950 !important;
-        font-size: 18px !important;
+        font-size: 1.15rem !important;
         flex: 1;
-        outline: none;
+        outline: none !important; /* Managed by .mcf-command-deck:focus-within */
         text-transform: uppercase;
         letter-spacing: 1px;
     }
@@ -263,24 +326,25 @@
     /* Force hide redundant systems */
     .mcf-top-bar,
     .hdr-search-container,
-    .hdr-search-wrap,
-    .mcf-search-box {
+    .hdr-search-wrap {
         display: none !important;
     }
 
-    body.theme-mcf .mcf-command-deck:focus-within~#app .tabs {
+    body.theme-mcf .mcf-command-deck:focus-within ~ .tabs,
+    body.theme-mcf .mcf-command-deck.hdr-search-active ~ .tabs {
         display: none !important;
     }
 
     /* Pushes content down ONLY when top-bar is active */
     body.theme-mcf .ctx-bar:not(.hidden)~.view .scroll-content,
     body.theme-mcf .ctx-bar:not(.hidden)~main .scroll-content {
-        padding-top: 150px !important;
-        /* Safety margin for industrial shadows and notches */
+        padding-top: 20px !important;
     }
 
-    body.theme-mcf .ctx-bar:not(.hidden)~.mcf-command-deck {
-        display: none !important;
+    body.theme-mcf .ctx-bar:not(.hidden)~.mcf-command-deck,
+    body.theme-mcf .ctx-bar:not(.hidden)~#app .mcf-command-deck {
+        bottom: 86px !important;
+        display: block !important; /* Ensure it stays visible above the bar */
     }
 
     body.theme-mcf .ctx-bar:not(.hidden)~#app .tabs {
@@ -340,17 +404,18 @@
     }
 
     @keyframes mcf-flash {
-        0% {
-            border-color: var(--mcf-amber);
-            box-shadow: 0 0 40px var(--mcf-amber);
-            transform: scale(1.02);
-        }
+        0% { border-color: var(--mcf-amber); box-shadow: 0 0 40px var(--mcf-amber); transform: scale(1.02); }
+        100% { border-color: var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-ink); transform: scale(1); }
+    }
 
-        100% {
-            border-color: var(--mcf-ink);
-            box-shadow: 8px 8px 0px var(--mcf-ink);
-            transform: scale(1);
-        }
+    @keyframes mcfFadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes mcfScaleIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
     }
 
     /* ——————————————————————————————————————————————————————————————————————————
@@ -376,12 +441,23 @@
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
         text-shadow: none !important;
-        background-image: none !important;
     }
 
     /* Aesthetics Only - Minimal Structural Intervention */
+    /* Aesthetics Only - Minimal Structural Intervention */
     body.theme-mcf .view {
-        background-color: var(--mcf-bg) !important;
+        display: none !important;
+        background: var(--mcf-bg) !important;
+        min-height: 100vh !important;
+        width: 100% !important;
+        opacity: 1 !important;
+    }
+
+    body.theme-mcf .view.active {
+        display: flex !important;
+        flex-direction: column !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 
     body.theme-mcf .dash-card,
@@ -435,7 +511,7 @@
         letter-spacing: 1px !important;
         font-family: inherit !important;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: background 0.15s var(--mcf-snap), transform 0.1s var(--mcf-snap);
     }
 
     .ctx-exit {
@@ -597,31 +673,34 @@
     .mcf-header .home-logo {
         color: var(--mcf-bg);
         font-family: var(--mcf-font-display) !important;
-        font-size: 68px !important;
+        font-size: 42px !important;
         margin: 0 !important;
-        line-height: 0.8 !important;
-        letter-spacing: -3px !important;
-        text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+        line-height: 1 !important;
+        letter-spacing: -2px !important;
+        text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+        word-break: break-word;
     }
 
     .mcf-header .subtitle {
         font-family: var(--mcf-font-display) !important;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 900;
         text-transform: uppercase;
-        letter-spacing: 5px;
-        margin-top: 12px;
+        letter-spacing: 2px;
+        margin-top: 8px;
         opacity: 0.8;
+        line-height: 1.4;
     }
 
     .mcf-header-controls {
         position: absolute !important;
-        top: 20px !important;
-        right: 20px !important;
+        top: 16px !important;
+        right: 16px !important;
         display: flex !important;
-        gap: 12px !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 6px !important;
         z-index: 100 !important;
-        /* High enough to be clickable */
     }
 
     /* Command Buttons (Header) */
@@ -636,13 +715,13 @@
         justify-content: center !important;
         cursor: pointer !important;
         transition: transform 0.1s !important;
-        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
         touch-action: manipulation !important;
     }
 
     .mcf-mini-btn:active {
         transform: translate(2px, 2px) !important;
-        box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
     }
 
     .mcf-mini-btn i {
@@ -679,39 +758,67 @@
         z-index: 1;
     }
 
-    /* ACTION GRID V2 */
-    /* Consolidado en seccion inferior */
-        gap: 16px;
-        min-height: 160px;
-        cursor: pointer;
-        transition: all 0.1s var(--mcf-snap);
-        touch-action: manipulation !important;
-        text-align: center;
+    /* 🏗️ ACTION GRID (Consolidated Industrial System) */
+    .mcf-grid-v2 {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px !important;
+        margin-bottom: 24px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
-    .mcf-action-btn:active {
-        transform: translate(4px, 4px);
-        box-shadow: 2px 2px 0px var(--mcf-ink);
-    }
-
-    .mcf-action-btn i {
-        width: 52px !important;
-        height: 52px !important;
+    .mcf-action-btn {
         display: flex !important;
+        flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
+        padding: 24px 16px !important;
+        background: var(--mcf-paper) !important;
+        border: var(--mcf-border) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap), background 0.15s var(--mcf-snap) !important;
+        min-height: 140px !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        animation: mcfFadeIn 0.4s var(--mcf-snap) both !important;
+    }
+
+    /* Staggered entrance for buttons */
+    .mcf-grid-v2 div:nth-child(1) { animation-delay: 0.1s !important; }
+    .mcf-grid-v2 div:nth-child(2) { animation-delay: 0.15s !important; }
+    .mcf-grid-v2 div:nth-child(3) { animation-delay: 0.2s !important; }
+    .mcf-grid-v2 div:nth-child(4) { animation-delay: 0.25s !important; }
+
+    .mcf-action-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    /* Specific Button Colors */
+    .mcf-btn-roi { background: var(--mcf-slate-lt) !important; }
+    .mcf-btn-hist { background: var(--mcf-paper) !important; }
+    .mcf-btn-pedido { background: var(--mcf-rose) !important; }
+    .mcf-btn-stock { background: var(--mcf-sky) !important; }
+    .mcf-btn-recepc { background: var(--mcf-sage) !important; }
+    .mcf-btn-merma { background: var(--mcf-mauve) !important; }
+
+    .mcf-action-btn i {
+        width: 48px !important;
+        height: 48px !important;
+        margin-bottom: 12px !important;
+        stroke-width: 3px !important;
         color: var(--mcf-ink) !important;
-        margin-bottom: 4px;
     }
 
     .mcf-action-btn span {
         font-family: var(--mcf-font-display) !important;
-        font-size: 15px;
-        font-weight: 950;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
+        font-weight: 950 !important;
+        font-size: 13px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
         color: var(--mcf-ink) !important;
-        line-height: 1.2;
+        text-align: center !important;
     }
 
     /* GLOBAL INDUSTRIAL INK SYSTEM (McFetridge Standard) */
@@ -1420,14 +1527,32 @@
         transition: all 0.3s var(--mcf-snap) !important;
     }
 
-    /* 🔼 RELEVAMIENTO: TABS TO TOP (Forced with ID) */
+    /* 🔼 RELEVAMIENTO: TABS TO TOP (Direct Anchor, No Header) */
     body.theme-mcf.view-relevamiento #main-tabs {
         top: 0 !important;
         bottom: auto !important;
         border-top: none !important;
-        border-bottom: 5px solid var(--mcf-ink) !important;
-        box-shadow: 0 10px 0px rgba(0, 0, 0, 0.15) !important;
-        z-index: 999 !important;
+        border-bottom: 4px solid var(--mcf-amber) !important;
+        box-shadow: 0 12px 15px rgba(0, 0, 0, 0.08) !important;
+        z-index: 10000 !important;
+    }
+
+    /* 🚫 HEADER EXCLUSIONS (No Header in Relevamiento/Home/Loader) */
+    body.view-home #main-hdr,
+    body.view-relevamiento #main-hdr,
+    body.view-loader #main-hdr,
+    body.view-home .tabs,
+    body.view-loader .tabs {
+        display: none !important;
+    }
+
+    body.theme-mcf.view-relevamiento #view-relevamiento {
+        padding-top: 70px !important; /* Only Tabs (70) */
+    }
+
+    /* Command Deck Hierarchy Optimization */
+    body.theme-mcf .mcf-command-deck {
+        z-index: 20000 !important;
     }
 
     body.theme-mcf.view-relevamiento .ctx-bar {
@@ -1443,16 +1568,25 @@
     #view-relevamiento,
     .view-relevamiento {
         background: var(--mcf-bg) !important;
-        padding-top: 110px !important; 
+        padding-top: 70px !important; 
         padding-bottom: 160px !important; 
-        display: none; /* Default to hidden, handled by .active */
         flex-direction: column !important;
     }
 
     /* Only show Relevamiento when active */
-    #view-relevamiento.active,
-    .view-relevamiento.active {
+    body.theme-mcf #view-relevamiento.active {
         display: flex !important;
+        background: var(--mcf-bg) !important;
+    }
+
+    /* 🏙️ GLOBAL VIEW VISIBILITY (McFetridge Totality) */
+    body.theme-mcf .view {
+        display: none !important; 
+    }
+
+    body.theme-mcf .view.active {
+        display: flex !important; 
+        background: var(--mcf-bg) !important;
     }
 
     /* Reset legacy scroll-content padding that was causing double-spacing */
@@ -1462,7 +1596,12 @@
         padding-right: 0 !important;
     }
 
-    /* 🏠 HOME VIEW OVERRIDE (Fixes inline style interference) */
+    #view-historial,
+    #view-dashboard,
+    #view-datos {
+        padding-top: 70px !important;
+    }
+
     #home-content {
         padding-top: 110px !important;
         padding-bottom: 160px !important;
@@ -1519,7 +1658,7 @@
 
     .cchip span {
         font-family: var(--mcf-font-display) !important;
-        font-size: 18px !important;
+        font-size: 1.125rem !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
@@ -1533,7 +1672,7 @@
         background: var(--mode-color, var(--mcf-amber)) !important;
         color: var(--mcf-paper) !important;
         transform: translate(4px, 4px) !important;
-        box-shadow: none !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
     }
 
     .cchip.active i, .cchip.active span {
@@ -1572,12 +1711,12 @@
 
     .prow .pname {
         font-family: var(--mcf-font-display) !important;
-        font-size: 24px !important;
+        font-size: 1.5rem !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
         color: var(--mcf-ink) !important;
         border-bottom: 3px solid var(--mcf-ink) !important;
-        padding-bottom: 12px !important;
+        padding-bottom: 0.75rem !important;
         letter-spacing: -0.5px !important;
         text-align: center !important;
     }
@@ -1644,12 +1783,15 @@
     }
 
     /* Aesthetics Only - Settings and Home shadow-safe padding */
-    body.theme-mcf .view.scroll,
-    body.theme-mcf #view-datos {
+    body.theme-mcf .view.scroll.active,
+    body.theme-mcf #view-datos.active {
         padding: 40px 20px 140px 16px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        align-items: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        overflow-y: auto !important;
     }
 
     body.theme-mcf #home-content {
@@ -1687,41 +1829,44 @@
         right: 16px !important;
         top: 16px !important;
         display: flex !important;
-        gap: 10px !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 6px !important;
     }
 
     .mcf-date-tag {
         background: var(--mcf-amber) !important;
         color: var(--mcf-ink) !important;
-        padding: 4px 12px !important;
+        padding: 2px 8px !important;
         font-weight: 950 !important;
-        font-size: 10px !important;
+        font-size: 9px !important;
         text-transform: uppercase !important;
-        letter-spacing: 1px !important;
+        letter-spacing: 0.5px !important;
     }
 
     .mcf-sheet-tag {
         background: transparent !important;
         color: var(--mcf-paper) !important;
-        border: 2px solid var(--mcf-paper) !important;
-        padding: 3px 12px !important;
+        border: 1.5px solid var(--mcf-paper) !important;
+        padding: 2px 8px !important;
         font-weight: 950 !important;
-        font-size: 10px !important;
+        font-size: 9px !important;
         text-transform: uppercase !important;
-        letter-spacing: 1px !important;
+        letter-spacing: 0.5px !important;
         opacity: 0.8;
     }
 
     .home-logo {
         font-family: inherit !important;
         font-weight: 950 !important;
-        font-size: 34px !important;
+        font-size: 38px !important;
         /* Unified with Settings logic */
         letter-spacing: -1.5px !important;
         margin: 0 !important;
         line-height: 1 !important;
         color: var(--mcf-paper) !important;
         text-transform: uppercase !important;
+        word-break: break-word;
     }
 
     body.theme-mcf .subtitle {
@@ -1770,7 +1915,7 @@
 
     /* 🏛️ VIEW TRANSITIONS (Skill: Algorithmic Art -> Physics) */
     body.theme-mcf .view.active {
-        display: block !important;
+        display: flex !important;
         animation: mcf-view-entry 0.3s var(--mcf-snap) backwards;
     }
 
@@ -1788,17 +1933,10 @@
         }
     }
 
-    body.theme-mcf .mcf-mini-btn {
-        background: var(--mcf-surface) !important;
-        border: 2px solid var(--mcf-ink) !important;
-        color: var(--mcf-ink) !important;
-        width: 50px !important;
-        height: 50px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        transition: transform 0.1s var(--mcf-snap) !important;
+    body.theme-mcf .view .scroll-content,
+    body.theme-mcf main .scroll-content {
+        padding-top: 16px !important;
+        padding-bottom: 200px !important;
     }
 
     body.theme-mcf .mcf-mini-btn:active {
@@ -1965,8 +2103,7 @@
     }
 
     body.theme-mcf.view-relevamiento .scroll-content {
-        padding-top: 120px !important;
-        /* Context for Tabs Top */
+        padding-top: 16px !important;
     }
 
     /* ═══════════════════════════════════════════════════════════════════
@@ -2160,12 +2297,6 @@
         }
     }
 
-    /* Hydraulic Menu Expansion */
-    body.theme-mcf .mcf-alerts-collapsible {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.4s var(--mcf-snap) !important;
-    }
 
     body.theme-mcf .mcf-alerts-collapsible.expanded {
         max-height: 800px;
@@ -2186,8 +2317,10 @@
         border-top: 4px solid var(--mcf-amber) !important;
         display: flex !important;
         padding: 0 !important;
-        z-index: 2000000 !important;
-        /* SUPREME PRIORITY */
+        z-index: 10000 !important;
+        /* Fixed: Above content (z=10), below modals (z=100000) */
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        box-sizing: content-box !important;
         border-radius: 0 !important;
         box-shadow: 0 -10px 0px rgba(26, 26, 26, 0.1) !important;
         backdrop-filter: none !important;
@@ -2246,6 +2379,15 @@
         border: none !important;
         background: var(--mcf-bg) !important;
         max-width: 100% !important;
+        display: none;
+    }
+
+    body.theme-mcf #app.visible {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 100vh !important;
+        position: relative !important;
+        z-index: 1000 !important;
     }
 
     body.theme-mcf #main-hdr {
@@ -2269,13 +2411,149 @@
         display: none !important;
     }
 
-    /* 🚨 MCFETRIDGE MODAL OVERRIDES (Totality Fix) */
+    /* 🚨 MCFETRIDGE MODAL & SHEET OVERRIDES */
+    .shov {
+        position: fixed !important;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(26, 24, 22, 0.9) !important;
+        z-index: 1000000 !important;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s var(--mcf-snap);
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .shov.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .sh {
+        width: 100%;
+        background: var(--mcf-paper) !important;
+        border-top: 6px solid var(--mcf-ink) !important;
+        padding: 40px 24px calc(env(safe-area-inset-bottom, 0px) + 32px) !important;
+        transform: translateY(100%);
+        transition: transform 0.4s var(--mcf-fluid);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .shov.open .sh {
+        transform: translateY(0);
+    }
+
+    .sh-handle {
+        width: 40px;
+        height: 6px;
+        background: var(--mcf-ink);
+        margin: -24px auto 24px;
+        opacity: 0.2;
+    }
+
+    #sh-title {
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 28px !important;
+        text-transform: uppercase !important;
+        letter-spacing: -1px !important;
+        margin-bottom: 24px !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    #sh-body {
+        margin-bottom: 32px !important;
+        background: var(--mcf-bg) !important;
+        border: 2px solid var(--mcf-ink) !important;
+        padding: 16px !important;
+    }
+
+    /* Manifest Rows (Industrial List) */
+    .mcf-manifest-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--mcf-paper);
+        border: 2px solid var(--mcf-ink);
+        margin-bottom: 8px;
+        box-shadow: 4px 4px 0px var(--mcf-ink);
+    }
+
+    .mcf-manifest-name {
+        font-weight: 800;
+        font-size: 13px;
+        text-transform: uppercase;
+        color: var(--mcf-ink);
+    }
+
+    .mcf-manifest-qty {
+        font-family: var(--mcf-font-display);
+        font-weight: 950;
+        font-size: 15px;
+        color: var(--mcf-amber);
+    }
+
+    .mcf-manifest-qty.status-86 {
+        color: var(--mcf-rose) !important;
+        text-decoration: line-through;
+    }
+
+    /* Merma Reason Chips */
+    .motivo-btn {
+        background: var(--mcf-paper);
+        border: 2px solid var(--mcf-ink);
+        padding: 8px 16px;
+        font-family: var(--mcf-font-display);
+        font-weight: 800;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .motivo-btn.active {
+        background: var(--mcf-amber);
+        box-shadow: 4px 4px 0px var(--mcf-ink);
+        transform: translate(-2px, -2px);
+    }
+
+    /* Sheet Action Buttons */
+    .mcf-sheet-btn {
+        width: 100%;
+        padding: 20px;
+        border: 4px solid var(--mcf-ink);
+        font-family: var(--mcf-font-display);
+        font-weight: 950;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .mcf-btn-wa { background: #25D366; color: white; box-shadow: 6px 6px 0px var(--mcf-ink); }
+    .mcf-btn-cloud { background: var(--mcf-amber); color: var(--mcf-ink); box-shadow: 6px 6px 0px var(--mcf-ink); }
+    .mcf-btn-danger-alt { background: var(--mcf-rose-lt); color: var(--mcf-ink); border-style: dashed; }
+    .mcf-btn-cancel-alt { background: transparent; border: none; color: var(--mcf-ink-muted); font-size: 12px; }
+
+    .mcf-sheet-btn:active {
+        transform: translate(3px, 3px);
+        box-shadow: none !important;
+    }
+
     body.theme-mcf .confirm-overlay,
     body.theme-mcf .sync-overlay,
     body.theme-mcf .action-sheet-overlay {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        background: rgba(26, 24, 22, 0.85) !important;
+        background: rgba(26, 24, 22, 0.9) !important;
         z-index: 1000000 !important;
     }
 
@@ -2339,6 +2617,7 @@
         /* Above deck and tabs, below modals */
     }
 
+    /* 🏗️ DASHBOARD & ANALYTICS (Tectonic Data) */
     .mcf-empty-search {
         padding: 40px 20px !important;
         text-align: center !important;
@@ -2350,5 +2629,417 @@
         opacity: 0.5;
         border: 2px dashed var(--mcf-ink) !important;
         margin: 10px !important;
+    }
+
+    .cal-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 6px !important;
+    }
+
+    .cal-day {
+        aspect-ratio: 1 / 1 !important;
+        background: var(--mcf-bg) !important;
+        border: 2px solid var(--mcf-ink-ghost) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink-ghost) !important;
+        position: relative !important;
+    }
+
+    .cal-day.today {
+        border-color: var(--mcf-ink) !important;
+        background: var(--mcf-amber-lt) !important;
+        color: var(--mcf-ink) !important;
+        z-index: 2 !important;
+    }
+
+    .cal-day-dots {
+        position: absolute !important;
+        bottom: 2px !important;
+        display: flex !important;
+        gap: 2px !important;
+    }
+
+    .cal-dot {
+        width: 4px !important;
+        height: 4px !important;
+        border-radius: 0 !important; /* Brutalist dots are squares */
+        border: 1px solid var(--mcf-ink) !important;
+    }
+
+    .cal-dot-pedido { background: var(--mcf-rose) !important; }
+    .cal-dot-stock { background: var(--mcf-slate) !important; }
+    .cal-dot-recepcion { background: var(--mcf-sage) !important; }
+    .cal-dot-merma { background: var(--mcf-mauve) !important; }
+
+    /* 🏎️ STAGGERED ENTRANCE (Industrial Sequence) */
+    .mcf-appear {
+        opacity: 0;
+        transform: translateY(15px);
+        animation: mcf-slide-up 0.4s var(--mcf-snap) forwards;
+        animation-delay: var(--delay, 0s);
+    }
+
+    @keyframes mcf-slide-up {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* 🗓️ CALENDAR LIST (Industrial Feed) */
+    .cal-event-card {
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    .cal-event-time {
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink-ghost) !important;
+        letter-spacing: 1px !important;
+    }
+
+    .cal-event-title {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 14px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink) !important;
+        line-height: 1.2 !important;
+    }
+
+    /* ⏱️ RECENT UPDATES CHIPS */
+    .dash-recent-chip {
+        flex-shrink: 0 !important;
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 12px 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        min-width: 120px !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    .dash-recent-chip span:first-child {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 12px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .dash-recent-chip span:last-child {
+        font-size: 9px !important;
+        font-weight: 700 !important;
+        color: var(--mcf-ink-ghost) !important;
+        text-transform: uppercase !important;
+    }
+
+    /* 📜 HISTORY & LOGS (Industrial Record) */
+    .mcf-hist-card {
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        padding: 20px !important;
+        margin-bottom: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        position: relative !important;
+        transition: transform 0.2s var(--mcf-snap) !important;
+    }
+
+    .mcf-hist-card:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-hist-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
+    }
+
+    .mcf-hist-mode-tag {
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        padding: 4px 10px !important;
+        border: 2px solid var(--mcf-ink) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .mcf-hist-time {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-ink-ghost) !important;
+        text-transform: uppercase !important;
+    }
+
+    .mcf-hist-title {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 16px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink) !important;
+        margin-top: 4px !important;
+    }
+
+    .mcf-hist-details {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--mcf-ink-muted) !important;
+        line-height: 1.5 !important;
+        padding-top: 12px !important;
+        border-top: 2px dashed var(--mcf-ink-ghost) !important;
+    }
+
+    /* 🎛️ HISTORY FILTERS (Mechanical Toggles) */
+    .mcf-hist-filter-row {
+        display: flex !important;
+        gap: 10px !important;
+        overflow-x: auto !important;
+        padding: 4px 4px 12px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .mcf-hist-filter-btn {
+        flex-shrink: 0 !important;
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 10px 16px !important;
+        font-size: 11px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        color: var(--mcf-ink) !important;
+        cursor: pointer !important;
+        transition: all 0.1s var(--mcf-snap) !important;
+    }
+
+    .mcf-hist-filter-btn.active {
+        background: var(--btn-active-bg, var(--mcf-ink)) !important;
+        color: var(--btn-active-color, var(--mcf-paper)) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        transform: translate(-2px, -2px) !important;
+    }
+
+    .mcf-hist-date-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+        padding: 20px !important;
+        background: var(--mcf-surface) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        margin-bottom: 24px !important;
+    }
+
+    .mcf-hist-input-group {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+
+    .mcf-hist-label {
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink-muted) !important;
+    }
+
+    .mcf-hist-date-input {
+        width: 100% !important;
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 12px !important;
+        font-family: var(--mcf-font-body) !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .mcf-hist-date-input:focus {
+        outline: none !important;
+        border-color: var(--mcf-amber) !important;
+    }
+
+    .dash-h-scroll::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    /* 🛠️ CONTROL DE SISTEMA (Settings) */
+    .mcf-set-card {
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        padding: 24px !important;
+        margin-bottom: 24px !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        position: relative !important;
+    }
+
+    .mcf-set-title {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 14px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        color: var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        margin-bottom: 20px !important;
+        padding-bottom: 12px !important;
+        border-bottom: 3px solid var(--mcf-ink) !important;
+    }
+
+    .mcf-set-label {
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink-ghost) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        display: block !important;
+        margin-bottom: 8px !important;
+    }
+
+    .mcf-set-input {
+        width: 100% !important;
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 14px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-ink) !important;
+        text-transform: uppercase !important;
+        border-radius: 0 !important;
+        outline: none !important;
+        transition: background 0.2s ease !important;
+    }
+
+    .mcf-set-input:focus {
+        background: var(--mcf-surface) !important;
+    }
+
+    .mcf-set-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* 🔌 THEME TOGGLES */
+    .mcf-set-theme-btn {
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        cursor: pointer !important;
+        transition: all 0.2s var(--mcf-snap) !important;
+        position: relative !important;
+    }
+
+    .mcf-set-theme-btn.active {
+        background: var(--mcf-surface) !important;
+        box-shadow: inset 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-set-theme-btn.active::after {
+        content: 'ACTIVE' !important;
+        position: absolute !important;
+        top: -10px !important;
+        right: 10px !important;
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        font-size: 8px !important;
+        font-weight: 950 !important;
+        padding: 2px 6px !important;
+    }
+
+    .mcf-set-theme-preview {
+        width: 100% !important;
+        height: 48px !important;
+        border: 2px solid var(--mcf-ink) !important;
+    }
+
+    .mcf-set-action-btn {
+        width: 100% !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        padding: 16px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 12px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        color: var(--mcf-ink) !important;
+        cursor: pointer !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        transition: all 0.1s var(--mcf-snap) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    .mcf-set-action-btn:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-set-action-btn.urgent {
+        color: var(--mcf-rose) !important;
+    }
+
+    /* 🏷️ LOGISTICS CHIPS (Settings) */
+    .mcf-set-day-chip {
+        padding: 8px 12px !important;
+        border: 2px solid var(--mcf-ink) !important;
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .mcf-set-day-chip.active {
+        background: var(--mcf-amber) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    /* 📡 DIAGNOSTIC TERMINAL */
+    .mcf-set-terminal {
+        background: var(--mcf-ink) !important;
+        color: #00FF41 !important; /* Industrial Matrix Green */
+        padding: 16px !important;
+        font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+        font-size: 11px !important;
+        line-height: 1.6 !important;
+        margin-top: 16px !important;
+        border-left: 4px solid var(--mcf-amber) !important;
+    }
+
+    /* 🛠️ VERSION TAG (Footer Settings) */
+    .mcf-set-footer {
+        margin-top: 48px !important;
+        padding: 32px 20px !important;
+        border-top: 4px solid var(--mcf-ink) !important;
+        background: var(--mcf-surface) !important;
+        text-align: center !important;
     }
 </style>

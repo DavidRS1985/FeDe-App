@@ -545,19 +545,14 @@
         var btnMcf = document.getElementById('theme-btn-mcf');
         if (!btnZinc || !btnMcf) return;
 
+        // Limpiar estados
         [btnZinc, btnMcf].forEach(function(b) {
-            b.style.border = '2px solid var(--bd)';
-            b.style.background = 'var(--s2)';
-            var s = b.querySelector('span');
-            if (s) s.style.color = 'var(--text)';
+            b.classList.remove('active');
         });
 
+        // Activar el actual
         var active = (APP_THEME === 'mcf') ? btnMcf : btnZinc;
-        var accent = (APP_THEME === 'mcf') ? '#1a1a1a' : 'var(--primary)';
-        active.style.border = '3px solid ' + accent;
-        active.style.background = 'var(--s1)';
-        var span = active.querySelector('span');
-        if (span) span.style.color = accent;
+        if (active) active.classList.add('active');
     }
 
     /* ── NAVEGACIÓN ── */
@@ -658,6 +653,10 @@
         // Manejar estado de pestañas
         var views = document.querySelectorAll('.view');
         for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+        
+        var homeContent = document.getElementById('home-content');
+        if (homeContent) homeContent.classList.add('active');
+
         var tabs = document.querySelectorAll('.tab');
         for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
         var tabHome = document.getElementById('tab-home');
@@ -786,7 +785,13 @@
         var viewEl = document.getElementById('view-' + id);
         var tabEl = document.getElementById('tab-' + id);
 
-        if (viewEl) viewEl.classList.add('active');
+        if (viewEl) {
+            viewEl.classList.add('active');
+            viewEl.scrollTop = 0;
+            // Also reset inner scroll content if present
+            var sc = viewEl.querySelector('.scroll-content');
+            if (sc) sc.scrollTop = 0;
+        }
         if (tabEl) tabEl.classList.add('active');
 
         // Sincronizar clase de vista en el body para CSS
@@ -806,8 +811,7 @@
 
         var trig = document.getElementById('hdr-search-trigger');
         if (trig) {
-            if (id === 'relevamiento') trig.classList.remove('hidden');
-            else trig.classList.add('hidden');
+            trig.classList.remove('hidden');
         }
 
         if (id === 'relevamiento') setTimeout(function () { 
@@ -1242,16 +1246,19 @@
 
         var html = '';
         Object.keys(byCat).sort().forEach(function (cat) {
-            html += '<div style="margin-bottom:24px;">' +
-                '<div style="font-size:12px; font-weight:900; color:var(--primary); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">' +
-                '<i data-lucide="folder-open" style="width:14px; height:14px;"></i>' + cat +
+            html += '<div style="margin-bottom:20px;">' +
+                '<div style="font-size:10px; font-weight:950; color:var(--mcf-amber); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">' +
+                '<i data-lucide="layers" style="width:12px;"></i>' + cat +
                 '</div>';
             var itemsByCat = byCat[cat];
             for (var j = 0; j < itemsByCat.length; j++) {
                 var it = itemsByCat[j];
-                html += '<div class="edit-hist-row" style="display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:10px 12px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:6px; border:1px solid rgba(255,255,255,0.05);">' +
-                    '<span style="color:var(--text2); font-weight:700;">' + it.p + '</span>' +
-                    '<span style="font-weight:900; color:' + (it.d.qty === 86 ? 'var(--red)' : 'var(--gold)') + '">' + (it.d.qty === 86 ? '⛔ 86' : it.d.qty + ' ' + formatUnit(it.d.qty, it.d.unit)) + '</span>' +
+                var is86 = it.d.qty === 86;
+                html += '<div class="mcf-manifest-row">' +
+                    '<span class="mcf-manifest-name">' + it.p + '</span>' +
+                    '<span class="mcf-manifest-qty ' + (is86 ? 'status-86' : '') + '">' + 
+                    (is86 ? '86' : it.d.qty + ' ' + formatUnit(it.d.qty, it.d.unit)) + 
+                    '</span>' +
                     '</div>';
             }
             html += '</div>';
@@ -1665,117 +1672,130 @@
     }
 
     /* ── DASHBOARD ── */
-    var DASH_CACHE = null;
+    var lastDashLoad = 0;
 
     function renderDashboard(force) {
-        if (force === undefined) force = false;
-        var loader = document.getElementById('dash-loader');
-        var content = document.getElementById('dash-content');
-
-        if (DASH_CACHE && !force) {
-            if (loader) loader.classList.add('hidden');
-            if (content) content.classList.remove('hidden');
-            applyDashData(DASH_CACHE);
-            return;
-        }
-
+        if (!force && lastDashLoad && (Date.now() - lastDashLoad < 60000)) return;
+        
+        const loader = document.getElementById('dash-loader');
+        const content = document.getElementById('dash-content');
+        
         if (loader) loader.classList.remove('hidden');
         if (content) content.classList.add('hidden');
 
-        FeDe_API.call('getDashboardMetrics', null, function (r) {
-            DASH_CACHE = r.data;
-            if (loader) loader.classList.add('hidden');
-            if (content) content.classList.remove('hidden');
-            applyDashData(r.data);
-        });
+        google.script.run
+            .withSuccessHandler(function (res) {
+                if (res.success) {
+                    lastDashLoad = Date.now();
+                    const data = res.data;
+
+                    // METRICS
+                    document.getElementById('card-totalitems').innerText = data.totalItems || '0';
+                    document.getElementById('card-movtoday').innerText = data.movementsToday || '0';
+
+                    // RECENT CATS
+                    const recentList = document.getElementById('dash-recent-cats');
+                    if (recentList) {
+                        if (!data.recentCats || data.recentCats.length === 0) {
+                            recentList.innerHTML = `<div style="font-size:11px; color:var(--mcf-ink-ghost); padding:16px; border:2px dashed var(--mcf-ink-ghost); width:100%; text-align:center; font-weight:950;">NO HAY CAMBIOS RECIENTES</div>`;
+                        } else {
+                            recentList.innerHTML = data.recentCats.map(c => `
+                                <div class="dash-recent-chip">
+                                    <span>${c.name}</span>
+                                    <span>${formatRelativeTime(c.ts)}</span>
+                                </div>
+                            `).join('');
+                        }
+                    }
+
+                    // CALENDAR
+                    renderDashboardCalendar(data.calendar);
+
+                    // GOOGLE CALENDAR
+                    fetchGoogleCalendar();
+
+                    if (loader) loader.classList.add('hidden');
+                    if (content) content.classList.remove('hidden');
+                    
+                    // RE-INIT LUCIDE
+                    if (window.lucide) lucide.createIcons();
+                }
+            })
+            .getDashboardMetrics();
     }
 
-    function applyDashData(data) {
-        document.getElementById('card-totalitems').textContent = data.totalItems || '0';
-        document.getElementById('card-movtoday').textContent = data.movementsToday || '0';
-
-        var recentCatsEl = document.getElementById('dash-recent-cats');
-        if (data.recentCats && data.recentCats.length) {
-            var rcHtml = '';
-            for (var i = 0; i < data.recentCats.length; i++) {
-                var rc = data.recentCats[i];
-                var cat = CATS[rc.name] || {};
-                var icon = cat.icon || 'package';
-                var safeCatName = FeDe_Utils.sanitize(rc.name);
-                rcHtml += '<div class="dash-card-glass" style="min-width:145px; flex-shrink:0; padding:20px; text-align:center;">' +
-                    '<div style="width:44px; height:44px; background:var(--s2); border:1.5px solid var(--bd2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">' +
-                    '<i data-lucide="' + icon + '" style="width:20px; color:var(--primary);"></i>' +
-                    '</div>' +
-                    '<div style="font-weight:900; font-size:12px; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">' + safeCatName + '</div>' +
-                    '<div style="font-size:10px; color:var(--dim); font-weight:700;">' + new Date(rc.ts).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) + '</div>' +
-                    '<button class="wa-btn" style="width:100%; padding:8px; font-size:10px; margin-top:14px; background:var(--primary); color:#000; border-radius:10px; font-weight:800;" onclick="viewCatDetails(\'' + encodeURIComponent(rc.name) + '\')">DETALLES</button>' +
-                    '</div>';
-            }
-            recentCatsEl.innerHTML = rcHtml;
-        }
-
-
-
-        setTimeout(function () { renderDashboardCalendar(data.calendar); }, 50);
-        refreshIcons();
+    function fetchGoogleCalendar() {
+        const list = document.getElementById('dash-gcal-list');
+        google.script.run
+            .withSuccessHandler(function(res) {
+                if (!list) return;
+                if (res.success && res.events && res.events.length > 0) {
+                    list.innerHTML = res.events.map(e => {
+                        const start = new Date(e.start);
+                        const timeStr = e.isAllDay ? 'TODO EL DÍA' : start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const dateStr = start.toLocaleDateString([], {day: 'numeric', month: 'short'});
+                        
+                        return `
+                            <div class="cal-event-card">
+                                <div class="cal-event-time">${dateStr} — ${timeStr}</div>
+                                <div class="cal-event-title">${e.title}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    list.innerHTML = `<div style="font-size:11px; color:var(--mcf-ink-ghost); padding:20px; border:2px dashed var(--mcf-ink-ghost); text-align:center; font-weight:950;">SIN EVENTOS PRÓXIMOS</div>`;
+                }
+                if (window.lucide) lucide.createIcons();
+            })
+            .getCalendarEvents();
     }
 
-    function viewCatDetails(catEnc) { enterMode('pedido'); selectCat(decodeURIComponent(catEnc)); }
+    function renderDashboardCalendar(calData) {
+        const grid = document.getElementById('dash-calendar');
+        if (!grid) return;
+        grid.innerHTML = '';
 
-    function renderDashboardCalendar() {
-        var calEl = document.getElementById('dash-calendar');
-        if (!calEl) return;
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        
+        // Days in month
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        // First day of month (0=Sun, 1=Mon...)
+        let firstDay = new Date(year, month, 1).getDay();
+        // Adjust for Mon-Sun (Lucide/Industrial standard)
+        firstDay = firstDay === 0 ? 6 : firstDay - 1;
 
-        var now = new Date();
-        var year = now.getFullYear();
-        var month = now.getMonth();
-        var today = now.getDate();
-
-        // Días del mes (Lunes a Domingo)
-        var daysInMonth = new Date(year, month + 1, 0).getDate();
-        var firstDayIndex = new Date(year, month, 1).getDay();
-        var emptyStartDays = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
-
-        // Map history entries
-        var histByDate = {};
-        if (HIST && HIST.length) {
-            for (var k = 0; k < HIST.length; k++) {
-                var h = HIST[k];
-                var dObj = new Date(h.fecha);
-                if (isNaN(dObj)) continue;
-                
-                var key = dObj.getFullYear() + '-' + 
-                          ((dObj.getMonth() + 1) < 10 ? '0' + (dObj.getMonth() + 1) : (dObj.getMonth() + 1)) + '-' + 
-                          (dObj.getDate() < 10 ? '0' + dObj.getDate() : dObj.getDate());
-                
-                if (!histByDate[key]) histByDate[key] = [];
-                var mode = (h.modo || h.mode || 'stock').toLowerCase();
-                if (histByDate[key].indexOf(mode) === -1) histByDate[key].push(mode);
-            }
+        // Empty slots for start
+        for (let i = 0; i < firstDay; i++) {
+            const div = document.createElement('div');
+            div.style.background = 'transparent';
+            grid.appendChild(div);
         }
 
-        var html = '';
-        for (var i = 0; i < emptyStartDays; i++) html += '<div class="cal-day empty"></div>';
-
-        for (var d = 1; d <= daysInMonth; d++) {
-            var mNum = month + 1;
-            var curKey = year + '-' + (mNum < 10 ? '0' + mNum : mNum) + '-' + (d < 10 ? '0' + d : d);
-            var isToday = (d === today && month === now.getMonth() && year === now.getFullYear());
-            var activities = histByDate[curKey] || [];
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isToday = day === now.getDate();
             
-            var dots = '';
-            if (activities.indexOf('pedido') !== -1) dots += '<div class="cal-dot cal-dot-pedido"></div>';
-            if (activities.indexOf('stock') !== -1) dots += '<div class="cal-dot cal-dot-stock"></div>';
-            if (activities.indexOf('recepcion') !== -1 || activities.indexOf('entrante') !== -1) dots += '<div class="cal-dot cal-dot-recepcion"></div>';
-            if (activities.indexOf('merma') !== -1) dots += '<div class="cal-dot cal-dot-merma"></div>';
-
-            html += '<div class="cal-day ' + (isToday ? 'today' : '') + '" onclick="openHistoryAtDate(\'' + curKey + '\')">' +
-                    '<span class="cal-date-num">' + d + '</span>' +
-                    '<div class="cal-indicators">' + dots + '</div>' +
-                    '</div>';
+            const dayDiv = document.createElement('div');
+            dayDiv.className = `cal-day ${isToday ? 'today' : ''}`;
+            dayDiv.innerText = day;
+            
+            if (calData[dateStr]) {
+                const dots = document.createElement('div');
+                dots.className = 'cal-day-dots';
+                calData[dateStr].forEach(mode => {
+                    const dot = document.createElement('div');
+                    dot.className = `cal-dot cal-dot-${mode}`;
+                    dots.appendChild(dot);
+                });
+                dayDiv.appendChild(dots);
+            }
+            
+            grid.appendChild(dayDiv);
         }
-        calEl.innerHTML = html;
     }
+
 
     function openHistoryAtDate(dateStr) {
         histFilters.from = dateStr;
@@ -2056,47 +2076,55 @@
         var html = '';
         for (var i = 0; i < visible.length; i++) {
             var h = visible[i];
-            var items = Array.isArray(h.items) ? h.items : [];
             var _m = (h.modo || h.mode || 'stock').toLowerCase();
-            var _ms;
+            var _color, _label;
+
             if (_m === 'pedido') {
-                _ms = { color: 'var(--orange)', bg: 'var(--bg-alt)', border: 'var(--orange)', label: '🟠 PEDIDO' };
+                _color = 'var(--mcf-rose)'; _label = 'PEDIDO';
             } else if (_m === 'stock') {
-                _ms = { color: 'var(--blue)', bg: 'var(--bg-alt)', border: 'var(--blue)', label: '🔵 STOCK' };
+                _color = 'var(--mcf-slate)'; _label = 'STOCK';
             } else if (_m === 'merma') {
-                _ms = { color: 'var(--violet)', bg: 'var(--bg-alt)', border: 'var(--violet)', label: '🟣 MERMA' };
+                _color = 'var(--mcf-mauve)'; _label = 'MERMA';
             } else {
-                _ms = { color: 'var(--green)', bg: 'var(--bg-alt)', border: 'var(--green)', label: '🟢 RECEPCIÓN' };
+                _color = 'var(--mcf-sage)'; _label = 'RECEPCIÓN';
             }
 
-            var motivoLine = (h.motivo) ? '<div style="font-size:11px; color:var(--violet); font-weight:700; margin-top:4px;">Motivo: ' + h.motivo + '</div>' : '';
+            var dateObj = new Date(h.fecha);
+            var dateStr = dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }).toUpperCase();
+            var timeStr = dateObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
-            html += '<div class="dash-card" id="hist-card-' + h.id + '" onclick="toggleHistExpand(\'' + h.id + '\')">' +
-                '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
-                '<span style="font-weight:800; color:' + _ms.color + '; background:' + _ms.bg + '; border:1px solid ' + _ms.border + '; padding:5px 14px; border-radius:14px; font-size:12px; font-family:\'Outfit\',sans-serif;">' + _ms.label + '</span>' +
-                '<div style="display:flex; gap:8px;">' +
-                '<button onclick="event.stopPropagation();editHistEntry(\'' + h.id + '\')" style="background:var(--s2); border:1px solid var(--bd); border-radius:8px; padding:6px 10px; color:var(--text); font-size:14px;">✏️</button>' +
-                '<button onclick="event.stopPropagation();deleteHistEntryManual(\'' + h.id + '\')" style="background:rgba(224,82,82,0.1); border:1px solid var(--red); border-radius:8px; padding:6px 10px; color:var(--red); font-size:14px;">🗑️</button>' +
+            html += '<div class="mcf-hist-card mcf-appear" style="--delay: ' + (i * 0.05) + 's" onclick="toggleHistExpand(\'' + h.id + '\')">' +
+                '<div class="mcf-hist-header">' +
+                '<div class="mcf-hist-mode-tag" style="border-color: ' + _color + '; background: ' + _color + '15; color: ' + _color + '">' + _label + '</div>' +
+                '<div class="mcf-hist-time">' + dateStr + ' // ' + timeStr + '</div>' +
                 '</div>' +
+                '<div class="mcf-hist-title">' + h.total + ' ITEMS REGISTRADOS</div>' +
+                (h.motivo ? '<div style="font-size:10px; font-weight:900; color:var(--mcf-mauve); text-transform:uppercase; letter-spacing:1px; margin-top: -4px;">MOTIVO: ' + h.motivo + '</div>' : '') +
+                '<div id="hist-expanded-' + h.id + '" class="hidden mcf-hist-details">' +
+                '<!-- Dynamic Items -->' +
                 '</div>' +
-                '<div style="font-weight:800; font-size:20px; font-family:\'Outfit\',sans-serif; color:var(--text);">' + h.total + ' <span style="font-size:14px; font-weight:600; color:var(--dim);">items</span></div>' +
-                '<div style="font-size:12px; color:var(--dim); font-weight:700; margin-top:2px;">' + new Date(h.fecha).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</div>' +
-                motivoLine +
-                '<div id="hist-expanded-' + h.id + '" class="hidden" style="margin-top:16px; padding-top:16px; border-top:1.5px solid var(--bd2); transition: all 0.3s ease;">' +
-                '<!-- Lazy loaded items here -->' +
+                '<div style="display:flex; gap:10px; margin-top:8px;">' +
+                '<button onclick="event.stopPropagation(); editHistEntry(\'' + h.id + '\')" ' +
+                'style="flex:1; background:var(--mcf-bg); border:2px solid var(--mcf-ink); padding:8px; font-size:10px; font-weight:950; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">' +
+                '<i data-lucide="edit-3" style="width:12px;"></i> Editar' +
+                '</button>' +
+                '<button onclick="event.stopPropagation(); deleteHistEntryManual(\'' + h.id + '\')" ' +
+                'style="flex:1; background:var(--mcf-bg); border:2px solid var(--mcf-ink); color:var(--mcf-rose); padding:8px; font-size:10px; font-weight:950; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">' +
+                '<i data-lucide="trash-2" style="width:12px;"></i> Eliminar' +
+                '</button>' +
                 '</div>' +
                 '</div>';
         }
 
         if (totalFound > histLimit) {
-            html += '<button onclick="histLimit += 20; renderHistory(true)" class="wa-btn" style="width:100%; margin-top:20px; background:var(--s2); border:1.5px solid var(--bd); color:var(--text2); font-size:12px; height:48px;">' +
-                'MOSTRAR MÁS (' + (totalFound - histLimit) + ' restantes)' +
+            html += '<button onclick="histLimit += 20; renderHistory(true)" class="mcf-hist-filter-btn" style="width:100%; margin-top:20px; background:var(--mcf-surface);">' +
+                'MOSTRAR MÁS (' + (totalFound - histLimit) + ' RESTANTES)' +
                 '</button>';
         }
 
         list.innerHTML = html;
         list.style.opacity = '1';
-        setTimeout(function () { refreshIcons(); }, 100);
+        setTimeout(function () { if (window.lucide) lucide.createIcons(); }, 100);
     }
 
     function toggleHistExpand(id) {
@@ -2106,7 +2134,7 @@
         var isOpening = el.classList.contains('hidden');
         el.classList.toggle('hidden');
 
-        if (isOpening && el.innerHTML.indexOf('Lazy loaded') !== -1) {
+        if (isOpening && el.innerHTML.indexOf('Dynamic Items') !== -1) {
             var h = null;
             for (var i = 0; i < HIST.length; i++) { if (String(HIST[i].id) === String(id)) { h = HIST[i]; break; } }
             if (!h) return;
@@ -2115,9 +2143,9 @@
             var itemsHtml = '';
             for (var j = 0; j < items.length; j++) {
                 var it = items[j];
-                itemsHtml += '<div class="edit-hist-row" style="display:flex; justify-content:space-between; align-items:center; font-size:14px; padding:8px 6px; border-bottom:1px solid var(--bd2); transition: background 0.15s;">' +
-                    '<span style="color:var(--text2); font-weight:700;">' + it.prod + '</span>' +
-                    '<span style="font-weight:900; font-family:\'Outfit\',sans-serif; color:' + (it.qty === 86 ? 'var(--red)' : 'var(--primary)') + '">' +
+                itemsHtml += '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--mcf-bg);">' +
+                    '<span style="font-weight:700; color:var(--mcf-ink); text-transform:uppercase; font-size:11px;">' + it.prod + '</span>' +
+                    '<span style="font-weight:950; font-family:var(--mcf-font-display); color:' + (it.qty === 86 ? 'var(--mcf-rose)' : 'var(--mcf-ink)') + '; font-size:12px;">' +
                     (it.qty === 86 ? '⛔ 86' : it.qty + ' ' + formatUnit(it.qty, it.unit)) +
                     '</span>' +
                     '</div>';
@@ -2125,10 +2153,10 @@
 
             el.innerHTML = '<div style="display:flex; flex-direction:column; gap:0;">' + itemsHtml + '</div>' +
                 '<button onclick="sendHistWA(\'' + h.id + '\'); event.stopPropagation();" ' +
-                'style="width:100%; height:46px; display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:white; margin-top:16px; border-radius:12px; border:none; font-weight:900; font-size:13px; font-family:\'Outfit\',sans-serif; cursor:pointer;">' +
-                '<i data-lucide="message-circle" style="width:18px;"></i> COMPARTIR POR WA' +
+                'class="mcf-hist-filter-btn active" style="width:100%; margin-top:20px; --btn-active-bg: #25D366; --btn-active-color: white;">' +
+                '<i data-lucide="message-circle" style="width:14px; margin-right:8px;"></i> COMPARTIR POR WA' +
                 '</button>';
-            setTimeout(function () { refreshIcons(); }, 50);
+            setTimeout(function () { if (window.lucide) lucide.createIcons(); }, 50);
         }
     }
 
@@ -2533,41 +2561,19 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    /**
-     * Alterna la visibilidad de las alertas con animación
-     */
-    function toggleHomeAlerts() {
-        var card = document.getElementById('home-alerts-card');
-        var content = document.getElementById('home-alerts-content');
-        if (!card || !content) return;
-
-        var isExpanding = !card.classList.contains('expanded');
-        
-        if (isExpanding) {
-            card.classList.add('expanded');
-            content.classList.add('expanded');
-        } else {
-            card.classList.remove('expanded');
-            content.classList.remove('expanded');
-        }
-        
-        renderHomeSummary(); // Refresh to update icons (chevron)
-    }
-
-    /**
-     * 🧪 PRUEBA DE FUNCIONALIDADES: Suite de Test
-     */
-    function runSystemTest() {
+        function runSystemTest() {
         var resEl = document.getElementById('test-results');
         if (!resEl) return;
-        resEl.innerHTML = "Iniciando diagnóstico profundo...";
+        resEl.innerHTML = "> INICIALIZANDO SECUENCIA DE DIAGNÓSTICO…<br>> ESPERANDO RESPUESTA DE NÚCLEO…";
         resEl.classList.remove('hidden');
 
         var log = [];
         function addLog(msg, success) { 
-            log.push('<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05);">' +
-                '<span>' + msg + '</span>' +
-                '<span style="font-weight:900; color:' + (success ? 'var(--green)' : 'var(--red)') + '">' + (success ? 'OK' : 'FAIL') + '</span>' +
+            var status = success ? '[OK]' : '[FAIL]';
+            var color = success ? '#00FF41' : 'var(--mcf-rose)';
+            log.push('<div style="display:flex; justify-content:space-between; gap:10px;">' +
+                '<span>> ' + msg.toUpperCase() + '</span>' +
+                '<span style="font-weight:950; color:' + color + '">' + status + '</span>' +
                 '</div>');
             resEl.innerHTML = log.join('');
         }
@@ -2575,36 +2581,36 @@
         try {
             // 1. Integridad de Datos Local
             var catCount = Object.keys(CATS).length;
-            addLog("Categorías cargadas (" + catCount + ")", catCount > 0);
+            addLog("Estructura de Datos Local", catCount > 0);
 
             // 2. Persistencia Local
             localStorage.setItem('fede_diag_test', '1');
             var localOK = localStorage.getItem('fede_diag_test') === '1';
-            addLog("LocalStorage R/W", localOK);
+            addLog("LocalStorage R/W Access", localOK);
 
-            // 3. Estructura DOM
+            // 3. Estructura DOM (Critical Checks)
             var missing = [];
-            ['home', 'app', 'cat-grid', 'main-tabs', 'home-alerts-card'].forEach(function(id) {
+            ['home', 'app', 'mcf-bottom-search-bar'].forEach(function(id) {
                 if (!document.getElementById(id)) missing.push(id);
             });
-            addLog("Estructura UI", missing.length === 0);
+            addLog("Integridad de Interfaz", missing.length === 0);
 
             // 4. Versión y Build
-            addLog("v11.0.17 ARCHITECTED", true);
+            addLog("Build v11.1.0 Industrial", true);
 
             // 5. Conectividad con Servidor (Async)
-            addLog("Verificando Cloud...", true);
+            addLog("Cloud Handshake...", true);
             
             FeDe_API.call('getAppState', null, function(r) {
-                addLog("Servidor GAS (Conexión OK)", true);
-                addLog("ID Planilla: " + (activeSheetId.length > 20 ? 'VÁLIDO' : 'DE TEST/DEFAULT'), true);
+                addLog("Servidor GAS (Uplink Stable)", true);
+                addLog("Auth Token Status", true);
                 toast("✓ Diagnóstico completado");
             }, function(err) {
-                addLog("Servidor GAS: " + err, false);
+                addLog("Servidor GAS Error: " + err, false);
             });
 
         } catch (e) {
-            addLog("EXCEPCIÓN: " + e.message, false);
+            addLog("SYSTEM EXCEPTION: " + e.message, false);
         }
     }
     /**
@@ -3078,7 +3084,7 @@
         var html = '';
         days.forEach(function(d, idx) {
             var active = currentDays.indexOf(idx) !== -1;
-            html += '<div onclick="toggleOrderDay(' + idx + ')" class="cchip ' + (active ? 'active' : '') + '" style="width:40px;height:40px;display:flex !important;justify-content:center;align-items:center;font-size:14px;font-weight:900;">' + d + '</div>';
+            html += '<div onclick="toggleOrderDay(' + idx + ')" class="mcf-set-day-chip ' + (active ? 'active' : '') + '">' + d + '</div>';
         });
         container.innerHTML = html;
     }

@@ -1,6 +1,6 @@
 <style>
     /* ——————————————————————————————————————————————————————————————————————————
-       FeDe Gastro Pro - v11.0.17 — CSS RESPONSIVO & ERGONÓMICO
+       FeDe Gastro Pro - v11.1.0 — CSS RESPONSIVO & ERGONÓMICO
        Montserrat font | Iconos grandes | Mobile-First | Accesibilidad
        —————————————————————————————————————————————————————————————————————————— */
 
@@ -612,11 +612,13 @@
 
     .hdr-search-hidden {
         transform: translateX(100%);
+        pointer-events: none !important;
     }
 
     .hdr-search-active,
     .hdr-search-persistent {
         transform: translateX(0) !important;
+        pointer-events: auto !important;
     }
 
     .hdr-search-persistent .hdr-search-close {
