@@ -902,70 +902,8 @@
         margin-bottom: 20px !important;
     }
 
-    /* 🧱 INDUSTRIAL COMPONENTS (Cards & Rows) */
-    .cchip,
-    .prow,
-    .home-alerts-card,
-    .mcf-status-panel {
-        background: var(--mcf-paper) !important;
-        border: var(--mcf-border) !important;
-        box-shadow: var(--mcf-shadow) !important;
-        transition: transform 0.15s var(--mcf-snap), box-shadow 0.15s var(--mcf-snap);
-        width: 100%;
-        max-width: 500px;
-        margin-bottom: var(--mcf-gap);
-    }
+    /* [REDUNDANT BLOCK REMOVED FOR ARCHITECTURAL CLEANUP] */
 
-    .cchip {
-        height: 80px;
-        padding: 0 24px !important;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        cursor: pointer;
-    }
-
-    .cchip i {
-        width: 32px;
-        height: 32px;
-    }
-
-    .cchip span {
-        font-family: var(--mcf-font-display) !important;
-        font-size: 16px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .cchip.active {
-        background: var(--mode-color, var(--mcf-amber)) !important;
-        color: var(--mcf-paper) !important;
-        box-shadow: var(--mcf-shadow) !important;
-        transform: translate(-2px, -2px);
-    }
-
-    .prow {
-        padding: 24px !important;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .prow .pname {
-        font-family: var(--mcf-font-display) !important;
-        font-size: 22px;
-        font-weight: 900;
-        text-transform: uppercase;
-        border-bottom: 2px solid var(--mcf-ink);
-        padding-bottom: 8px;
-        text-align: center;
-    }
-
-    .prow.has-qty {
-        border-color: var(--mode-color) !important;
-        box-shadow: 6px 6px 0px var(--mode-color) !important;
-    }
 
     h1,
     h2,
@@ -1503,10 +1441,28 @@
 
     /* 📊 RELEVAMIENTO VIEW (Operational Module) */
     #view-relevamiento,
-    .view-relevamiento {
+    .view-relevamiento,
+    .view.scroll {
         background: var(--mcf-bg) !important;
-        padding-top: 84px !important; /* 64px header + 20px gap */
-        padding-bottom: 180px !important; /* Safe zone for Command Deck + Tabs */
+        padding-top: 110px !important; /* Extra room for top tabs in MCF mode */
+        padding-bottom: 160px !important; /* Safe zone for Command Deck + Context Bar */
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* 🏠 HOME VIEW OVERRIDE (Fixes inline style interference) */
+    #home-content {
+        padding-top: 110px !important;
+        padding-bottom: 160px !important;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+
+    /* Reset legacy scroll-content padding that was causing double-spacing */
+    .view.scroll .scroll-content {
+        padding-bottom: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     /* 📦 RELEVAMIENTO MODULES (Consolidated Industrial Core) */
