@@ -846,15 +846,12 @@
     }
 
     /* ── RELEVAMIENTO ── */
-    function getCategoryColor(catName) {
-        var n = catName.toLowerCase();
-        if (n.indexOf('merma') !== -1) return 'var(--mcf-mauve-lt)';
-        if (n.indexOf('recep') !== -1) return 'var(--mcf-sky-lt)';
-        if (n.indexOf('bebida') !== -1) return 'var(--mcf-sky-lt)';
-        if (n.indexOf('postre') !== -1) return 'var(--mcf-rose-lt)';
-        if (n.indexOf('fresco') !== -1 || n.indexOf('verdu') !== -1) return 'var(--mcf-sage-lt)';
-        if (n.indexOf('carne') !== -1) return 'var(--mcf-rose-lt)';
-        return 'var(--mcf-paper)';
+    function getModeBgColor() {
+        var m = currentMode || 'pedido';
+        if (m === 'merma') return 'var(--mcf-mauve-lt)';
+        if (m === 'recepcion') return 'var(--mcf-sage-lt)';
+        if (m === 'stock') return 'var(--mcf-slate-lt)';
+        return 'var(--mcf-amber-lt)'; // Pedido
     }
 
     function renderCatGrid() {
@@ -872,7 +869,7 @@
             var styleOverride = size ? 'style="--cat-icon-size: ' + size + 'px;"' : '';
             var encoded = encodeURIComponent(cat);
             var safeCat = FeDe_Utils.sanitize(cat);
-            var bgColor = getCategoryColor(cat);
+            var bgColor = getModeBgColor();
             var styleStr = 'background-color: ' + bgColor + ';';
             if (size) styleStr += ' --cat-icon-size: ' + size + 'px;';
             
