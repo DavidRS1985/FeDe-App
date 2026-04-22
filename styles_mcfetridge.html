@@ -1505,8 +1505,8 @@
     #view-relevamiento,
     .view-relevamiento {
         background: var(--mcf-bg) !important;
-        padding-top: 100px !important;
-        padding-bottom: 200px !important;
+        padding-top: 84px !important; /* 64px header + 20px gap */
+        padding-bottom: 180px !important; /* Safe zone for Command Deck + Tabs */
     }
 
     /* 📦 RELEVAMIENTO MODULES (Consolidated Industrial Core) */
@@ -1514,11 +1514,10 @@
         display: flex !important;
         flex-direction: column !important;
         gap: 12px !important;
-        padding: 12px !important;
+        padding: 16px !important; /* Uniform padding, no bottom stacking */
         width: 100% !important;
         max-width: 600px !important;
         margin: 0 auto !important;
-        padding-bottom: 140px !important; /* Optimized clearance */
     }
 
     .cchip {
@@ -1574,14 +1573,13 @@
     }
 
     #prod-list {
-        padding: 12px !important;
+        padding: 16px !important; /* Uniform padding, no bottom stacking */
         width: 100% !important;
         max-width: 600px !important;
         margin: 0 auto !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 20px !important;
-        padding-bottom: 160px !important; /* Optimized clearance */
     }
 
     .prow {
