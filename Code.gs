@@ -53,6 +53,7 @@ var FeDe_Repo = {
       }
     }
     sheet.appendRow([key, valStr]);
+    SpreadsheetApp.flush();
     return true;
   }
 };
@@ -186,6 +187,7 @@ function getSheetId(id) {
 }
 
 function doGet(e) {
+  // ── RELEASE: v11.0.18 ──
   // ── ROUTING PARA PWA / ANDROID ──
   if (e && e.parameter) {
     if (e.parameter.path === 'manifest.json') {
@@ -431,6 +433,7 @@ function addHistoryEntry(entry, targetId) {
       sheet.deleteRows(2, sheet.getLastRow() - 300);
     }
     
+    SpreadsheetApp.flush();
     return { success: true, entryId: entryId };
   } catch(e) { 
     Logger_FeDe.error('Fallo en addHistoryEntry', { error: e.message });
