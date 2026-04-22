@@ -846,6 +846,17 @@
     }
 
     /* ── RELEVAMIENTO ── */
+    function getCategoryColor(catName) {
+        var n = catName.toLowerCase();
+        if (n.indexOf('merma') !== -1) return 'var(--mcf-mauve-lt)';
+        if (n.indexOf('recep') !== -1) return 'var(--mcf-sky-lt)';
+        if (n.indexOf('bebida') !== -1) return 'var(--mcf-sky-lt)';
+        if (n.indexOf('postre') !== -1) return 'var(--mcf-rose-lt)';
+        if (n.indexOf('fresco') !== -1 || n.indexOf('verdu') !== -1) return 'var(--mcf-sage-lt)';
+        if (n.indexOf('carne') !== -1) return 'var(--mcf-rose-lt)';
+        return 'var(--mcf-paper)';
+    }
+
     function renderCatGrid() {
         var grid = document.getElementById('cat-grid');
         if (!grid) return;
@@ -861,7 +872,11 @@
             var styleOverride = size ? 'style="--cat-icon-size: ' + size + 'px;"' : '';
             var encoded = encodeURIComponent(cat);
             var safeCat = FeDe_Utils.sanitize(cat);
-            return '<div class="cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" ' + styleOverride + '>' +
+            var bgColor = getCategoryColor(cat);
+            var styleStr = 'background-color: ' + bgColor + ';';
+            if (size) styleStr += ' --cat-icon-size: ' + size + 'px;';
+            
+            return '<div class="cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" style="' + styleStr + '">' +
                 '<i data-lucide="' + icon + '"></i>' +
                 '<span>' + safeCat + '</span>' +
                 '</div>';
