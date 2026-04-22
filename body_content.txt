@@ -453,6 +453,26 @@
                         </button>
                     </div>
                 </div>
+                <!-- SECCIÓN: SISTEMA DE DISEÑO -->
+                <div class="dash-card">
+                    <h3 style="font-size:14px; font-family:'Outfit', sans-serif; font-weight:800; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:10px; text-transform:uppercase; letter-spacing:1px;">
+                        <i data-lucide="palette" style="width:18px; color:var(--magenta);"></i>Sistema de Diseño
+                    </h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <button id="theme-btn-zinc" class="wa-btn" 
+                            style="background:var(--s2); border:2px solid var(--bd); border-radius:14px; padding:12px; flex-direction:column; gap:8px;"
+                            onclick="changeAppTheme('zinc')">
+                            <div style="width:100%; height:40px; border-radius:8px; background:linear-gradient(135deg, #27272a, #09090b); border:1px solid #3f3f46;"></div>
+                            <span style="font-size:12px; font-weight:800;">ZINC (CLASSIC)</span>
+                        </button>
+                        <button id="theme-btn-mcf" class="wa-btn" 
+                            style="background:var(--s2); border:2px solid var(--bd); border-radius:14px; padding:12px; flex-direction:column; gap:8px;"
+                            onclick="changeAppTheme('mcf')">
+                            <div style="width:100%; height:40px; border-radius:0; background:#F4F0E5; border:2px solid #1a1a1a;"></div>
+                            <span style="font-size:12px; font-weight:800;">McFETRIDGE</span>
+                        </button>
+                    </div>
+                </div>
 
                 <!-- SECCIÓN: ESTRUCTURA -->
 
@@ -1339,14 +1359,14 @@
         return `
             <div data-prow="${ep}" class="prow ${d.qty > 0 ? 'has-qty' : ''} ${is86 ? 'is-86' : ''}">
                 <!-- FILA 1: NOMBRE Y FAV -->
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                    <button onclick="toggleFav('${ep}')" aria-label="${isFav ? 'Quitar favorito' : 'Agregar favorito'}" style="background:none; border:none; color:${isFav ? 'var(--gold)' : 'var(--dim2)'}; cursor:pointer; flex-shrink:0; display:flex; align-items:center; padding:4px;">
-                        <i data-lucide="star" style="width:20px; height:20px; fill:${isFav ? 'var(--gold)' : 'none'}; color:${isFav ? 'var(--gold)' : 'var(--dim)'};"></i>
-                    </button>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; width:100%;">
                     <div style="flex:1;">
                         <div class="pname">${p}</div>
-                        ${PREDICTIONS[p] ? `<div style="font-size:10px; color:var(--blue); font-weight:800; margin-top:2px; text-transform:uppercase; letter-spacing:0.5px;">Sug: ${PREDICTIONS[p]} ${d.unit}</div>` : ''}
+                        ${PREDICTIONS[p] ? `<div style="font-size:11px; color:var(--mcf-slate); font-weight:900; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px;">Sug: ${PREDICTIONS[p]} ${d.unit}</div>` : ''}
                     </div>
+                    <button onclick="toggleFav('${ep}')" class="mcf-fav-trigger" aria-label="${isFav ? 'Quitar favorito' : 'Agregar favorito'}" style="background:none; border:none; color:${isFav ? 'var(--mcf-amber)' : 'var(--mcf-ink-muted)'}; cursor:pointer; flex-shrink:0; display:flex; align-items:center; padding:8px;">
+                        <i data-lucide="star" style="width:24px; height:24px; fill:${isFav ? 'var(--mcf-amber)' : 'none'};"></i>
+                    </button>
                 </div>
                 
                 <div style="display:flex; align-items:center; justify-content:center; width:100%;">

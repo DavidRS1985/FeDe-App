@@ -1,0 +1,2388 @@
+<style>
+    /* ——————————————————————————————————————————————————————————————————————————
+       MCFETRIDGE METHOD — DESIGN SYSTEM
+       Flat form. Muted tone. Clean line.
+       MOBILE-FIRST OPTIMIZED.
+       —————————————————————————————————————————————————————————————————————————— */
+
+    /* 📱 MOBILE ALIGNMENT & SAFE AREAS */
+    /* 🏗️ INDUSTRIAL TOKENS - UNIFIED MCFETRIDGE SYSTEM */
+    :root {
+        /* Palette */
+        --mcf-paper: #FDFBF7;
+        --mcf-bg: #F4F0E5;
+        --mcf-surface: #E8E3D6;
+        --mcf-ink: #1A1816;
+        --mcf-ink-muted: #6E6A62;
+        --mcf-ink-ghost: #9E9A92;
+        --mcf-rose: #D4937A;
+        --mcf-rose-lt: #EDD9CF;
+        --mcf-sage: #8BA87A;
+        --mcf-sage-lt: #CEDFCA;
+        --mcf-slate: #4E637A;
+        --mcf-slate-lt: #C8D1DC;
+        --mcf-mauve: #A884A6;
+        --mcf-mauve-lt: #DDD0DC;
+        --mcf-amber: #C89A42;
+        --mcf-amber-lt: #F0DAAA;
+        --mcf-sky: #7AB8D4;
+        --mcf-sky-lt: #CFE6ED;
+
+        /* Typography */
+        --mcf-font-display: 'Outfit', sans-serif;
+        --mcf-font-body: 'DM Sans', sans-serif;
+
+        /* Layout & Spacing */
+        --mcf-tab-height: 70px;
+        --mcf-header-height: 64px;
+        --mcf-border: 4px solid var(--mcf-ink);
+        --mcf-shadow: 6px 6px 0px var(--mcf-ink);
+        --mcf-shadow-lg: 10px 10px 0px var(--mcf-ink);
+        --mcf-gap: 16px;
+
+        /* Bridge to Legacy */
+        --text: var(--mcf-ink);
+        --text2: var(--mcf-ink-muted);
+        --primary: var(--mcf-amber);
+        --bg: var(--mcf-bg);
+        --bd: var(--mcf-ink);
+        --r: 0px !important;
+        --r2: 0px !important;
+    }
+
+    /* 🏛️ GLOBAL RESET & SCOPING */
+    html.theme-mcf {
+        background: var(--mcf-ink) !important;
+        height: 100%;
+    }
+
+    body.theme-mcf {
+        background: var(--mcf-bg) !important;
+        color: var(--mcf-ink) !important;
+        font-family: var(--mcf-font-body) !important;
+        margin: 0;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    body.theme-mcf * {
+        box-sizing: border-box !important;
+        border-radius: 0 !important;
+        -webkit-tap-highlight-color: transparent;
+        backdrop-filter: none !important;
+        text-shadow: none !important;
+    }
+
+    /* Theme-Mode Semantic Mapping */
+    body.theme-pedido {
+        --mode-color: var(--mcf-rose);
+        --mode-bg: var(--mcf-rose-lt);
+    }
+
+    body.theme-stock {
+        --mode-color: var(--mcf-slate);
+        --mode-bg: var(--mcf-slate-lt);
+    }
+
+    body.theme-recepcion {
+        --mode-color: var(--mcf-sage);
+        --mode-bg: var(--mcf-sage-lt);
+    }
+
+    body.theme-merma {
+        --mode-color: var(--mcf-mauve);
+        --mode-bg: var(--mcf-mauve-lt);
+    }
+
+    body:not([class*="theme-"]) {
+        --mode-color: var(--mcf-ink);
+        --mode-bg: var(--mcf-paper);
+    }
+
+    /* 🏷️ TACTICAL METADATA (Home Labels) */
+    .mcf-date-tag {
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        padding: 3px 10px !important;
+        font-size: 11px !important;
+        font-weight: 850 !important;
+        margin-right: 8px !important;
+        border: 2px solid var(--mcf-ink) !important;
+    }
+
+    .mcf-sheet-tag {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        padding: 2px 8px !important;
+        font-size: 11px !important;
+        font-weight: 950 !important;
+    }
+
+    /* 🏙️ ADAPTIVE COMMAND SYSTEMS (Search) */
+    .mcf-command-deck {
+        position: fixed !important;
+        bottom: calc(var(--mcf-tab-height) + 12px) !important;
+        left: 16px !important;
+        right: 16px !important;
+        z-index: 5000 !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 10px 10px 0px var(--mcf-ink) !important;
+        box-sizing: border-box;
+        pointer-events: auto !important;
+        transition: transform 0.3s var(--mcf-snap), border-color 0.2s;
+    }
+
+    .mcf-deck-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        height: 72px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .mcf-deck-icon {
+        width: 32px !important;
+        height: 32px !important;
+        stroke-width: 3px !important;
+        color: var(--mcf-ink) !important;
+        margin-right: 18px !important;
+        flex-shrink: 0;
+    }
+
+    .mcf-deck-wrap input {
+        border: none !important;
+        background: transparent !important;
+        color: var(--mcf-ink) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 18px !important;
+        flex: 1;
+        outline: none;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .mcf-deck-wrap input::placeholder {
+        color: var(--mcf-ink-ghost) !important;
+        opacity: 0.6 !important;
+    }
+
+    .mcf-command-deck:focus-within {
+        border-color: var(--mcf-amber) !important;
+    }
+
+
+
+    .mcf-search-results-overlay {
+        position: absolute !important;
+        bottom: calc(100% + 4px) !important;
+        left: -4px !important;
+        right: -4px !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        max-height: 50vh;
+        overflow-y: auto;
+        z-index: 6000 !important;
+        display: none;
+    }
+
+    /* Results visibility logic tied to content, as JS handles the display toggle */
+    .mcf-command-deck .mcf-search-results-overlay:not(:empty) {
+        /* JS handles display style directly, but we ensure it's allowed */
+    }
+
+    /* 📋 SEARCH RESULT ITEM (McFetridge Pro) */
+    .mcf-res-item {
+        padding: 14px 18px !important;
+        border-bottom: 2px solid var(--mcf-surface) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        background: var(--mcf-paper) !important;
+        transition: background 0.15s ease !important;
+    }
+
+    .mcf-res-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .mcf-res-item:active,
+    .mcf-res-item:hover {
+        background: var(--mcf-amber) !important;
+        transform: scale(0.98);
+    }
+
+    /* 🧱 TECTONIC PULSE (Success Search Indicator) */
+    @keyframes mcf-found-pulse {
+        0% {
+            background: var(--mcf-bg);
+            filter: brightness(1);
+        }
+
+        30% {
+            background: var(--mcf-amber);
+            filter: brightness(1.2);
+            box-shadow: 0 0 40px var(--mcf-amber);
+        }
+
+        100% {
+            background: var(--mcf-bg);
+            filter: brightness(1);
+        }
+    }
+
+    .mcf-found-highlight {
+        animation: mcf-found-pulse 1s var(--mcf-industrial) !important;
+        position: relative;
+        z-index: 5;
+    }
+
+    .mcf-res-name {
+        font-size: 14px !important;
+        font-weight: 850 !important;
+        color: var(--mcf-ink) !important;
+        text-transform: uppercase !important;
+    }
+
+    .mcf-res-cat {
+        font-size: 10px !important;
+        font-weight: 900 !important;
+        color: var(--mcf-ink-muted) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Force hide redundant systems */
+    .mcf-top-bar,
+    .hdr-search-container,
+    .hdr-search-wrap,
+    .mcf-search-box {
+        display: none !important;
+    }
+
+    body.theme-mcf .mcf-command-deck:focus-within~#app .tabs {
+        display: none !important;
+    }
+
+    /* Pushes content down ONLY when top-bar is active */
+    body.theme-mcf .ctx-bar:not(.hidden)~.view .scroll-content,
+    body.theme-mcf .ctx-bar:not(.hidden)~main .scroll-content {
+        padding-top: 150px !important;
+        /* Safety margin for industrial shadows and notches */
+    }
+
+    body.theme-mcf .ctx-bar:not(.hidden)~.mcf-command-deck {
+        display: none !important;
+    }
+
+    body.theme-mcf .ctx-bar:not(.hidden)~#app .tabs {
+        display: none !important;
+    }
+
+    /* 🔍 SEARCH RESULTS (Interactive & Thumb-Centric) */
+    .mcf-res-item {
+        padding: 16px 20px !important;
+        background: var(--mcf-paper) !important;
+        border-bottom: 2px solid var(--mcf-surface) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        transition: background 0.15s ease, transform 0.1s ease !important;
+    }
+
+    .mcf-res-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .mcf-res-item:active {
+        background: var(--mcf-amber) !important;
+        transform: scale(0.98) !important;
+    }
+
+    .mcf-res-item:focus-visible {
+        outline: 2px solid var(--mcf-ink) !important;
+        outline-offset: -2px !important;
+    }
+
+    .mcf-res-name {
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        font-size: 14px !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .mcf-res-cat {
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-amber) !important;
+        text-transform: uppercase !important;
+        background: var(--mcf-ink) !important;
+        padding: 2px 8px !important;
+        letter-spacing: 1px !important;
+    }
+
+    /* Subliminal Highlight for finding items */
+    .prow-highlight {
+        animation: mcf-flash 1.5s ease-out !important;
+    }
+
+    @keyframes mcf-flash {
+        0% {
+            border-color: var(--mcf-amber);
+            box-shadow: 0 0 40px var(--mcf-amber);
+            transform: scale(1.02);
+        }
+
+        100% {
+            border-color: var(--mcf-ink);
+            box-shadow: 8px 8px 0px var(--mcf-ink);
+            transform: scale(1);
+        }
+    }
+
+    /* ——————————————————————————————————————————————————————————————————————————
+       RESET & GLOBAL OVERRIDES (Scoped to McFetridge Theme)
+       —————————————————————————————————————————————————————————————————————————— */
+
+    body.theme-mcf * {
+        box-sizing: border-box;
+        border-radius: 0 !important;
+        /* Force sharp corners */
+    }
+
+    body.theme-mcf {
+        background-color: var(--mcf-bg) !important;
+        background-image: none !important;
+        /* Remove zinc patterns */
+        font-family: var(--mcf-font-display) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    /* Remove filters globally within McFetridge theme */
+    body.theme-mcf * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        text-shadow: none !important;
+        background-image: none !important;
+    }
+
+    /* Aesthetics Only - Minimal Structural Intervention */
+    body.theme-mcf .view {
+        background-color: var(--mcf-bg) !important;
+    }
+
+    body.theme-mcf .dash-card,
+    body.theme-mcf .mcf-search-box {
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        margin: 0 6px 20px 0 !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        width: calc(100% - 10px) !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Dedicated Button Logic removed and consolidated below */
+
+    /* ——————————————————————————————————————————————————————————————————————————
+       BARRA CONTEXTUAL (Fixed Footer)
+       —————————————————————————————————————————————————————————————————————————— */
+    /* 🛠️ CONTEXTUAL ACTION BAR (Industrial Footer) */
+    footer.ctx-bar {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: var(--mcf-tab-height, 70px) !important;
+        background: var(--mcf-paper) !important;
+        border-top: 5px solid var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+        gap: 12px !important;
+        z-index: 70000 !important;
+        box-sizing: border-box !important;
+        box-shadow: 0 -12px 0px rgba(26, 26, 26, 0.08) !important;
+        transform: none !important;
+        margin: 0 !important;
+    }
+
+    .ctx-btn {
+        height: 52px !important;
+        /* Reduced height to fit better */
+        border: 4px solid var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        font-family: inherit !important;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .ctx-exit {
+        flex: 1 !important;
+        background: var(--mcf-surface) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .ctx-send {
+        flex: 2 !important;
+        background: var(--mode-color, var(--mcf-amber)) !important;
+        color: var(--mcf-paper) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    .ctx-send:active {
+        transform: translate(2px, 2px);
+        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
+    }
+
+    .ctx-count {
+        background: rgba(255, 255, 255, 0.25) !important;
+        border: 2px solid var(--mcf-ink) !important;
+        border-radius: 0 !important;
+        padding: 2px 10px !important;
+        font-size: 14px !important;
+        font-weight: 950 !important;
+        margin-left: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ORDER MODULE OVERLAY (MOP Adaptation)
+       ═══════════════════════════════════════════════════════════════════ */
+    .order-overlay {
+        background: var(--mcf-bg) !important;
+        color: var(--mcf-ink) !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .order-header {
+        background: var(--mcf-paper) !important;
+        border-bottom: 4px solid var(--mcf-ink) !important;
+        padding: 24px 20px !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .order-header h2 {
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 900 !important;
+        font-size: 24px !important;
+        letter-spacing: -0.5px !important;
+        margin: 0;
+    }
+
+    .order-item-row {
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        margin-bottom: 16px !important;
+        padding: 16px !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FULLSCREEN MODE (MOP Adaptation)
+       ═══════════════════════════════════════════════════════════════════ */
+    .prod-fs-header {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        padding: 20px 16px !important;
+        border-bottom: 5px solid var(--mcf-ink) !important;
+    }
+
+    .prod-fs-name {
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 38px !important;
+        line-height: 1 !important;
+        letter-spacing: -1.5px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .prod-fs-stepper {
+        border-radius: 0 !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+    }
+
+    .prod-fs-step-btn {
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        font-weight: 900 !important;
+        font-size: 32px !important;
+    }
+
+    /* Precision Overrides */
+    body.theme-mcf .order-overlay *,
+    body.theme-mcf .prod-fs-header *,
+    body.theme-mcf .prod-fullscreen * {
+        border-radius: 0 !important;
+        font-family: var(--mcf-font-display) !important;
+    }
+
+    /* Active Category Fix */
+    .cchip.active {
+        background: var(--mcf-amber) !important;
+        color: var(--mcf-ink) !important;
+        border-color: var(--mcf-ink) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        transform: translate(-2px, -2px) scale(1.05);
+    }
+
+    .cchip.active i,
+    .cchip.active span {
+        color: var(--mcf-ink) !important;
+    }
+
+    /* Typography */
+    body.theme-mcf h1,
+    body.theme-mcf h2,
+    body.theme-mcf h3,
+    body.theme-mcf h4,
+    body.theme-mcf h5,
+    body.theme-mcf h6,
+    body.theme-mcf .home-logo,
+    body.theme-mcf .pqty-box,
+    body.theme-mcf #card-totalitems,
+    body.theme-mcf #card-movtoday,
+    body.theme-mcf .mode-label,
+    body.theme-mcf .tag-beta,
+    body.theme-mcf .shov h2 {
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.02em !important;
+        text-transform: uppercase !important;
+    }
+
+    /* COMMAND CENTER HEADER (ALGORITHMIC) */
+    .mcf-header {
+        width: 100%;
+        max-width: 500px;
+        background-color: var(--mcf-ink);
+        background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='rgba(255,255,255,0.05)' stroke-width='1.5' fill='none'%3E%3Cpath d='M0,0 Q100,200 200,0 M0,200 Q100,0 200,200 M100,0 L100,200 M0,100 L200,100' /%3E%3Ccircle cx='100' cy='100' r='50' /%3E%3Ccircle cx='100' cy='100' r='80' stroke-dasharray='6 6' /%3E%3Ccircle cx='100' cy='100' r='20' /%3E%3Cpolygon points='100,10 190,100 100,190 10,100' stroke-dasharray='2 4' /%3E%3C/g%3E%3C/svg%3E");
+        background-size: 140px 140px;
+        color: var(--mcf-bg);
+        border: 4px solid var(--mcf-ink);
+        padding: 34px 28px;
+        margin-bottom: 40px;
+        position: relative;
+        box-shadow: 8px 8px 0px var(--mcf-ink), 16px 16px 0px var(--mcf-amber);
+        overflow: hidden;
+    }
+
+    .mcf-header .home-logo {
+        color: var(--mcf-bg);
+        font-family: var(--mcf-font-display) !important;
+        font-size: 68px !important;
+        margin: 0 !important;
+        line-height: 0.8 !important;
+        letter-spacing: -3px !important;
+        text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+    }
+
+    .mcf-header .subtitle {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-top: 12px;
+        opacity: 0.8;
+    }
+
+    .mcf-header-controls {
+        position: absolute !important;
+        top: 20px !important;
+        right: 20px !important;
+        display: flex !important;
+        gap: 12px !important;
+        z-index: 100 !important;
+        /* High enough to be clickable */
+    }
+
+    /* Command Buttons (Header) */
+    .mcf-mini-btn {
+        width: 48px !important;
+        height: 48px !important;
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: transform 0.1s !important;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2) !important;
+        touch-action: manipulation !important;
+    }
+
+    .mcf-mini-btn:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .mcf-mini-btn i {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    /* STATUS PANEL (BRUTALIST EVENT CONTAINER) */
+    .mcf-status-panel {
+        background: var(--mcf-paper) !important;
+        border: var(--mcf-border) !important;
+        box-shadow: var(--mcf-shadow) !important;
+        margin-bottom: 30px;
+        width: 100%;
+        max-width: 500px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .mcf-status-title {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        padding: 16px 20px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 14px !important;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 4px solid var(--mcf-ink);
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ACTION GRID V2 */
+    /* Consolidado en seccion inferior */
+        gap: 16px;
+        min-height: 160px;
+        cursor: pointer;
+        transition: all 0.1s var(--mcf-snap);
+        touch-action: manipulation !important;
+        text-align: center;
+    }
+
+    .mcf-action-btn:active {
+        transform: translate(4px, 4px);
+        box-shadow: 2px 2px 0px var(--mcf-ink);
+    }
+
+    .mcf-action-btn i {
+        width: 52px !important;
+        height: 52px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: var(--mcf-ink) !important;
+        margin-bottom: 4px;
+    }
+
+    .mcf-action-btn span {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 15px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--mcf-ink) !important;
+        line-height: 1.2;
+    }
+
+    /* GLOBAL INDUSTRIAL INK SYSTEM (McFetridge Standard) */
+    body.theme-mcf i,
+    body.theme-mcf svg,
+    body.theme-mcf [data-lucide] {
+        stroke-width: 3px !important;
+    }
+
+    /* Legibility overrides for micro-icons */
+    body.theme-mcf .uchip i,
+    body.theme-mcf .tree-icon,
+    body.theme-mcf .mini-status-icon {
+        stroke-width: 3px !important;
+    }
+
+    /* Home Specific weight (redundant but safe) */
+    #home [data-lucide] {
+        stroke-width: 3px !important;
+    }
+
+    /* LARGE ACTION BAR */
+    .mcf-full-bar {
+        width: 100%;
+        max-width: 500px;
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border: var(--mcf-border);
+        padding: 24px;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 18px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        box-shadow: 8px 8px 0px var(--mcf-slate);
+    }
+
+    .mcf-full-bar:active {
+        transform: translate(4px, 4px);
+        box-shadow: 4px 4px 0px var(--mcf-slate);
+    }
+
+    .home-alert-ok {
+        background: var(--mcf-sage-lt) !important;
+        border: var(--mcf-border) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    /* Buttons - Global MCF Style (excluding specific triggers) */
+    button:not(.mcf-fav-trigger),
+    .btn,
+    .as-btn,
+    .wa-btn,
+    .mode-btn-glass,
+    .mode-btn-square {
+        background: var(--mcf-surface) !important;
+        border: var(--mcf-border) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        color: var(--mcf-ink) !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.1em !important;
+        padding: 10px 16px !important;
+    }
+
+    button:not(.mcf-fav-trigger):active,
+    .btn:active,
+    .mode-btn-glass:active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-bg) !important;
+        box-shadow: none !important;
+        transform: translate(2px, 2px) !important;
+    }
+
+    /* Icons */
+    i[data-lucide] {
+        stroke-width: 3px !important;
+    }
+
+    /* ——————————————————————————————————————————————————————————————————————————
+       MODE IMMERSION (Visual Feedback)
+       —————————————————————————————————————————————————————————————————————————— */
+
+    /* Generic Overrides when any mode is active */
+    body.theme-mcf.theme-pedido .hdr,
+    body.theme-mcf.theme-pedido .nb {
+        background: var(--mcf-rose) !important;
+        transition: background 0.3s;
+    }
+
+    body.theme-mcf.theme-stock .hdr,
+    body.theme-mcf.theme-stock .nb {
+        background: var(--mcf-slate) !important;
+        color: var(--mcf-paper) !important;
+        transition: background 0.3s;
+    }
+
+    body.theme-mcf.theme-recepcion .hdr,
+    body.theme-mcf.theme-recepcion .nb {
+        background: var(--mcf-sage) !important;
+        transition: background 0.3s;
+    }
+
+    body.theme-mcf.theme-merma .hdr,
+    body.theme-mcf.theme-merma .nb {
+        background: var(--mcf-mauve) !important;
+        transition: background 0.3s;
+    }
+
+    /* Text contrast adjustment for dark modes (Stock) */
+    body.theme-mcf.theme-stock .hdr *,
+    body.theme-mcf.theme-stock .nb * {
+        color: var(--mcf-paper) !important;
+    }
+
+    body.theme-mcf.theme-stock .hdr i,
+    body.theme-mcf.theme-stock .nb i {
+        color: var(--mcf-paper) !important;
+    }
+
+    /* Modos - Mapping colors to McFetridge Palette */
+    body.theme-mcf .as-btn-pedido {
+        background: var(--mcf-rose) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .as-btn-stock {
+        background: var(--mcf-slate) !important;
+        color: var(--mcf-paper) !important;
+    }
+
+    body.theme-mcf .as-btn-recepcion {
+        background: var(--mcf-sage) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .as-btn-merma {
+        background: var(--mcf-mauve) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .as-btn-pedido i,
+    body.theme-mcf .as-btn-recepcion i,
+    body.theme-mcf .as-btn-merma i {
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .as-btn-stock i {
+        color: var(--mcf-paper) !important;
+    }
+
+    body.theme-mcf .mode-tag-lg,
+    body.mode-pedido .as-btn-pedido {
+        background: var(--mcf-rose) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf.theme-stock .mode-tag-lg,
+    body.mode-stock .as-btn-stock {
+        background: var(--mcf-slate) !important;
+        color: var(--mcf-paper) !important;
+    }
+
+    body.theme-mcf.theme-recepcion .mode-tag-lg,
+    body.theme-entrante .as-btn-entrante {
+        background: var(--mcf-sage) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf.theme-merma .mode-tag-lg {
+        background: var(--mcf-mauve) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    /* ——————————————————————————————————————————————————————————————————————————
+       ITEM SELECTION (CHIPS & ROWS)
+       —————————————————————————————————————————————————————————————————————————— */
+
+    .cats-scroll {
+        padding: 5px 0 15px !important;
+        gap: 8px !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* 🧱 INDUSTRIAL COMPONENTS (Cards & Rows) */
+    .cchip,
+    .prow,
+    .home-alerts-card,
+    .mcf-status-panel {
+        background: var(--mcf-paper) !important;
+        border: var(--mcf-border) !important;
+        box-shadow: var(--mcf-shadow) !important;
+        transition: transform 0.15s var(--mcf-snap), box-shadow 0.15s var(--mcf-snap);
+        width: 100%;
+        max-width: 500px;
+        margin-bottom: var(--mcf-gap);
+    }
+
+    .cchip {
+        height: 80px;
+        padding: 0 24px !important;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        cursor: pointer;
+    }
+
+    .cchip i {
+        width: 32px;
+        height: 32px;
+    }
+
+    .cchip span {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 16px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .cchip.active {
+        background: var(--mode-color, var(--mcf-amber)) !important;
+        color: var(--mcf-paper) !important;
+        box-shadow: var(--mcf-shadow) !important;
+        transform: translate(-2px, -2px);
+    }
+
+    .prow {
+        padding: 24px !important;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .prow .pname {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 22px;
+        font-weight: 900;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--mcf-ink);
+        padding-bottom: 8px;
+        text-align: center;
+    }
+
+    .prow.has-qty {
+        border-color: var(--mode-color) !important;
+        box-shadow: 6px 6px 0px var(--mode-color) !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    .home-logo,
+    .mode-label {
+        font-family: var(--mcf-font-display) !important;
+        text-transform: uppercase;
+    }
+
+    .mcf-alerts-collapsible {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+        opacity: 0;
+    }
+
+    .mcf-alerts-collapsible.expanded {
+        max-height: 1200px;
+        opacity: 1;
+    }
+
+    .mcf-status-title {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        padding: 14px 18px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        font-size: 13px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        border-bottom: 4px solid var(--mcf-ink) !important;
+    }
+
+    .mcf-status-title svg {
+        width: 22px !important;
+        height: 22px !important;
+        stroke-width: 3px !important;
+        color: var(--mcf-paper) !important;
+    }
+
+    .home-alert-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 20px !important;
+        padding: 18px 24px !important;
+        border-bottom: 2px solid var(--mcf-surface) !important;
+        background: var(--mcf-paper) !important;
+    }
+
+    .home-alert-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .home-alert-item.urgent {
+        background: repeating-linear-gradient(45deg,
+                var(--mcf-paper),
+                var(--mcf-paper) 10px,
+                rgba(212, 147, 122, 0.08) 10px,
+                rgba(212, 147, 122, 0.08) 20px) !important;
+    }
+
+    .home-alert-icon {
+        width: 46px !important;
+        height: 46px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        border: 3px solid var(--mcf-ink) !important;
+        background: var(--mcf-paper) !important;
+    }
+
+    .home-alert-icon svg {
+        width: 24px !important;
+        height: 24px !important;
+        stroke-width: 2.5px !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .home-alert-text {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        flex: 1 !important;
+    }
+
+    .home-alert-title {
+        font-weight: 900 !important;
+        font-size: 15px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .home-alert-desc {
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-rose) !important;
+    }
+
+    /* Search Box */
+    .mcf-search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 12px 18px;
+        margin: 20px auto !important;
+        width: 100%;
+        max-width: 500px;
+        box-sizing: border-box;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-search-box input {
+        border: none !important;
+        background: transparent !important;
+        color: var(--mcf-ink) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 800 !important;
+        font-size: 16px !important;
+        width: 100%;
+        outline: none !important;
+    }
+
+    .home-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--mcf-bg);
+        border: 3px solid var(--mcf-ink);
+        z-index: 1000;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+        box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.2);
+    }
+
+    .home-search-results.active {
+        display: block;
+    }
+
+    .gs-item {
+        padding: 16px;
+        border-bottom: 2px solid var(--mcf-slate-lt);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .gs-item:hover {
+        background: var(--mcf-slate-lt);
+    }
+
+    .gs-pname {
+        font-weight: 900;
+        color: var(--mcf-ink);
+    }
+
+    .gs-pcat {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--mcf-amber);
+        text-transform: uppercase;
+    }
+
+    /* Favorites Button fix (remove the 'square' around the star) */
+    .mcf-fav-trigger {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        transform: none !important;
+        padding: 0 !important;
+    }
+
+    .mcf-fav-trigger i {
+        /* Inherits global 3px weight */
+    }
+
+    /* Stepper adjustments */
+    .stepper {
+        border-radius: 0 !important;
+        border: 2px solid var(--mcf-ink) !important;
+        background: var(--mcf-paper) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        max-width: 100% !important;
+    }
+
+    .step-btn {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        padding: 10px 20px !important;
+        font-size: 24px !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        cursor: pointer !important;
+        transition: background 0.15s ease, transform 0.1s ease !important;
+    }
+
+    .step-btn:active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        transform: scale(0.98) !important;
+    }
+
+    .step-btn:focus-visible {
+        outline: 2px solid var(--mcf-ink) !important;
+        outline-offset: -2px !important;
+    }
+
+    .pqty-box {
+        font-size: 32px !important;
+    }
+
+    /* Unit Chips (uchip) restoration to MCF */
+    .uchip {
+        border-radius: 0 !important;
+        border: 2px solid var(--mcf-ink) !important;
+        background: var(--mcf-surface) !important;
+        color: var(--mcf-ink) !important;
+        padding: 8px 12px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+
+    .uchip.active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-bg) !important;
+        box-shadow: none !important;
+        transform: translate(2px, 2px) !important;
+    }
+
+    /* Navigation / Tabs */
+    .nb {
+        background: var(--mcf-bg) !important;
+        border-top: 3px solid var(--mcf-ink) !important;
+        height: 75px !important;
+    }
+
+    .nb-item {
+        border-radius: 0 !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Inputs and Search Bar */
+    input,
+    textarea,
+    select {
+        background: var(--mcf-paper) !important;
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 16px 20px !important;
+        font-family: inherit !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        border-radius: 0 !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        width: 100% !important;
+    }
+
+    /* Fixed header search container for McFetridge */
+    #hdr-search-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 80px !important;
+        background: var(--mcf-bg) !important;
+        z-index: 10000 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transform: translateY(-110%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border-bottom: 4px solid var(--mcf-ink) !important;
+        padding: 0 15px !important;
+    }
+
+    #hdr-search-container.hdr-search-active {
+        transform: translateY(0) !important;
+    }
+
+    .hdr-search-wrap {
+        max-width: 800px !important;
+        height: 64px !important;
+    }
+
+    /* GLOBAL MCF SEARCH BOX (Industrial) */
+    .mcf-search-box,
+    .mcf-local-search-wrap {
+        width: 100%;
+        background: var(--mcf-paper) !important;
+        border: var(--mcf-border) !important;
+        box-shadow: var(--mcf-shadow) !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 0 18px !important;
+        height: 64px !important;
+        position: relative !important;
+        transition: all 0.2s var(--mcf-snap) !important;
+        margin-bottom: 24px;
+    }
+
+    .mcf-search-box:focus-within,
+    .mcf-local-search-wrap:focus-within {
+        transform: translate(-3px, -3px);
+        border-color: var(--mcf-amber) !important;
+        box-shadow: var(--mcf-shadow-lg) !important;
+    }
+
+    .mcf-search-box input,
+    .mcf-local-search-wrap input {
+        border: none !important;
+        box-shadow: none !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        background: transparent !important;
+        flex: 1 !important;
+        outline: none !important;
+        color: var(--mcf-ink) !important;
+        height: 100% !important;
+        text-transform: uppercase !important;
+    }
+
+    .mcf-search-box i,
+    .mcf-local-search-icon {
+        color: var(--mcf-ink) !important;
+        width: 28px !important;
+        height: 28px !important;
+        stroke-width: 3px !important;
+    }
+
+    /* SEARCH SYSTEM - TOTAL STANDARDIZATION */
+    .mcf-search-box input,
+    #hdr-search-input,
+    #home-search,
+    #prod-search,
+    #hist-search,
+    #edit-hist-search {
+        color: var(--mcf-ink) !important;
+        background: transparent !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        -webkit-text-fill-color: var(--mcf-ink) !important;
+        /* Force for some mobile browsers */
+        font-size: 16px !important;
+        padding: 0 4px !important;
+        /* Reset nested paddings since mcf-search-box already has padding */
+    }
+
+    /* Auto-hide placeholder on focus */
+    .mcf-search-box input:focus::placeholder,
+    input:focus::placeholder {
+        color: transparent !important;
+    }
+
+    .hdr-search-results,
+    #home-search-res,
+    #hdr-search-res {
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 12px 12px 0px var(--mcf-ink) !important;
+        z-index: 99999 !important;
+        position: absolute !important;
+        width: 100% !important;
+        max-height: 400px !important;
+        overflow-y: auto !important;
+        border-radius: 0 !important;
+    }
+
+    /* PRODUCT SEARCH FIX: Ensure no duplicate cascading borders break the local search */
+
+
+
+
+    /* SEARCH RESULTS POPOVER (No Overlap) */
+    .home-search-results,
+    #home-search-res {
+        position: absolute !important;
+        top: 100% !important;
+        left: -4px !important;
+        right: -4px !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 10px 10px 0px var(--mcf-ink) !important;
+        z-index: 20000 !important;
+        /* HIGHER THAN TABS */
+        max-height: 50vh !important;
+        overflow-y: auto !important;
+        display: none;
+    }
+
+    .mcf-search-box:focus-within .home-search-results,
+    #home-search-res:not(:empty) {
+        display: block !important;
+    }
+
+    .gs-item {
+        padding: 16px 20px !important;
+        border-bottom: 3px solid var(--mcf-bg) !important;
+        font-family: inherit !important;
+        cursor: pointer !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+
+    .gs-item:active {
+        background: var(--mcf-amber-lt) !important;
+    }
+
+    .gs-pname {
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink) !important;
+        font-size: 14px !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    .gs-cat {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-ink-muted) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+    }
+
+    /* HISTORY FILTERS & SEARCH (Industrial Standardization) */
+    body.theme-mcf #view-historial .scroll-content>div:nth-child(3) {
+        border-radius: 0 !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-slate) !important;
+        background: var(--mcf-paper) !important;
+        padding: 20px !important;
+    }
+
+    body.theme-mcf #hist-date-from,
+    body.theme-mcf #hist-date-to {
+        border-radius: 0 !important;
+        border: 3px solid var(--mcf-ink) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        font-weight: 800 !important;
+        padding: 14px 16px !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Loader Focaccia -> McFetridge */
+    #loader {
+        background: var(--mcf-bg) !important;
+    }
+
+    .loader-circle {
+        background: var(--mcf-ink) !important;
+        filter: none !important;
+    }
+
+    .loader-perc {
+        color: var(--mcf-ink) !important;
+        text-shadow: none !important;
+    }
+
+    .loader-status {
+        color: var(--mcf-ink-muted) !important;
+    }
+
+    /* Bottom Spacer */
+    .bottom-spacer {
+        height: 120px !important;
+    }
+
+    /* Remove custom Scrollbar styles if any */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--mcf-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--mcf-ink);
+        border: 2px solid var(--mcf-bg);
+    }
+
+    /* Navigation (Main Tabs Container) */
+    .tabs {
+        background: var(--mcf-paper) !important;
+        border-top: 5px solid var(--mcf-ink) !important;
+        box-shadow: 0 -10px 0px rgba(0, 0, 0, 0.05) !important;
+        height: 70px !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 60000 !important;
+        transition: all 0.3s var(--mcf-snap) !important;
+    }
+
+    /* 🔼 RELEVAMIENTO: TABS TO TOP (Forced with ID) */
+    body.theme-mcf.view-relevamiento #main-tabs {
+        top: 0 !important;
+        bottom: auto !important;
+        border-top: none !important;
+        border-bottom: 5px solid var(--mcf-ink) !important;
+        box-shadow: 0 10px 0px rgba(0, 0, 0, 0.15) !important;
+        z-index: 999 !important;
+    }
+
+    body.theme-mcf.view-relevamiento .ctx-bar {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        display: flex !important;
+        z-index: 60001 !important;
+    }
+
+    /* 📊 RELEVAMIENTO VIEW (Operational Module) */
+    #view-relevamiento,
+    .view-relevamiento {
+        background: var(--mcf-bg) !important;
+        padding-top: 100px !important;
+        padding-bottom: 200px !important;
+    }
+
+    /* 📦 RELEVAMIENTO MODULES (Consolidated Industrial Core) */
+    .cat-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        padding: 12px !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        margin: 0 auto !important;
+        padding-bottom: 140px !important; /* Optimized clearance */
+    }
+
+    .cchip {
+        height: 72px !important;
+        padding: 0 20px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 20px !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        cursor: pointer !important;
+        transition: all 0.1s var(--mcf-snap) !important;
+        box-sizing: border-box !important;
+    }
+
+    .cchip i, 
+    .cchip [data-lucide],
+    .cchip i svg {
+        width: 32px !important;
+        height: 32px !important;
+        stroke-width: 1.2px !important;
+        color: var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .cchip span {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 18px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        color: var(--mcf-ink) !important;
+        line-height: 1 !important;
+        text-align: left !important;
+        flex: 1 !important;
+    }
+
+    .cchip.active {
+        background: var(--mode-color, var(--mcf-amber)) !important;
+        color: var(--mcf-paper) !important;
+        transform: translate(4px, 4px) !important;
+        box-shadow: none !important;
+    }
+
+    .cchip.active i, .cchip.active span {
+        color: var(--mcf-ink) !important; /* Force Ink for contrast on mode colors */
+    }
+
+    #prod-list {
+        padding: 12px !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        margin: 0 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        padding-bottom: 160px !important; /* Optimized clearance */
+    }
+
+    .prow {
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mode-color, var(--mcf-ink)) !important; /* Mode-colored tectonic shadow */
+        padding: 24px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        position: relative !important;
+        width: 100% !important;
+        max-width: 500px !important;
+        margin: 0 auto !important;
+    }
+
+    .prow.has-qty {
+        border-color: var(--mode-color, var(--mcf-amber)) !important;
+        background: var(--mode-bg, var(--mcf-paper)) !important;
+    }
+
+    .prow .pname {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 24px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink) !important;
+        border-bottom: 3px solid var(--mcf-ink) !important;
+        padding-bottom: 12px !important;
+        letter-spacing: -0.5px !important;
+        text-align: center !important;
+    }
+
+    /* 🔢 BRUTALIST STEPPERS (Quantity Controls) */
+    .stepper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0 !important;
+        border: 4px solid var(--mcf-ink) !important;
+        width: fit-content !important;
+        margin: 0 auto !important;
+        background: var(--mcf-ink) !important;
+        overflow: hidden !important;
+    }
+
+    .step-btn {
+        width: 70px !important;
+        height: 70px !important;
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        font-size: 32px !important;
+        font-weight: 950 !important;
+        border: none !important;
+        transition: background 0.1s !important;
+    }
+
+    .step-btn:active {
+        background: var(--mcf-amber) !important;
+    }
+
+    .pqty-box {
+        width: 100px !important;
+        height: 70px !important;
+        background: var(--mcf-bg) !important;
+        border-left: 4px solid var(--mcf-ink) !important;
+        border-right: 4px solid var(--mcf-ink) !important;
+        color: var(--mcf-ink) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 24px !important;
+        font-weight: 950 !important;
+        text-align: center !important;
+        line-height: 1 !important;
+    }
+
+    .prow .pqty-box input {
+        width: 100% !important;
+        border: none !important;
+        background: transparent !important;
+        text-align: center !important;
+        font-family: inherit !important;
+        font-weight: inherit !important;
+        font-size: inherit !important;
+        color: inherit !important;
+        outline: none !important;
+    }
+
+    /* Aesthetics Only - Settings and Home shadow-safe padding */
+    body.theme-mcf .view.scroll,
+    body.theme-mcf #view-datos {
+        padding: 40px 20px 140px 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        align-items: center !important;
+    }
+
+    body.theme-mcf #home-content {
+        padding: 0 20px 100px 16px !important;
+        /* Adjusted for Command Deck clearance */
+        width: 100% !important;
+        box-sizing: border-box !important;
+        align-items: center !important;
+        max-width: 500px !important;
+        margin: 0 auto !important;
+    }
+
+    body.theme-mcf .mcf-header {
+        width: 100% !important;
+        /* Full width for the bleed effect */
+        max-width: 550px !important;
+        margin: 0 auto 24px !important;
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        padding: 50px 24px 40px !important;
+        /* Increased top/bottom padding to avoid cutoff */
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-amber) !important;
+        position: relative;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        min-height: 180px !important;
+        /* Forces enough height for all info */
+    }
+
+    .mcf-header-controls {
+        position: absolute !important;
+        right: 16px !important;
+        top: 16px !important;
+        display: flex !important;
+        gap: 10px !important;
+    }
+
+    .mcf-date-tag {
+        background: var(--mcf-amber) !important;
+        color: var(--mcf-ink) !important;
+        padding: 4px 12px !important;
+        font-weight: 950 !important;
+        font-size: 10px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+    }
+
+    .mcf-sheet-tag {
+        background: transparent !important;
+        color: var(--mcf-paper) !important;
+        border: 2px solid var(--mcf-paper) !important;
+        padding: 3px 12px !important;
+        font-weight: 950 !important;
+        font-size: 10px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        opacity: 0.8;
+    }
+
+    .home-logo {
+        font-family: inherit !important;
+        font-weight: 950 !important;
+        font-size: 34px !important;
+        /* Unified with Settings logic */
+        letter-spacing: -1.5px !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+        color: var(--mcf-paper) !important;
+        text-transform: uppercase !important;
+    }
+
+    body.theme-mcf .subtitle {
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        letter-spacing: 1.5px !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-paper) !important;
+        opacity: 0.7 !important;
+        margin: 4px 0 0 0 !important;
+        display: block !important;
+    }
+
+    body.theme-mcf .scroll-content {
+        width: 100% !important;
+        max-width: 600px !important;
+        margin: 0 auto !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       INDUSTRIAL COMPONENT REFINEMENT (v11.0.5)
+       ═══════════════════════════════════════════════════════════════════ */
+
+    /* 1. THE GRID (2-Column Architecture) */
+    body.theme-mcf .mcf-grid-v2 {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px !important;
+        width: 100% !important;
+        max-width: 600px !important; /* Industrial Wide Span */
+        margin: 0 auto 32px !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 4px !important;
+        /* Safety padding for shadows */
+    }
+
+    /* ⚙️ MECHANICAL MOTION SYSTEM (Skill: Algorithmic Art -> Engineering) */
+    :root {
+        --mcf-snap: cubic-bezier(1, 0, 0, 1);
+        /* Instant start, mechanical halt */
+        --mcf-impulse: cubic-bezier(0.19, 1, 0.22, 1);
+        --mcf-industrial: cubic-bezier(0.5, 1, 0.3, 1);
+    }
+
+    /* 🏛️ VIEW TRANSITIONS (Skill: Algorithmic Art -> Physics) */
+    body.theme-mcf .view.active {
+        display: block !important;
+        animation: mcf-view-entry 0.3s var(--mcf-snap) backwards;
+    }
+
+    @keyframes mcf-view-entry {
+        from {
+            transform: translateX(10px);
+            opacity: 0;
+            filter: blur(2px);
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+            filter: blur(0);
+        }
+    }
+
+    body.theme-mcf .mcf-mini-btn {
+        background: var(--mcf-surface) !important;
+        border: 2px solid var(--mcf-ink) !important;
+        color: var(--mcf-ink) !important;
+        width: 50px !important;
+        height: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: transform 0.1s var(--mcf-snap) !important;
+    }
+
+    body.theme-mcf .mcf-mini-btn:active {
+        transform: translate(3px, 3px) !important;
+        background: var(--mcf-amber-lt) !important;
+    }
+
+    /* 🛠️ MECHANICAL UI (Buttons & Interactive) - CONSOLIDATED */
+    body.theme-mcf .mcf-action-btn,
+    body.theme-mcf .btn,
+    body.theme-mcf .wa-btn {
+        background: var(--mcf-paper);
+        /* Base background, no !important to allow categories to win */
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        aspect-ratio: 1 / 1 !important;
+        /* Perfectly square */
+        --icon-size: 72px !important;
+        --icon-size-large: 72px !important;
+        --icon-size-medium: 72px !important;
+        cursor: pointer;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap), background 0.1s;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    body.theme-mcf .mcf-action-btn span {
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 14px !important;
+        /* Slightly larger for balance */
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        line-height: 1 !important;
+        color: var(--mcf-ink) !important;
+        /* Absolute Ink Force */
+    }
+
+    body.theme-mcf .mcf-action-btn i,
+    body.theme-mcf .mcf-action-btn i svg,
+    body.theme-mcf .mcf-action-btn .lucide,
+    body.theme-mcf .mcf-action-btn [data-lucide] {
+        width: 68px !important;
+        height: 68px !important;
+        min-width: 68px !important;
+        min-height: 68px !important;
+        stroke-width: 1.2px !important; /* Technical precision balance */
+        color: var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    body.theme-mcf .mcf-action-btn:active,
+    body.theme-mcf .btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+
+    /* 🎨 INDUSTRIAL CATEGORY COLORS - BRUTALIST BLOCK SYSTEM (v5) */
+    /* Restore the 4px Ink Border for all blocks to maintain authority */
+    body.theme-mcf .mcf-btn-pedido { background: var(--mcf-rose) !important; border-color: var(--mcf-ink) !important; }
+    body.theme-mcf .mcf-btn-stock { background: var(--mcf-slate) !important; border-color: var(--mcf-ink) !important; }
+    body.theme-mcf .mcf-btn-recepc { background: var(--mcf-sage) !important; border-color: var(--mcf-ink) !important; }
+    body.theme-mcf .mcf-btn-merma { background: var(--mcf-mauve) !important; border-color: var(--mcf-ink) !important; }
+    body.theme-mcf .mcf-btn-roi { background: var(--mcf-amber) !important; border-color: var(--mcf-ink) !important; }
+    body.theme-mcf .mcf-btn-hist { background: var(--mcf-sky) !important; border-color: var(--mcf-ink) !important; }
+
+    /* ⚠️ DRAFT BANNER (Pending Work) */
+    .mcf-draft-banner {
+        background: var(--mcf-amber-lt) !important;
+        border: var(--mcf-border) !important;
+        box-shadow: var(--mcf-shadow) !important;
+        padding: 20px !important;
+        margin: 24px 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .mcf-draft-banner.hidden {
+        display: none !important;
+    }
+
+    .mcf-draft-title {
+        color: var(--mcf-ink) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 14px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mcf-draft-btns {
+        display: flex !important;
+        gap: 12px !important;
+    }
+
+    .mcf-draft-btn {
+        border: 3px solid var(--mcf-ink) !important;
+        padding: 14px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
+        font-size: 11px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        cursor: pointer !important;
+        flex: 1 !important;
+        transition: transform 0.1s var(--mcf-snap);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .mcf-draft-btn:active {
+        transform: translate(2px, 2px);
+    }
+
+    .mcf-draft-btn.resume {
+        background: var(--mcf-amber) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    .mcf-draft-btn.discard {
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        border-color: var(--mcf-ink-ghost) !important;
+        opacity: 0.8;
+    }
+
+
+    .mcf-mini-btn {
+        width: 48px;
+        height: 48px;
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Scroll Resilience */
+    .scroll-content {
+        padding-bottom: 200px !important;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    body.theme-mcf.view-relevamiento .scroll-content {
+        padding-top: 120px !important;
+        /* Context for Tabs Top */
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       TREE / CATEGORY EDITOR (McFetridge logic)
+       ═══════════════════════════════════════════════════════════════════ */
+    body.theme-mcf .tree-node {
+        border-bottom: 2px solid var(--mcf-ink) !important;
+        background: var(--mcf-paper) !important;
+    }
+
+    body.theme-mcf .tree-row {
+        padding: 12px 10px !important;
+        border-left: 6px solid var(--mcf-slate) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        overflow: hidden !important;
+    }
+
+    body.theme-mcf .tree-label {
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.2px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        font-size: 13px !important;
+    }
+
+    body.theme-mcf .tree-toggle {
+        font-weight: 950 !important;
+        font-size: 18px !important;
+        width: 20px !important;
+        text-align: center !important;
+    }
+
+    body.theme-mcf .tree-children {
+        border-left: 4px solid var(--mcf-slate) !important;
+        margin-left: 12px !important;
+    }
+
+    body.theme-mcf .tree-leaf {
+        padding: 14px 16px 14px 20px !important;
+        border-bottom: 1px solid var(--mcf-slate-lt) !important;
+        background: var(--mcf-surface) !important;
+        font-weight: 800 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    body.theme-mcf .tree-add-form {
+        padding: 12px !important;
+        background: var(--mcf-surface) !important;
+        display: flex !important;
+        gap: 8px !important;
+        border-bottom: 2px solid var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .tree-add-inp {
+        border: 3px solid var(--mcf-ink) !important;
+        border-radius: 0 !important;
+        background: var(--mcf-paper) !important;
+        padding: 8px 12px !important;
+        font-family: inherit !important;
+        font-weight: 800 !important;
+    }
+
+    body.theme-mcf .tree-add-btn {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border: none !important;
+        padding: 8px 16px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        cursor: pointer !important;
+    }
+
+    body.theme-mcf main.view.scroll {
+        padding-bottom: 150px !important;
+        /* Safety for ctx-bar */
+    }
+
+    /* 🧱 TECTONIC CASCADE (Skill: Algorithmic Art -> Sequence) */
+    body.theme-mcf .home-alert-item {
+        animation: mcf-list-item-entry 0.3s var(--mcf-snap) backwards;
+        border-radius: 0 !important;
+        margin-bottom: 12px !important;
+        border: 2px solid var(--mcf-ink) !important;
+        transition: transform 0.1s var(--mcf-snap), background 0.1s var(--mcf-snap) !important;
+        padding: 20px 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 16px !important;
+        min-height: 85px !important;
+        box-sizing: border-box !important;
+    }
+
+    body.theme-mcf .home-alert-item:active {
+        transform: translate(3px, 3px) !important;
+        background: var(--mcf-surface) !important;
+        box-shadow: none !important;
+    }
+
+    body.theme-mcf .home-alert-item.urgent {
+        border: 4px solid var(--mcf-ink) !important;
+        background: var(--mcf-amber-lt) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        position: relative !important;
+        cursor: pointer !important;
+    }
+
+    body.theme-mcf .mcf-urgent-indicator {
+        position: absolute !important;
+        top: -10px !important;
+        right: -10px !important;
+        background: var(--mcf-rose) !important;
+        color: var(--mcf-paper) !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 950 !important;
+        border: 2px solid var(--mcf-ink) !important;
+        font-size: 14px !important;
+        z-index: 5 !important;
+        animation: mcf-pulse-alert 1.5s infinite !important;
+    }
+
+    @keyframes mcf-pulse-alert {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.15);
+        }
+    }
+
+    body.theme-mcf .home-alert-title {
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: var(--mcf-ink) !important;
+        font-size: 13px !important;
+    }
+
+    body.theme-mcf .home-alert-desc {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        opacity: 0.8 !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .home-alert-item:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+
+    body.theme-mcf .home-alert-item:nth-child(2) {
+        animation-delay: 0.10s;
+    }
+
+    body.theme-mcf .home-alert-item:nth-child(3) {
+        animation-delay: 0.15s;
+    }
+
+    body.theme-mcf .home-alert-item:nth-child(4) {
+        animation-delay: 0.20s;
+    }
+
+    body.theme-mcf .home-alert-item:nth-child(5) {
+        animation-delay: 0.25s;
+    }
+
+    @keyframes mcf-list-item-entry {
+        from {
+            transform: scaleX(0);
+            transform-origin: left;
+            opacity: 0;
+        }
+
+        to {
+            transform: scaleX(1);
+            transform-origin: left;
+            opacity: 1;
+        }
+    }
+
+    /* Hydraulic Menu Expansion */
+    body.theme-mcf .mcf-alerts-collapsible {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s var(--mcf-snap) !important;
+    }
+
+    body.theme-mcf .mcf-alerts-collapsible.expanded {
+        max-height: 800px;
+    }
+
+    /* 🗂️ INDUSTRIAL TAB BAR (Foundational Bottom) */
+    body.theme-mcf .tabs {
+        position: fixed !important;
+        bottom: 0 !important;
+        pointer-events: auto !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        transform: none !important;
+        height: var(--mcf-tab-height) !important;
+        background: var(--mcf-ink) !important;
+        border-top: 4px solid var(--mcf-amber) !important;
+        display: flex !important;
+        padding: 0 !important;
+        z-index: 2000000 !important;
+        /* SUPREME PRIORITY */
+        border-radius: 0 !important;
+        box-shadow: 0 -10px 0px rgba(26, 26, 26, 0.1) !important;
+        backdrop-filter: none !important;
+        touch-action: manipulation !important;
+        /* Remove 300ms delay */
+    }
+
+    body.theme-mcf .tab {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 0 !important;
+        gap: 6px !important;
+        font-size: 10px !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink-muted) !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 12px 0 !important;
+        cursor: pointer !important;
+        transition: all 0.2s var(--mcf-snap) !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    body.theme-mcf .tab.active {
+        color: var(--mcf-paper) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    body.theme-mcf .tab i {
+        width: 20px !important;
+        height: 20px !important;
+        color: inherit !important;
+    }
+
+    /* 🧠 MODAL COORDINATION: Top Context Bar logic */
+    body.theme-mcf .ctx-bar:not(.hidden) {
+        display: flex !important;
+        z-index: 70100 !important;
+    }
+
+    /* Ensuring views don't get cut off by the fixed bottom bars */
+    body.theme-mcf .view .scroll-content,
+    body.theme-mcf main .scroll-content {
+        padding-bottom: 180px !important;
+        padding-top: 20px !important;
+        /* Standard top padding */
+    }
+
+    /* Global visibility fixes for McFetridge */
+    /* 🏗️ APP CONTAINER OVERHAUL (McFetridge Totality) */
+    body.theme-mcf #app {
+        border: none !important;
+        background: var(--mcf-bg) !important;
+        max-width: 100% !important;
+    }
+
+    body.theme-mcf #main-hdr {
+        background: var(--mcf-paper) !important;
+        border-bottom: 4px solid var(--mcf-ink) !important;
+        height: 70px !important;
+        display: flex !important;
+        align-items: center !important;
+        box-shadow: none !important;
+    }
+
+    /* Unified Tactical Scroll */
+    body.theme-mcf .view .scroll-content,
+    body.theme-mcf main .scroll-content,
+    body.theme-mcf .scroll-content {
+        padding-bottom: 220px !important; /* Space for Floating Deck & Tabs */
+        padding-top: 24px !important;
+    }
+
+    body.theme-mcf .ctx-bar:not(.hidden) ~ .tabs {
+        display: none !important;
+    }
+
+    /* 🚨 MCFETRIDGE MODAL OVERRIDES (Totality Fix) */
+    body.theme-mcf .confirm-overlay,
+    body.theme-mcf .sync-overlay,
+    body.theme-mcf .action-sheet-overlay {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(26, 24, 22, 0.85) !important;
+        z-index: 1000000 !important;
+    }
+
+    body.theme-mcf .confirm-modal,
+    body.theme-mcf .action-sheet {
+        background: var(--mcf-paper) !important;
+        border: 5px solid var(--mcf-ink) !important;
+        border-radius: 0 !important;
+        box-shadow: 12px 12px 0px var(--mcf-ink) !important;
+        padding: 40px 24px !important;
+    }
+
+    body.theme-mcf .confirm-title,
+    body.theme-mcf .action-sheet h3 {
+        font-family: inherit !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        color: var(--mcf-ink) !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    body.theme-mcf .confirm-btn-danger,
+    body.theme-mcf .confirm-btn-cancel,
+    body.theme-mcf .prod-fs-btn {
+        border-radius: 0 !important;
+        border: 3px solid var(--mcf-ink) !important;
+        font-family: inherit !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .confirm-btn-danger {
+        background: var(--mcf-rose) !important;
+        color: white !important;
+    }
+
+    body.theme-mcf .confirm-btn-cancel {
+        background: var(--mcf-surface) !important;
+        color: var(--mcf-ink) !important;
+    }
+
+    body.theme-mcf .sync-spinner {
+        border-radius: 0 !important;
+        border: 6px solid var(--mcf-ink) !important;
+        border-top-color: var(--mcf-amber) !important;
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    body.theme-mcf .sync-text {
+        font-family: inherit !important;
+        color: var(--mcf-paper) !important;
+        text-shadow: none !important;
+        letter-spacing: 6px !important;
+    }
+
+    /* Fix Results Overlay Z-index relative to other elements */
+    body.theme-mcf .mcf-search-results-overlay {
+        z-index: 150000 !important;
+        /* Above deck and tabs, below modals */
+    }
+
+    .mcf-empty-search {
+        padding: 40px 20px !important;
+        text-align: center !important;
+        color: var(--mcf-ink) !important;
+        font-weight: 850 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        font-size: 13px !important;
+        opacity: 0.5;
+        border: 2px dashed var(--mcf-ink) !important;
+        margin: 10px !important;
+    }
+</style>

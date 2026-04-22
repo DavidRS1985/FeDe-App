@@ -162,16 +162,60 @@
               timeText = "En " + Math.ceil(diffMs / (1000 * 3600 * 24)) + " días";
           }
 
-          alertHtml += '<div style="background:linear-gradient(135deg, #098b8c, #065f57); border-radius:16px; padding:14px 16px; margin-bottom:12px; display:flex; align-items:flex-start; gap:14px; box-shadow:0 8px 25px rgba(6, 95, 87, 0.4); color:white;">' +
-                '<i data-lucide="calendar-clock" style="color:#a5f3fc; width:var(--icon-size-large); height:var(--icon-size-large); margin-top:2px; flex-shrink:0;"></i>' +
-                '<div style="flex:1;">' +
+          function getEventAlgorithmicArt(str) {
+              var hash = 0;
+              for (var i = 0; i < str.length; i++) {
+                  hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                  hash |= 0;
+              }
+              hash = Math.abs(hash);
+              var hue = hash % 360;
+              var c1 = 'hsl(' + hue + ', 80%, 25%)';
+              var c2 = 'hsl(' + ((hue + 45) % 360) + ', 90%, 15%)';
+              var c3 = 'hsl(' + ((hue + 180) % 360) + ', 70%, 40%)';
+              
+              var svg = '<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">';
+              svg += '<defs>';
+              svg += '<linearGradient id="g' + hash + '" x1="0%" y1="0%" x2="100%" y2="100%">';
+              svg += '<stop offset="0%" stop-color="' + c1 + '" />';
+              svg += '<stop offset="100%" stop-color="' + c2 + '" />';
+              svg += '</linearGradient>';
+              svg += '<pattern id="p' + hash + '" width="24" height="24" patternUnits="userSpaceOnUse">';
+              svg += '<path d="M24,0 L0,24" stroke="' + c3 + '" stroke-width="2" stroke-opacity="0.4"/>';
+              svg += '</pattern>';
+              svg += '</defs>';
+              svg += '<rect width="100%" height="100%" fill="url(#g' + hash + ')" />';
+              svg += '<rect width="100%" height="100%" fill="url(#p' + hash + ')" />';
+              
+              for (var j = 0; j < 5; j++) {
+                  var params = (hash * (j + 1));
+                  var cx = (params % 400);
+                  var cy = ((params * 7) % 200);
+                  var r = 30 + (params % 80);
+                  var op = 0.05 + ((params % 20) / 100);
+                  svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#ffffff" stroke-opacity="'+op+'" stroke-width="'+(1+(j%4))+'" />';
+                  svg += '<polygon points="';
+                  for(var k=0; k<3; k++) {
+                      svg += (cx + (r*1.3) * Math.cos(k * 2.09)) + ',' + (cy + (r*1.3) * Math.sin(k * 2.09)) + ' ';
+                  }
+                  svg += '" fill="none" stroke="#ffffff" stroke-opacity="'+(op/2)+'" stroke-width="2" />';
+              }
+              svg += '</svg>';
+              return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+          }
+
+          var bgData = getEventAlgorithmicArt(h.name);
+
+          alertHtml += '<div style="background-image: url(\'' + bgData + '\'); background-size: cover; border-radius: 0; border: 3px solid var(--mcf-ink, #1a1a1a); padding: 18px 20px; margin-bottom: 20px; display:flex; align-items:flex-start; gap:16px; box-shadow: 6px 6px 0px var(--mcf-ink, #1a1a1a); color: white; position: relative; overflow: hidden; font-family: \'Helvetica Neue\', Arial, sans-serif;">' +
+                '<i data-lucide="calendar-clock" style="color:#fff; width:32px; height:32px; margin-top:2px; flex-shrink:0; filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.7));"></i>' +
+                '<div style="flex:1; z-index: 1;">' +
                     '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-                        '<div style="font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">' + h.name + '</div>' +
-                        '<div style="background:rgba(0,0,0,0.25); padding:4px 8px; border-radius:8px; font-size:11px; font-weight:800; letter-spacing:1px; color:#a5f3fc; white-space:nowrap;">' +
+                        '<div style="font-weight:900; font-size:17px; text-transform:uppercase; letter-spacing:0.5px; text-shadow: 2px 2px 0px rgba(0,0,0,0.8);">' + h.name + '</div>' +
+                        '<div style="background:var(--mcf-amber, #FDB813); border: 2px solid var(--mcf-ink, #1a1a1a); padding:4px 10px; border-radius:0; font-size:11px; font-weight:900; letter-spacing:1px; color:var(--mcf-ink, #1a1a1a); white-space:nowrap; box-shadow: 2px 2px 0px var(--mcf-ink, #1a1a1a);">' +
                             timeText +
                         '</div>' +
                     '</div>' +
-                    '<div style="font-size:11px; font-weight:600; color:rgba(255,255,255,0.85); margin-top:6px; line-height:1.4;">' +
+                    '<div style="font-size:12px; font-weight:700; color:rgba(255,255,255,0.95); margin-top:10px; line-height:1.4; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);">' +
                         h.desc +
                     '</div>' +
                 '</div>' +

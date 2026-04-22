@@ -1,13 +1,68 @@
 <script>
     /* ——————————————————————————————————————————————————————————————————————————
-       FeDe Gastro Pro - v10.0.0 — FOCACCIA Edition
+       FeDe Gastro Pro - v11.0.18 — FOCACCIA Edition
        —————————————————————————————————————————————————————————————————————————— */
 
-    var CATS = {}, FAVS = [], HIST = [], relData = {}, currentMode = null, activeCat = null, CUSTOM_UNITS = {};
+    var CATS = {}, HIST = [], relData = {}, currentMode = null, activeCat = null, CUSTOM_UNITS = {}, CONFIG = {};
     var units = ["unidad/es", "kg", "litro/s", "porción/es", "pack/s", "atado/s", "frasco/s", "lata/s"];
     var treeOpen = {};
     var activeSheetId = localStorage.getItem('fede_active_sheet_id') || 'undefined';
     var dbName = 'Master';
+    
+    /* ── UTILIDADES DE SEGURIDAD Y RENDIMIENTO ── */
+    var FeDe_Utils = {
+        sanitize: function(str) {
+            if (typeof str !== 'string') return str;
+            var temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        },
+        debounce: function(func, wait) {
+            var timeout;
+            return function() {
+                var context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    func.apply(context, args);
+                }, wait);
+            };
+        },
+        generateEntryId: function() {
+            return Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+    };
+
+    var IdGenerator = {
+        generateEntryId: FeDe_Utils.generateEntryId
+    };
+
+    /**
+     * API ADAPTER (Interface Adapter): Centraliza llamadas al servidor.
+     */
+    var FeDe_API = {
+        call: function(serverName, params, success, failure) {
+            var runner = google.script.run
+                .withSuccessHandler(function(res) {
+                    if (res && res.success === false) {
+                        if (failure) failure(res.error || 'Error desconocido');
+                        else showToast(res.error || 'Error en el servidor', 'error');
+                    } else if (success) {
+                        success(res);
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    if (failure) failure(err.message);
+                    else showToast('Error de conexión: ' + err.message, 'error');
+                });
+            
+            // Ejecución dinámica
+            if (params !== undefined && params !== null) {
+                runner[serverName](params, activeSheetId);
+            } else {
+                runner[serverName](activeSheetId);
+            }
+        }
+    };
 
     /* ── MEMORIA DE UNIDADES ── */
     var UNIT_MEM = {
@@ -76,15 +131,7 @@
     document.addEventListener('mozfullscreenchange', onFullscreenChange);
 
     // Auto-restaurar fullscreen en la primera interacción del usuario
-    function autoRestoreFullscreen() {
-        if (localStorage.getItem('fede_fullscreen') === 'true') {
-            toggleAppFullscreen();
-        }
-        document.removeEventListener('click', autoRestoreFullscreen);
-    }
-    if (localStorage.getItem('fede_fullscreen') === 'true') {
-        document.addEventListener('click', autoRestoreFullscreen, { once: true });
-    }
+    // Fullscreen auto-restore disabled by user request.
 
     /* ── LOADER PROGRESS LOGIC ── */
     var _loaderPerc = 0;
@@ -171,7 +218,7 @@
 
     /* ── INIT ── */
     window.addEventListener('DOMContentLoaded', function () {
-        console.log("FeDe Gastro Pro v10.0.0 - FOCACCIA Edition");
+        console.log("FeDe Gastro Pro v11.0.18 - FOCACCIA Edition");
         updateLoader(15, "Iniciando sistema...");
         updateTime();
         setInterval(updateTime, 10000);
@@ -290,88 +337,93 @@
 
 
     function loadConfigFromGAS() {
-        console.log('⟳ [LOAD] Iniciando carga desde GAS...', activeSheetId);
+        console.log('⟳ [LOAD] Iniciando carga (Refactored Flow)...', activeSheetId);
         updateDBLabel();
-        google.script.run
-            .withSuccessHandler(onConfigLoaded)
-            .withFailureHandler(onConfigFailed)
-            .getAppConfig(activeSheetId);
+        FeDe_API.call('getAppConfig', null, onConfigLoaded, function(err) {
+            onConfigFailed(err);
+        });
     }
 
     function onConfigLoaded(result) {
         console.log('✓ [LOAD] Config recibida:', result);
         // Cancelar timeout de seguridad
         if (window.loaderTimeout) clearTimeout(window.loaderTimeout);
+        if (_loaderInterval) clearInterval(_loaderInterval);
 
         if (!result || !result.success) {
             console.error('❌ [LOAD] GAS devolvió error:', result ? result.error : 'Unknown');
-            toast("❌ Error al cargar config");
-            onConfigFailed(result ? result.error : "Unknown error");
+            onConfigFailed(result ? result.error : 'Unknown error');
             return;
         }
-        var config = result.config;
-        var history = result.history;
-        var ssName = result.ssName;
 
-        if (ssName) { dbName = ssName; updateDBLabel(); }
-        if (config && config.cats) {
-            CATS = config.cats;
-            // 🎨 PATCH: Auto-update icons to requested set
-            var iconPatch = {
-                "Personal": "chess-pawn",
-                "Verdulería": "carrot",
-                "Pastas": "soup",
-                "Bebidas": "bottle-wine",
-                "Platos carta": "utensils-crossed"
-            };
-            var needsSave = false;
-            Object.keys(iconPatch).forEach(function (cat) {
-                if (CATS[cat] && CATS[cat].icon !== iconPatch[cat]) {
-                    CATS[cat].icon = iconPatch[cat];
-                    needsSave = true;
-                }
-            });
-            if (needsSave) google.script.run.saveConfig('cats', CATS, activeSheetId);
+        try {
+            CONFIG = result.config || {};
+            var config = CONFIG;
+            var history = result.history || [];
+            var ssName = result.ssName;
+
+            if (ssName) {
+                dbName = ssName;
+                updateDBLabel();
+                // Actualizar nombre de unidad activa en Home si existe el elemento
+                var sheetNameEl = document.getElementById('active-sheet-name');
+                if (sheetNameEl) sheetNameEl.textContent = ssName.toUpperCase();
+            }
+
+            if (config.cats) { CATS = config.cats; }
+            if (config.units && config.units.length) { units = config.units; }
+            if (config.custom_units) { CUSTOM_UNITS = config.custom_units; }
+
+            // 🆔 Identidad de la App — acceso defensivo con null-check
+            var titleVal = config.app_title || 'FeDe';
+            var subtitleVal = config.app_subtitle || 'Gastro PRO';
+
+            // App Header (siempre presente)
+            var appHdrTitle = document.getElementById('app-hdr-title');
+            var appHdrSub = document.getElementById('app-hdr-subtitle');
+            if (appHdrTitle) appHdrTitle.textContent = titleVal;
+            if (appHdrSub) appHdrSub.textContent = subtitleVal;
+
+            // Settings inputs (opcionales)
+            var cfgTitle = document.getElementById('cfg-app-title');
+            var cfgSub = document.getElementById('cfg-app-subtitle');
+            if (cfgTitle) cfgTitle.value = titleVal;
+            if (cfgSub) cfgSub.value = subtitleVal;
+
+            // Elementos legacy (pueden no existir)
+            var legacyTitle = document.getElementById('app-title-display');
+            var legacySub = document.getElementById('app-subtitle-display');
+            if (legacyTitle) legacyTitle.textContent = titleVal;
+            if (legacySub) legacySub.textContent = subtitleVal;
+
+        } catch(e) {
+            console.error('❌ [onConfigLoaded] Error aplicando config UI:', e.message);
         }
-        if (config && config.favs) { FAVS = config.favs; }
-        if (config && config.units && config.units.length) units = config.units;
-        if (config && config.custom_units) CUSTOM_UNITS = config.custom_units;
 
-        // 🆔 Identidad de la App
-        if (config && config.app_title) {
-            document.getElementById('app-title-display').textContent = config.app_title;
-            var inp = document.getElementById('cfg-app-title');
-            if (inp) inp.value = config.app_title;
+        try {
+            if (result.history) { HIST = result.history; renderHistory(); }
+            // Guardar snapshot para uso offline
+            var snapKey = 'fede_snapshot_' + activeSheetId;
+            var snapData = { cats: CATS, history: HIST, units: units, custom_units: CUSTOM_UNITS, ts: Date.now() };
+            localStorage.setItem(snapKey, JSON.stringify(snapData));
+            renderCatGrid();
+            renderTree();
+        } catch(e) {
+            console.error('❌ [onConfigLoaded] Error renderizando datos:', e.message);
         }
-        if (config && config.app_subtitle) {
-            document.getElementById('app-subtitle-display').textContent = config.app_subtitle;
-            var inp = document.getElementById('cfg-app-subtitle');
-            if (inp) inp.value = config.app_subtitle;
-        }
-        if (history) { HIST = history; renderHistory(); }
 
-        // Guardar snapshot para uso offline
-        var snapKey = 'fede_snapshot_' + activeSheetId;
-        var snapData = { cats: CATS, favs: FAVS, history: HIST, units: units, custom_units: CUSTOM_UNITS, ts: Date.now() };
-        localStorage.setItem(snapKey, JSON.stringify(snapData));
+        // Finalizar loader con éxito — SIEMPRE ejecutar esto
+        updateLoader(100, 'Sistema listo');
+        setTimeout(hideLoader, 300);
 
-        renderCatGrid();
-        renderTree();
-
-        
-        // Finalizar loader con éxito
-        if (_loaderInterval) clearInterval(_loaderInterval);
-        updateLoader(100, "Sincronizado");
-        setTimeout(hideLoader, 400);
-
-        // 🔄 Sincronizar identidad inicial
-        refreshBrandingUI();
-
+        // Callbacks post-carga secundarios — aislados para que errores no bloqueen
         setTimeout(function () {
-            refreshIcons();
-            checkDraft();
-            renderHomeSummary(); // NUEVO: Llamar al resumen de home
-        }, 100);
+            try { refreshIcons(); } catch(e) {}
+            try { checkDraft(); } catch(e) {}
+            try { renderHomeSummary(); } catch(e) { console.warn('renderHomeSummary falló:', e.message); }
+            try { refreshGCalendar(); } catch(e) {}
+            try { refreshBrandingUI(); } catch(e) {}
+        }, 150);
     }
 
     function onConfigFailed(error) {
@@ -404,39 +456,31 @@
     }
 
     function saveCatsToGAS(cats) {
-        google.script.run
-            .withSuccessHandler(function (result) {
-                if (result && result.success) {
-                    toast('✓ Guardado en servidor');
-                    localStorage.setItem('fede_cats_backup', JSON.stringify(cats));
-                } else toast('❌ Error guardando');
-            })
-            .withFailureHandler(function (error) { toast('❌ Error de servidor'); })
-            .saveConfig('cats', cats, activeSheetId);
+        FeDe_API.call('saveConfig', { key: 'cats', value: cats }, function (result) {
+            toast('✓ Guardado en servidor');
+            localStorage.setItem('fede_cats_backup', JSON.stringify(cats));
+        });
     }
 
     function addEntryToGAS(entry) {
-        google.script.run
-            .withSuccessHandler(function (result) {
-                if (result && result.success) {
-                    toast('✓ Registrado');
-                    loadConfigFromGAS();
-                } else toast('❌ Error al guardar');
-            })
-            .withFailureHandler(function (error) { toast('❌ Error de servidor'); })
-            .addHistoryEntry(entry, activeSheetId);
+        FeDe_API.call('addHistoryEntry', entry, function (result) {
+            toast('✓ Registrado');
+            loadConfigFromGAS();
+        });
     }
 
     function deleteHistoryEntry(entryId) {
-        google.script.run
-            .withSuccessHandler(function (res) { if (res.success) { toast('✓ Borrado'); loadConfigFromGAS(); } })
-            .deleteHistoryEntry(entryId, activeSheetId);
+        FeDe_API.call('deleteHistoryEntry', entryId, function (res) {
+            toast('✓ Borrado');
+            loadConfigFromGAS();
+        });
     }
 
     function deleteHistoryData(type) {
-        google.script.run
-            .withSuccessHandler(function (res) { if (res.success) { toast('✓ Historial limpiado'); loadConfigFromGAS(); } })
-            .deleteHistory(type, activeSheetId);
+        FeDe_API.call('deleteHistory', type, function (res) {
+            toast('✓ Historial limpiado'); 
+            loadConfigFromGAS();
+        });
     }
 
     function updateAppIdentity() {
@@ -445,11 +489,11 @@
 
         if (title) {
             document.getElementById('app-title-display').textContent = title;
-            google.script.run.saveConfig('app_title', title, activeSheetId);
+            FeDe_API.call('saveConfig', { key: 'app_title', value: title });
         }
         if (subtitle) {
             document.getElementById('app-subtitle-display').textContent = subtitle;
-            google.script.run.saveConfig('app_subtitle', subtitle, activeSheetId);
+            FeDe_API.call('saveConfig', { key: 'app_subtitle', value: subtitle });
         }
         toast("✓ Identidad actualizada");
     }
@@ -471,6 +515,51 @@
         if (as) as.textContent = sub;
     }
 
+    /**
+     * CAMBIO DE ESTÉTICA DEL SISTEMA
+     */
+    function setSystemTheme(themeName) {
+        if (themeName === APP_THEME) {
+            toast('El tema ' + themeName.toUpperCase() + ' ya está activo');
+            return;
+        }
+
+        var isMcf = (themeName === 'mcf');
+        fConfirm({
+            title: isMcf ? 'Activar McFetridge Method' : 'Restaurar Zinc Industrial',
+            message: isMcf ? 'Esta nueva estética optimiza el contraste y la geometría. La aplicación se reiniciará para aplicar los cambios.' : 'Volverás a la estética clásica de v10. La aplicación se reiniciará.',
+            okText: isMcf ? 'ACTIVAR MÉTODO' : 'RESTAURAR ZINC',
+            type: 'info'
+        }, function() {
+            toggleSync(true, 'Aplicando diseño...');
+            // Guardar preferencia en configuración para persistencia global
+            FeDe_API.call('saveConfig', { key: 'app_theme', value: themeName }, function(res) {
+                var base = window.location.href.split('?')[0];
+                window.location.href = base + '?style=' + themeName;
+            });
+        });
+    }
+
+    function initThemeUI() {
+        var btnZinc = document.getElementById('theme-btn-zinc');
+        var btnMcf = document.getElementById('theme-btn-mcf');
+        if (!btnZinc || !btnMcf) return;
+
+        [btnZinc, btnMcf].forEach(function(b) {
+            b.style.border = '2px solid var(--bd)';
+            b.style.background = 'var(--s2)';
+            var s = b.querySelector('span');
+            if (s) s.style.color = 'var(--text)';
+        });
+
+        var active = (APP_THEME === 'mcf') ? btnMcf : btnZinc;
+        var accent = (APP_THEME === 'mcf') ? '#1a1a1a' : 'var(--primary)';
+        active.style.border = '3px solid ' + accent;
+        active.style.background = 'var(--s1)';
+        var span = active.querySelector('span');
+        if (span) span.style.color = accent;
+    }
+
     /* ── NAVEGACIÓN ── */
     function initRelevamiento(m) {
         enterMode(m);
@@ -480,11 +569,11 @@
 
     // Mapa de colores por modo
     var MODE_CONFIG = {
-        pedido: { label: 'PEDIDO', borderColor: 'var(--orange)', bg: 'var(--s1)' },
-        stock: { label: 'STOCK', borderColor: 'var(--blue)', bg: 'var(--s1)' },
-        entrante: { label: 'ENTRANTE', borderColor: 'var(--green)', bg: 'var(--s1)' },
-        recepcion: { label: 'RECEPCIÓN', borderColor: 'var(--green)', bg: 'var(--s1)' },
-        merma: { label: 'MERMA', borderColor: 'var(--violet)', bg: 'var(--s1)' },
+        pedido: { label: 'PEDIDO', borderColor: 'var(--mcf-rose)', bg: 'var(--mcf-paper)' },
+        stock: { label: 'STOCK', borderColor: 'var(--mcf-slate)', bg: 'var(--mcf-paper)' },
+        entrante: { label: 'ENTRANTE', borderColor: 'var(--mcf-sage)', bg: 'var(--mcf-paper)' },
+        recepcion: { label: 'RECEPCIÓN', borderColor: 'var(--mcf-sage)', bg: 'var(--mcf-paper)' },
+        merma: { label: 'MERMA', borderColor: 'var(--mcf-mauve)', bg: 'var(--mcf-paper)' },
     };
 
     function showModeTag(m) {
@@ -535,6 +624,8 @@
         var hdr = document.getElementById('app-header');
         if (hdr) { hdr.style.borderBottom = '1px solid var(--bd)'; hdr.style.boxShadow = 'none'; }
         goTab('datos');
+        renderTree();
+        initThemeUI();
         setTimeout(function () { renderIconSizeControls(); }, 100);
         refreshIcons();
     }
@@ -553,6 +644,7 @@
     }
 
     function goHome() {
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
         if (currentMode && Object.keys(relData).length > 0) saveDraft();
         document.getElementById('app').classList.remove('visible');
         document.getElementById('home').classList.remove('hidden');
@@ -571,8 +663,11 @@
         var tabHome = document.getElementById('tab-home');
         if (tabHome) tabHome.classList.add('active');
 
-        // Limpiar temas de modo
+        // Limpiar temas y estados de vista
         document.body.classList.remove('theme-stock', 'theme-entrante', 'theme-pedido', 'theme-recepcion', 'theme-merma');
+        document.body.classList.remove('view-home', 'view-relevamiento', 'view-historial', 'view-dashboard', 'view-datos');
+        document.body.classList.add('view-home');
+        
         currentMode = null;
         activeCat = null;
         checkDraft();
@@ -582,6 +677,8 @@
         updateActivityIndicators();
 
         refreshBrandingUI();
+        refreshGCalendar(); 
+        renderHomeSummary();
     }
 
     /* ── BARRA CONTEXTUAL ── */
@@ -625,12 +722,13 @@
 
         updateActivityIndicators();
 
-        // ACTIVAR BÚSQUEDA PERSISTENTE
-        var sContainer = document.getElementById('hdr-search-container');
+        // ACTIVAR BÚSQUEDA PERSISTENTE (McFetridge Deck)
+        var sContainer = document.getElementById('mcf-bottom-search-bar');
+        var sTrigger = document.getElementById('hdr-search-trigger');
         if (sContainer) {
             sContainer.classList.add('hdr-search-persistent');
             sContainer.classList.remove('hdr-search-hidden');
-            document.getElementById('hdr-search-trigger').classList.add('hidden');
+            if (sTrigger) sTrigger.classList.add('hidden');
         }
     }
 
@@ -641,13 +739,15 @@
         if (bar) bar.classList.add('hidden');
         if (tabs) tabs.style.display = '';
 
-        // DESACTIVAR BÚSQUEDA PERSISTENTE
-        var sContainer = document.getElementById('hdr-search-container');
+        // DESACTIVAR BÚSQUEDA PERSISTENTE (McFetridge Deck)
+        var sContainer = document.getElementById('mcf-bottom-search-bar');
+        var sInput = document.getElementById('hdr-search-input');
+        var sRes = document.getElementById('hdr-search-res');
         if (sContainer) {
             sContainer.classList.remove('hdr-search-persistent');
             sContainer.classList.add('hdr-search-hidden');
-            document.getElementById('hdr-search-input').value = '';
-            document.getElementById('hdr-search-res').style.display = 'none';
+            if (sInput) sInput.value = '';
+            if (sRes) sRes.style.display = 'none';
         }
 
         refreshBrandingUI();
@@ -657,6 +757,7 @@
 
 
     function goTab(id) {
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
         var h = document.getElementById('home');
         var a = document.getElementById('app');
         if (h) h.classList.add('hidden');
@@ -688,6 +789,10 @@
         if (viewEl) viewEl.classList.add('active');
         if (tabEl) tabEl.classList.add('active');
 
+        // Sincronizar clase de vista en el body para CSS
+        document.body.classList.remove('view-home', 'view-relevamiento', 'view-historial', 'view-dashboard', 'view-datos');
+        document.body.classList.add('view-' + id);
+
         // Si no estamos en el home, el tab de home no debe estar activo
         if (id !== 'home' && document.getElementById('tab-home')) {
             document.getElementById('tab-home').classList.remove('active');
@@ -695,17 +800,25 @@
 
         updateActivityIndicators();
 
-        if (id === 'relevamiento') {
-            document.getElementById('hdr-search-trigger').classList.remove('hidden');
-        } else {
-            document.getElementById('hdr-search-trigger').classList.add('hidden');
+        if (id === 'datos') {
+            initOrderDaysUI();
         }
 
-        if (id === 'relevamiento') setTimeout(function () { renderCatGrid(); renderFAB(); finishNav(id); }, 10);
+        var trig = document.getElementById('hdr-search-trigger');
+        if (trig) {
+            if (id === 'relevamiento') trig.classList.remove('hidden');
+            else trig.classList.add('hidden');
+        }
+
+        if (id === 'relevamiento') setTimeout(function () { 
+            renderCatGrid(); 
+            renderFAB(); 
+            showContextBar(currentMode || 'pedido'); // FORZAR BARRA CONTEXTUAL AL BOTTOM
+            finishNav(id); 
+        }, 10);
         else if (id === 'historial') setTimeout(function () { renderHistory(); renderFAB(); finishNav(id); }, 10);
         else if (id === 'datos') setTimeout(function () { renderTree(); renderFAB(); finishNav(id); }, 10);
         else if (id === 'dashboard') {
-            // Ir al dashboard: intentar usar cache si existe
             setTimeout(function () { renderDashboard(false); renderFAB(); finishNav(id); }, 10);
         }
         else { renderFAB(); finishNav(id); }
@@ -723,9 +836,13 @@
 
         // Solo refrescar iconos de la vista activa y header/tabs para ahorrar CPU
         var viewEl = document.getElementById('view-' + id);
-        if (viewEl) lucide.createIcons({ root: viewEl });
-        lucide.createIcons({ root: document.getElementById('app-header') });
-        lucide.createIcons({ root: document.querySelector('.tabs') });
+        if (viewEl && window.lucide) { 
+            lucide.createIcons({ root: viewEl }); 
+            var hdr = document.getElementById('app-header');
+            if (hdr) lucide.createIcons({ root: hdr });
+            var tabs = document.querySelector('.tabs');
+            if (tabs) lucide.createIcons({ root: tabs });
+        }
     }
 
     /* ── RELEVAMIENTO ── */
@@ -734,7 +851,7 @@
         if (!grid) return;
         var catNames = Object.keys(CATS);
         if (catNames.length === 0) {
-            grid.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px;">Sin categorías cargadas</div>';
+            grid.innerHTML = '<div style="text-align:center;color:var(--mcf-ink);padding:60px;font-weight:900;text-transform:uppercase;border:4px dashed var(--mcf-ink);">Sin categorías cargadas</div>';
             return;
         }
         var sorted = catNames.sort(function (a, b) { return (CATS[a].order || 99) - (CATS[b].order || 99); });
@@ -743,9 +860,10 @@
             var size = CATS[cat] ? CATS[cat].iconSize : null;
             var styleOverride = size ? 'style="--cat-icon-size: ' + size + 'px;"' : '';
             var encoded = encodeURIComponent(cat);
+            var safeCat = FeDe_Utils.sanitize(cat);
             return '<div class="cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" ' + styleOverride + '>' +
                 '<i data-lucide="' + icon + '"></i>' +
-                '<span>' + cat + '</span>' +
+                '<span>' + safeCat + '</span>' +
                 '</div>';
         }).join('');
         refreshIcons(grid);
@@ -755,8 +873,6 @@
     function selectCat(cat) {
         if (!CATS[cat]) return toast('❌ Categoría no encontrada');
         activeCat = cat;
-        var searchInp = document.getElementById('prod-search');
-        if (searchInp) searchInp.value = '';
         var chips = document.querySelectorAll('.cchip');
         for (var i = 0; i < chips.length; i++) chips[i].classList.remove('active');
         var activeChip = document.querySelector('.cchip[data-cat="' + encodeURIComponent(cat) + '"]');
@@ -765,66 +881,71 @@
         document.getElementById('prod-section').classList.remove('hidden');
         renderProducts();
 
-        // Limpiar filtro local al cambiar de categoría
-        var lp = document.getElementById('prod-search');
-        if (lp) lp.value = '';
+        // Local Search filter reset removed as requested.
 
         setTimeout(function () { document.getElementById('prod-section').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
     }
 
+    /**
+     * CONTROLLER LAYER: Orchestrates product row rendering.
+     * Uses defensive mapping to ensure one broken product doesn't crash the UI.
+     */
     function renderProducts() {
         if (!activeCat || !CATS[activeCat]) return;
         var list = document.getElementById('prod-list');
         if (!list) return;
-        var prods = (CATS[activeCat] ? CATS[activeCat].prods : []).slice().sort();
+
+        var prods = (CATS[activeCat].prods || []).slice().sort();
         if (prods.length === 0) {
-            list.innerHTML = '<div style="text-align:center;color:var(--dim);padding:40px;">Sin productos en esta categoría</div>';
+            list.innerHTML = '<div style="text-align:center;color:var(--mcf-ink);border:4px dashed var(--mcf-ink);padding:60px;text-transform:uppercase;font-weight:900;font-family:var(--mcf-font-display);">Categoría Vacía</div>';
             return;
         }
-        try {
-            list.innerHTML = prods.map(function (p) { return genProductRow(p, getUnitsForProduct(activeCat, p)); }).join('');
-            renderFAB();
-            refreshIcons(list);
-        } catch (e) {
-            console.error('❌ [RENDER] Error:', e.message);
-        }
+
+        var htmlBuffer = [];
+        prods.forEach(function (p) {
+            try {
+                var rowHtml = genProductRow(p);
+                htmlBuffer.push(rowHtml);
+            } catch (e) {
+                console.error('❌ [ARCH-ERR] Failed to render product:', p, e.message);
+                htmlBuffer.push('<div style="padding:10px; color:var(--red); border:1px solid var(--red); margin:5px 0;">Error cargando: ' + FeDe_Utils.sanitize(p) + '</div>');
+            }
+        });
+
+        list.innerHTML = htmlBuffer.join('');
+        renderFAB();
+        refreshIcons(list);
     }
 
     function genProductRow(p, prodUnits) {
         if (!Array.isArray(prodUnits)) prodUnits = getUnitsForProduct(activeCat, p);
         var ep = encodeURIComponent(p);
         var d = relData[p] || { qty: 0, unit: (prodUnits[0] || units[0]) };
-        var isFav = FAVS.indexOf(p) !== -1;
         var is86 = d.qty === 86;
         var lastUsed = UNIT_MEM.get(p);
+        var safeProd = FeDe_Utils.sanitize(p);
 
         var html = '<div data-prow="' + ep + '" class="prow ' + (d.qty > 0 ? 'has-qty' : '') + ' ' + (is86 ? 'is-86' : '') + '">' +
-            '<!-- FILA 1: NOMBRE Y FAV -->' +
-            '<div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">' +
-            '<button onclick="toggleFav(\'' + ep + '\')" style="background:none; border:none; color:' + (isFav ? 'var(--gold)' : 'var(--dim2)') + '; cursor:pointer; font-size:24px; flex-shrink:0;">' + (isFav ? '★' : '☆') + '</button>' +
-            '<div style="flex:1;">' +
-            '<div class="pname">' + p + '</div>' +
+            '<!-- FILA 1: NOMBRE -->' +
+            '<div class="pname">' + safeProd + '</div>' +
+            
+            '<!-- FILA 2: STEPPER -->' +
+            '<div class="stepper">' +
+            '<button class="step-btn" data-prod="' + ep + '" data-dir="-1" onclick="stepEl(this)">−</button>' +
+            '<div class="pqty-box" onclick="manualEl(this)" data-prod="' + ep + '" style="touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; cursor:pointer;">' +
+            '<div>' + (is86 ? '86' : (d.qty || '0')) + '</div>' +
+            '<div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; margin-top:2px;">' + (is86 ? 'AGOTADO' : FeDe_Utils.sanitize(d.unit)) + '</div>' +
             '</div>' +
-            '</div>' +
-
-            '<div style="display:flex; align-items:center; justify-content:center; width:100%;">' +
-            '<div class="stepper" style="width:100%; max-width:280px; background:var(--s2); border-radius:18px; display:flex; align-items:center; border:2px solid var(--bd);">' +
-            '<button class="step-btn" data-prod="' + ep + '" data-dir="-1" onclick="stepEl(this)" style="padding:16px 24px; color:var(--gold); font-weight:900; background:none; border:none; font-size:28px;">−</button>' +
-            '<div class="pqty-box" onclick="manualEl(this)" data-prod="' + ep + '" style="flex:1; text-align:center; font-weight:900; font-size:24px; color:var(--text); line-height:1.1;">' +
-            '<div style="color:' + (is86 ? 'var(--red)' : 'var(--text)') + '">' + (is86 ? '86' : (d.qty || '0')) + '</div>' +
-            '<div style="font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">' + (is86 ? 'AGOTADO (86)' : d.unit) + '</div>' +
-            '</div>' +
-            '<button class="step-btn" data-prod="' + ep + '" data-dir="1" onclick="stepEl(this)" style="padding:16px 24px; color:var(--gold); font-weight:900; background:none; border:none; font-size:28px;">+</button>' +
-            '</div>' +
+            '<button class="step-btn" data-prod="' + ep + '" data-dir="1" onclick="stepEl(this)">+</button>' +
             '</div>' +
 
-            '<!-- FILA 3: UNIDADES -->' +
-            '<div class="unit-row" style="margin-top:14px; display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;">' +
+            '<!-- FILA 3: UNIDADES (Flow-based) -->' +
+            '<div class="unit-row">' +
             prodUnits.map(function (u) {
+                var safeUnit = FeDe_Utils.sanitize(u);
                 return '<div class="uchip ' + (d.unit === u ? 'active' : '') + ' ' + (u === lastUsed ? 'is-preferred' : '') + '" ' +
-                    'data-prod="' + ep + '" data-unit="' + encodeURIComponent(u) + '" onclick="setUnitEl(this)" ' +
-                    'style="padding:8px 14px; font-size:12px; min-width:60px; display:flex; align-items:center; justify-content:center;">' +
-                    (u === lastUsed ? '<i data-lucide="sparkles" style="width:10px;height:10px;margin-right:2px;color:var(--gold);"></i>' : '') + u +
+                    'data-prod="' + ep + '" data-unit="' + encodeURIComponent(u) + '" onclick="setUnitEl(this)">' +
+                    (u === lastUsed ? '<i data-lucide="sparkles" style="width:12px;height:12px;margin-right:4px;"></i>' : '') + safeUnit +
                     '</div>';
             }).join('') +
             '</div>' +
@@ -842,33 +963,16 @@
         }
     }
 
-    function refreshIcons(root) {
-        if (root === undefined) root = document;
-        if (window.lucide) lucide.createIcons({ root: root });
-        // Aplicar tamaños de iconos desde el data-icon-size
-        var icons = root.querySelectorAll('[data-lucide]');
-        for (var i = 0; i < icons.length; i++) {
-            var icon = icons[i];
-            if (!icon.style.width) {
-                icon.style.width = 'var(--icon-size)';
-                icon.style.height = 'var(--icon-size)';
-            }
+    var refreshIcons = FeDe_Utils.debounce(function(root) {
+        if (!root) root = document;
+        if (window.lucide) {
+            lucide.createIcons({ root: root });
+            // Los tamaños ahora se manejan via CSS (:root[data-icon-size] + .lucide)
+            // No es necesario iterar manualmente por cada icono para setear width/height inline
         }
-    }
+    }, 50);
 
-    var searchTimeout = null;
-    function filterProducts(q) {
-        if (searchTimeout) clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(function () {
-            var query = q.toLowerCase().trim();
-            var items = document.querySelectorAll('.prow');
-            for (var i = 0; i < items.length; i++) {
-                var el = items[i];
-                var name = el.querySelector('.pname').textContent.toLowerCase();
-                el.style.display = name.indexOf(query) !== -1 ? '' : 'none';
-            }
-        }, 150);
-    }
+    // filterProducts logic removed by user request.
 
     function formatUnit(q, u) {
         if (!u) return '';
@@ -975,17 +1079,63 @@
         updateProductRow(p); renderFAB(); saveDraft();
     }
 
+    var _currentManualProd = null;
     function manualEl(el) { manualEntry(decodeURIComponent(el.dataset.prod)); }
     function manualEntry(p) {
-        var val = prompt("Cantidad para " + p + ":", (relData[p] ? relData[p].qty : ''));
-        if (val === null) return;
-        var n = parseFloat(val.replace(',', '.'));
+        if (!p) return;
+        _currentManualProd = p;
+        var currentQty = (relData[p] && relData[p].qty !== undefined) ? relData[p].qty : '';
+        
+        document.getElementById('manual-entry-title').textContent = p;
+        var inp = document.getElementById('manual-entry-input');
+        inp.value = currentQty;
+        
+        var modal = document.getElementById('modal-manual-entry');
+        if (modal) {
+            modal.style.display = 'block';
+            setTimeout(function() {
+                modal.classList.add('active');
+                inp.focus();
+                inp.select(); // auto-select para sobreescribir rápido
+            }, 10);
+        }
+    }
+
+    function closeManualEntryModal(e) {
+        if (e && e.target && e.target.id === 'manual-entry-input') return; // Evitar cierre si hace tap repetido adentro
+        var modal = document.getElementById('modal-manual-entry');
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(function() { modal.style.display = 'none'; }, 300);
+        }
+        _currentManualProd = null;
+        var inp = document.getElementById('manual-entry-input');
+        if (inp) inp.blur();
+    }
+
+    function saveManualEntry() {
+        var p = _currentManualProd;
+        if (!p) return closeManualEntryModal();
+        
+        var inp = document.getElementById('manual-entry-input');
+        var val = inp.value;
+        
+        // Sanitización básica de entrada manual
+        var cleanVal = (val || '').toString().replace(/[^\d.,]/g, '').replace(',', '.');
+        var n = parseFloat(cleanVal);
+        
         if (!isNaN(n) && n >= 0) {
-            if (!relData[p]) relData[p] = { qty: n, unit: units[0] };
+            if (!relData[p]) relData[p] = { qty: n, unit: (units && units[0]) || '' };
             else relData[p].qty = n;
             if (relData[p].qty === 0) delete relData[p];
             updateProductRow(p); renderFAB(); saveDraft();
+        } else if (val.trim().toUpperCase() === '86' || n === 86) {
+            if (!relData[p]) relData[p] = { qty: 86, unit: (units && units[0]) || '' };
+            else relData[p].qty = 86;
+            updateProductRow(p); renderFAB(); saveDraft();
         }
+        
+        closeManualEntryModal();
     }
 
     function renderFAB() {
@@ -1195,9 +1345,13 @@
             Object.keys(CATS).forEach(function (c) { if (CATS[c].prods.indexOf(prod) !== -1) cat = c; });
             items.push({ prod: prod, cat: cat, qty: d.qty, unit: d.unit });
         }
-        if (!items.length) { toast("⚠️ No hay datos para guardar"); return; }
+        if (!items.length) { 
+            toggleSync(false);
+            toast("⚠️ No hay datos para guardar"); 
+            return; 
+        }
 
-        var entryId = Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        var entryId = IdGenerator.generateEntryId();
         var tEl = document.getElementById('hdr-turno');
         var turno = (tEl && tEl.textContent) ? tEl.textContent : 'Apertura';
         var entry = {
@@ -1216,31 +1370,27 @@
         }
 
         setSyncStatus('pending');
-        toggleSync(true, 'Guardando en la nube...');
-        google.script.run
-            .withSuccessHandler(function () {
-                toggleSync(false);
-                HIST.unshift(entry);
-                toast("✓ ¡Sincronizado!");
-                if (doClear) {
-                    relData = {};
-                    localStorage.removeItem('fede_draft');
-                    renderFAB(); closeResumen(); goHome();
-                }
-                setSyncStatus('online');
-                processOfflineQueue(); // Verificar si hay más
-            })
-            .withFailureHandler(function (err) {
-                toggleSync(false);
-                enqueueEntry(entry);
-                if (doClear) {
-                    relData = {};
-                    localStorage.removeItem('fede_draft');
-                    renderFAB(); closeResumen(); goHome();
-                }
-                setSyncStatus('error');
-            })
-            .addHistoryEntry(entry, activeSheetId);
+        FeDe_API.call('addHistoryEntry', entry, function() {
+            toggleSync(false);
+            HIST.unshift(entry);
+            toast("✓ ¡Sincronizado!");
+            if (doClear) {
+                relData = {};
+                localStorage.removeItem('fede_draft');
+                renderFAB(); closeResumen(); goHome();
+            }
+            setSyncStatus('online');
+            processOfflineQueue(); // Verificar si hay más
+        }, function(err) {
+            toggleSync(false);
+            enqueueEntry(entry);
+            if (doClear) {
+                relData = {};
+                localStorage.removeItem('fede_draft');
+                renderFAB(); closeResumen(); goHome();
+            }
+            setSyncStatus('error');
+        });
     }
 
     function enqueueEntry(entry) {
@@ -1269,19 +1419,16 @@
         isSyncing = true;
         var entry = window.offlineQueue[0];
 
-        google.script.run
-            .withSuccessHandler(function () {
-                window.offlineQueue.shift();
-                localStorage.setItem('fede_offline_queue', JSON.stringify(window.offlineQueue));
-                updateSyncBadge();
-                isSyncing = false;
-                if (window.offlineQueue.length > 0) processOfflineQueue();
-                else toast("✓ Todos los datos sincronizados");
-            })
-            .withFailureHandler(function () {
-                isSyncing = false; // Reintentar después
-            })
-            .addHistoryEntry(entry, activeSheetId);
+        FeDe_API.call('addHistoryEntry', entry, function () {
+            window.offlineQueue.shift();
+            localStorage.setItem('fede_offline_queue', JSON.stringify(window.offlineQueue));
+            updateSyncBadge();
+            isSyncing = false;
+            if (window.offlineQueue.length > 0) processOfflineQueue();
+            else toast("✓ Todos los datos sincronizados");
+        }, function () {
+            isSyncing = false;
+        });
     }
 
     /* ── GESTIÓN ABM ── */
@@ -1296,22 +1443,24 @@
             var ec = encodeURIComponent(cat);
             var prods = CATS[cat].prods.slice().sort();
 
+            var safeCat = FeDe_Utils.sanitize(cat);
             html += '<div class="tree-node">' +
                 '<div class="tree-row" data-cat="' + ec + '" onclick="toggleTreeEl(this)">' +
                 '<span class="tree-toggle ' + (isOpen ? 'open' : '') + '">+</span>' +
-                '<i data-lucide="' + (CATS[cat].icon || 'package') + '" style="width:var(--icon-size-small);height:var(--icon-size-small);color:var(--gold);flex-shrink:0;"></i>' +
-                '<span class="tree-label">' + cat + '</span>' +
-                '<span style="font-size:11px;color:var(--dim);">' + CATS[cat].prods.length + ' items</span>' +
-                '<button data-cat="' + ec + '" onclick="event.stopPropagation();openEditCatEl(this)" style="background:none;border:none;color:var(--text2);padding:5px;cursor:pointer;">✏️</button>' +
-                '<button data-cat="' + ec + '" onclick="event.stopPropagation();deleteCatEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>' +
+                '<i data-lucide="' + (CATS[cat].icon || 'package') + '" style="width:18px;height:18px;color:var(--mcf-slate, var(--primary));flex-shrink:0;"></i>' +
+                '<span class="tree-label">' + safeCat + '</span>' +
+                '<span style="font-size:10px; color:var(--mcf-ink-ghost, var(--dim)); white-space:nowrap;">' + CATS[cat].prods.length + ' pcs</span>' +
+                '<button data-cat="' + ec + '" onclick="event.stopPropagation();openEditCatEl(this)" style="background:none;border:none;padding:8px;font-size:16px;cursor:pointer;">✏️</button>' +
+                '<button data-cat="' + ec + '" onclick="event.stopPropagation();deleteCatEl(this)" style="background:none;border:none;padding:8px;font-size:16px;cursor:pointer;color:var(--mcf-rose, var(--red));">✕</button>' +
                 '</div>' +
                 '<div class="tree-children ' + (isOpen ? 'open' : '') + '">';
 
             for (var j = 0; j < prods.length; j++) {
                 var p = prods[j];
                 var ep = encodeURIComponent(p);
+                var safeLeaf = FeDe_Utils.sanitize(p);
                 html += '<div class="tree-leaf">' +
-                    '<span>' + p + '</span>' +
+                    '<span>' + safeLeaf + '</span>' +
                     '<div style="display:flex;gap:5px;">' +
                     '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="openEditProdEl(this)" class="tree-leaf-btn-edit">✏️</button>' +
                     '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="deleteProdEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>' +
@@ -1340,20 +1489,24 @@
         var v = document.getElementById('new-cat-inp').value.trim();
         if (!v) return toast("Ingresá un nombre");
         if (CATS[v]) return toast("Ya existe");
-        google.script.run
-            .withSuccessHandler(function (r) {
-                if (r.success) { CATS = r.data; document.getElementById('new-cat-inp').value = ''; renderTree(); renderCatGrid(); toast("✓ Creada"); }
-                else toast("❌ " + r.error);
-            })
-            .withFailureHandler(function (err) { toast("❌ Error: " + err.message); })
-            .createCategory(v, 'package', activeSheetId);
+        FeDe_API.call('createCategory', { name: v, icon: 'package' }, function(r) {
+            CATS = r.data; 
+            document.getElementById('new-cat-inp').value = ''; 
+            renderTree(); 
+            renderCatGrid(); 
+            toast("✓ Creada");
+        });
     }
 
     function deleteCatEl(el) {
         var cat = decodeURIComponent(el.dataset.cat);
         if (!confirm('¿Borrar "' + cat + '"?')) return;
-        delete CATS[cat];
-        google.script.run.withSuccessHandler(function (r) { if (r.success) { CATS = r.data; renderTree(); renderCatGrid(); toast("✓ Eliminada"); } }).deleteCategory(cat, activeSheetId);
+        FeDe_API.call('deleteCategory', { name: cat }, function(r) {
+            CATS = r.data;
+            renderTree();
+            renderCatGrid();
+            toast("✓ Eliminada");
+        });
     }
 
     function addProdBtn(el) { _addProd(decodeURIComponent(el.dataset.cat), el.closest('.tree-children').querySelector('.tree-prod-inp')); }
@@ -1361,12 +1514,23 @@
     function _addProd(cat, inp) {
         var v = inp.value.trim();
         if (!v || (CATS[cat] && CATS[cat].prods && CATS[cat].prods.indexOf(v) !== -1)) return;
-        google.script.run.withSuccessHandler(function (r) { if (r.success) { CATS = r.data; inp.value = ''; renderTree(); toast("✓ Añadido"); } }).createProduct(cat, v, activeSheetId);
+        FeDe_API.call('createProduct', { catName: cat, productName: v }, function(r) {
+            CATS = r.data; 
+            inp.value = ''; 
+            renderTree(); 
+            toast("✓ Añadido");
+        });
     }
 
     function deleteProdEl(el) {
         var cat = decodeURIComponent(el.dataset.cat), prod = decodeURIComponent(el.dataset.prod);
-        if (confirm('¿Eliminar "' + prod + '"?')) google.script.run.withSuccessHandler(function (r) { if (r.success) { CATS = r.data; renderTree(); toast("✓ Eliminado"); } }).deleteProduct(cat, prod, activeSheetId);
+        if (confirm('¿Eliminar "' + prod + '"?')) {
+            FeDe_API.call('deleteProduct', { catName: cat, productName: prod }, function(r) {
+                CATS = r.data; 
+                renderTree(); 
+                toast("✓ Eliminado");
+            });
+        }
     }
 
     var editCatOld = null;
@@ -1383,7 +1547,18 @@
         var newName = document.getElementById('modal-cat-name').value.trim();
         var newIcon = document.getElementById('modal-cat-icon').value.trim() || 'package';
         var newSize = parseInt(document.getElementById('modal-cat-size').value, 10) || null;
-        google.script.run.withSuccessHandler(function (r) { if (r.success) { CATS = r.data; renderTree(); renderCatGrid(); toast("✓ Actualizada"); closeEditCatModal(); } }).updateCategory(editCatOld, newName, newIcon, newSize, activeSheetId);
+        FeDe_API.call('updateCategory', { 
+            oldName: editCatOld, 
+            newName: newName, 
+            newIcon: newIcon, 
+            newSize: newSize 
+        }, function(r) {
+            CATS = r.data; 
+            renderTree(); 
+            renderCatGrid(); 
+            toast("✓ Actualizada"); 
+            closeEditCatModal();
+        });
     }
 
     var editProdCat = null, editProdOld = null, modalSelectedUnits = [];
@@ -1435,38 +1610,46 @@
         var newName = document.getElementById('modal-prod-name').value.trim();
 
         // Guardar Unidades Seleccionadas
-        if (modalSelectedUnits.length > 0) CUSTOM_UNITS[newName] = modalSelectedUnits.slice();
-        else delete CUSTOM_UNITS[newName];
+        if (modalSelectedUnits.length > 0) {
+            CUSTOM_UNITS[newName] = modalSelectedUnits.slice();
+        } else {
+            delete CUSTOM_UNITS[newName];
+        }
 
-        if (editProdOld !== newName && CUSTOM_UNITS[editProdOld]) delete CUSTOM_UNITS[editProdOld];
+        if (editProdOld !== newName && CUSTOM_UNITS[editProdOld]) {
+            delete CUSTOM_UNITS[editProdOld];
+        }
 
-        google.script.run.saveConfig('custom_units', CUSTOM_UNITS, activeSheetId);
-
-        // Guardar nombre y relocalizar en CATS
-        google.script.run.withSuccessHandler(function (r) {
-            if (r.success) {
-                CATS = r.data;
-                // Actualizar el DOM partial si es necesario y persistir local data
-                var oldData = relData[editProdOld];
-                if (oldData) { relData[newName] = oldData; delete relData[editProdOld]; saveDraft(); }
-                renderTree();
-                toast("✓ Actualizado");
-                closeEditProdModal();
-            }
-        }).updateProduct(editProdCat, editProdOld, newName, activeSheetId);
+        // Guardar unidades y nombre
+        FeDe_API.call('saveConfig', { key: 'custom_units', value: CUSTOM_UNITS });
+        
+        FeDe_API.call('updateProduct', { 
+            catName: editProdCat, 
+            oldName: editProdOld, 
+            newName: newName 
+        }, function (r) {
+            CATS = r.data;
+            var oldData = relData[editProdOld];
+            if (oldData) { relData[newName] = oldData; delete relData[editProdOld]; saveDraft(); }
+            renderTree();
+            toast("✓ Actualizado");
+            closeEditProdModal();
+        });
     }
 
     function handleDeleteProduct() {
         if (!confirm('¿Eliminar "' + editProdOld + '"?')) return;
         delete CUSTOM_UNITS[editProdOld];
-        google.script.run.saveConfig('custom_units', CUSTOM_UNITS, activeSheetId);
-        google.script.run
-            .withSuccessHandler(function (r) {
-                if (r.success) { CATS = r.data; renderTree(); toast("✓ Eliminado"); closeEditProdModal(); }
-                else toast("❌ " + r.error);
-            })
-            .withFailureHandler(function (err) { toast("❌ Error: " + err.message); })
-            .deleteProduct(editProdCat, editProdOld, activeSheetId);
+        FeDe_API.call('saveConfig', { key: 'custom_units', value: CUSTOM_UNITS });
+        FeDe_API.call('deleteProduct', { 
+            catName: editProdCat, 
+            productName: editProdOld 
+        }, function (r) {
+            CATS = r.data; 
+            renderTree(); 
+            toast("✓ Eliminado"); 
+            closeEditProdModal();
+        });
     }
 
     /* ── DASHBOARD ── */
@@ -1477,7 +1660,6 @@
         var loader = document.getElementById('dash-loader');
         var content = document.getElementById('dash-content');
 
-        // Si tenemos cache y no forzamos, mostramos instantáneamente
         if (DASH_CACHE && !force) {
             if (loader) loader.classList.add('hidden');
             if (content) content.classList.remove('hidden');
@@ -1488,16 +1670,12 @@
         if (loader) loader.classList.remove('hidden');
         if (content) content.classList.add('hidden');
 
-        google.script.run
-            .withSuccessHandler(function (r) {
-                if (r && r.success) {
-                    DASH_CACHE = r.data;
-                    if (loader) loader.classList.add('hidden');
-                    if (content) content.classList.remove('hidden');
-                    applyDashData(r.data);
-                }
-            })
-            .getDashboardMetrics(activeSheetId);
+        FeDe_API.call('getDashboardMetrics', null, function (r) {
+            DASH_CACHE = r.data;
+            if (loader) loader.classList.add('hidden');
+            if (content) content.classList.remove('hidden');
+            applyDashData(r.data);
+        });
     }
 
     function applyDashData(data) {
@@ -1511,11 +1689,12 @@
                 var rc = data.recentCats[i];
                 var cat = CATS[rc.name] || {};
                 var icon = cat.icon || 'package';
+                var safeCatName = FeDe_Utils.sanitize(rc.name);
                 rcHtml += '<div class="dash-card-glass" style="min-width:145px; flex-shrink:0; padding:20px; text-align:center;">' +
                     '<div style="width:44px; height:44px; background:var(--s2); border:1.5px solid var(--bd2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">' +
                     '<i data-lucide="' + icon + '" style="width:20px; color:var(--primary);"></i>' +
                     '</div>' +
-                    '<div style="font-weight:900; font-size:12px; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">' + rc.name + '</div>' +
+                    '<div style="font-weight:900; font-size:12px; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">' + safeCatName + '</div>' +
                     '<div style="font-size:10px; color:var(--dim); font-weight:700;">' + new Date(rc.ts).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) + '</div>' +
                     '<button class="wa-btn" style="width:100%; padding:8px; font-size:10px; margin-top:14px; background:var(--primary); color:#000; border-radius:10px; font-weight:800;" onclick="viewCatDetails(\'' + encodeURIComponent(rc.name) + '\')">DETALLES</button>' +
                     '</div>';
@@ -1607,55 +1786,7 @@
         toast('📅 Filtro aplicado: ' + dateStr, 1500);
     }
 
-    function renderFavs() {
-        var grid = document.getElementById('favs-grid'), container = document.getElementById('home-favs');
-        if (!grid || !container) return;
-        if (!FAVS.length) { container.classList.add('hidden'); return; }
-        container.classList.remove('hidden');
 
-        var favHtml = '';
-        var topFavs = FAVS.slice(0, 6);
-        for (var i = 0; i < topFavs.length; i++) {
-            var p = topFavs[i];
-            var cat = 'Otros';
-            var catKeys = Object.keys(CATS);
-            for (var k = 0; k < catKeys.length; k++) {
-                if (CATS[catKeys[k]].prods.indexOf(p) !== -1) { cat = catKeys[k]; break; }
-            }
-            var icon = (CATS[cat] && CATS[cat].icon) ? CATS[cat].icon : 'star';
-            favHtml += '<div class="dash-card" onclick="enterFav(\'' + encodeURIComponent(p) + '\')" style="margin-bottom:0; padding:12px 6px; text-align:center; cursor:pointer; background:rgba(212,168,67,0.05); border:1px solid rgba(212,168,67,0.15);">' +
-                '<i data-lucide="' + icon + '" style="width:var(--icon-size-small); height:var(--icon-size-small); color:var(--gold); display:block; margin:0 auto 6px;"></i>' +
-                '<div style="font-size:11px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + p + '</div>' +
-                '</div>';
-        }
-        grid.innerHTML = favHtml;
-        refreshIcons();
-    }
-
-    function enterFav(pEnc) {
-        var p = decodeURIComponent(pEnc); var cat = null;
-        var catKeys = Object.keys(CATS);
-        for (var k = 0; k < catKeys.length; k++) {
-            if (CATS[catKeys[k]].prods.indexOf(p) !== -1) { cat = catKeys[k]; break; }
-        }
-        if (!cat) return;
-        enterMode('pedido'); selectCat(cat);
-        setTimeout(function () {
-            var rows = document.querySelectorAll('.prow');
-            for (var i = 0; i < rows.length; i++) {
-                if (rows[i].querySelector('.pname').textContent === p) {
-                    rows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    break;
-                }
-            }
-        }, 600);
-    }
-
-    function toggleFav(pEnc) {
-        var p = decodeURIComponent(pEnc), idx = FAVS.indexOf(p);
-        if (idx > -1) FAVS.splice(idx, 1); else { FAVS.unshift(p); if (FAVS.length > 6) FAVS.pop(); }
-        updateProductRow(p); google.script.run.saveConfig('favs', FAVS, activeSheetId);
-    }
 
     /* ── GLOBAL SEARCH ── */
     function searchGlobalHome(q) {
@@ -1680,9 +1811,11 @@
             var limitedResults = results.slice(0, 10);
             for (var k = 0; k < limitedResults.length; k++) {
                 var r = limitedResults[k];
+                var safeP = FeDe_Utils.sanitize(r.p);
+                var safeCat = FeDe_Utils.sanitize(r.cat);
                 searchHtml += '<div class="gs-item" onclick="promptGlobalLoad(\'' + encodeURIComponent(r.p) + '\', \'' + encodeURIComponent(r.cat) + '\')">' +
-                    '<span class="gs-pname">' + r.p + '</span>' +
-                    '<span class="gs-pcat">' + r.cat + '</span>' +
+                    '<span class="gs-pname">' + safeP + '</span>' +
+                    '<span class="gs-pcat">' + safeCat + '</span>' +
                     '</div>';
             }
             resEl.innerHTML = searchHtml;
@@ -1690,60 +1823,9 @@
         resEl.classList.add('active');
     }
 
-    function handleHdrSearch(q) {
-        var query = q.toLowerCase().trim();
-        var resEl = document.getElementById('hdr-search-res');
-        if (!query || query.length < 2) { resEl.style.display = 'none'; return; }
 
-        var results = [];
-        var catKeys = Object.keys(CATS);
-        for (var i = 0; i < catKeys.length; i++) {
-            var cat = catKeys[i];
-            for (var j = 0; j < CATS[cat].prods.length; j++) {
-                var p = CATS[cat].prods[j];
-                if (p.toLowerCase().indexOf(query) !== -1) results.push({ p: p, cat: cat });
-            }
-        }
 
-        if (results.length === 0) {
-            resEl.innerHTML = '<div style="padding:12px; color:var(--dim); font-size:11px; text-align:center;">Sin resultados</div>';
-        } else {
-            var searchHtml = '';
-            var limitedResults = results.slice(0, 8);
-            for (var k = 0; k < limitedResults.length; k++) {
-                var r = limitedResults[k];
-                searchHtml += '<div class="gs-item" style="padding:10px 12px; border-bottom:1px solid var(--bd);" onclick="selectGlobalHdrResult(\'' + encodeURIComponent(r.p) + '\', \'' + encodeURIComponent(r.cat) + '\')">' +
-                    '<div style="font-weight:700; font-size:13px; color:var(--text);">' + r.p + '</div>' +
-                    '<div style="font-size:10px; color:var(--primary); font-weight:800; text-transform:uppercase;">' + r.cat + '</div>' +
-                    '</div>';
-            }
-            resEl.innerHTML = searchHtml;
-        }
-        resEl.style.display = 'block';
-    }
 
-    function selectGlobalHdrResult(pEnc, catEnc) {
-        var p = decodeURIComponent(pEnc), cat = decodeURIComponent(catEnc);
-        document.getElementById('hdr-search-res').style.display = 'none';
-        document.getElementById('hdr-search-input').value = '';
-
-        if (!currentMode) {
-            promptGlobalLoad(pEnc, catEnc);
-        } else {
-            selectCat(cat);
-            setTimeout(function () {
-                var ep = encodeURIComponent(p);
-                var el = document.querySelector('[data-prow="' + ep + '"]');
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.style.transition = 'background 0.3s, border-color 0.3s';
-                    el.style.background = 'var(--s3)';
-                    el.style.borderColor = 'var(--primary)';
-                    setTimeout(function () { el.style.background = ''; el.style.borderColor = ''; }, 1500);
-                }
-            }, 600);
-        }
-    }
 
     var globalSelected = null;
     function promptGlobalLoad(pEnc, catEnc) {
@@ -1901,22 +1983,52 @@
             filtered = newList;
         }
 
-        // 3. Filtrar por Búsqueda (Soporta producto o categoría)
+        // 3. Filtrar por Búsqueda (Soporta producto o categoría con Motor PRO)
         if (histFilters.query) {
-            var q = histFilters.query.toLowerCase();
+            var q = normalizeStr(histFilters.query.trim());
             var newList = [];
             for (var i = 0; i < filtered.length; i++) {
                 var h = filtered[i];
-                var match = false;
+                var bestIdx = -1;
                 var items = h.items || [];
+                
                 for (var j = 0; j < items.length; j++) {
-                    if (items[j].prod.toLowerCase().indexOf(q) !== -1 || (items[j].cat && items[j].cat.toLowerCase().indexOf(q) !== -1)) {
-                        match = true;
-                        break;
+                    var np = normalizeStr(items[j].prod);
+                    var nc = items[j].cat ? normalizeStr(items[j].cat) : '';
+                    
+                    var idxP = np.indexOf(q);
+                    var idxC = nc.indexOf(q);
+                    
+                    if (idxP !== -1) {
+                        bestIdx = (bestIdx === -1) ? idxP : Math.min(bestIdx, idxP);
+                    } else if (idxC !== -1) {
+                        bestIdx = (bestIdx === -1) ? idxC : Math.min(bestIdx, idxC);
                     }
                 }
-                if (match) newList.push(h);
+
+                if (bestIdx !== -1) {
+                    h._searchIdx = bestIdx;
+                    newList.push(h);
+                }
             }
+
+            // Aplicar Relevancia PRO preservando fecha en empate
+            newList.sort(function(a, b) {
+                var startsA = a._searchIdx === 0;
+                var startsB = b._searchIdx === 0;
+                
+                // 1. Prioridad: comienza exactamente con la palabra
+                if (startsA && !startsB) return -1;
+                if (startsB && !startsA) return 1;
+                
+                // 2. Prioridad: posición del match (más cercano a 0)
+                if (a._searchIdx !== b._searchIdx) return a._searchIdx - b._searchIdx;
+                
+                // 3. Prioridad: más reciente primero (mantener orden cronológico del historial)
+                var dateA = new Date(a.fecha);
+                var dateB = new Date(b.fecha);
+                return dateB - dateA;
+            });
             filtered = newList;
         }
 
@@ -2015,20 +2127,16 @@
             okText: 'ELIMINAR'
         }, function() {
             toggleSync(true, 'Eliminando registro...');
-            google.script.run
-                .withSuccessHandler(function (r) {
-                    toggleSync(false);
-                    if (r && r.success) {
-                        var newHist = [];
-                        for (var i = 0; i < HIST.length; i++) { if (HIST[i].id != id) newHist.push(HIST[i]); }
-                        HIST = newHist;
-                        renderHistory();
-                        toast("✓ Registro eliminado del historial");
-                    } else {
-                        toast("❌ Error al eliminar");
-                    }
-                })
-                .deleteHistoryEntry(id, activeSheetId);
+            FeDe_API.call('deleteHistoryEntry', id, function (r) {
+                toggleSync(false);
+                if (r.success) {
+                    var newHist = [];
+                    for (var i = 0; i < HIST.length; i++) { if (HIST[i].id != id) newHist.push(HIST[i]); }
+                    HIST = newHist;
+                    renderHistory();
+                    toast("✓ Registro eliminado del historial");
+                }
+            });
         });
     }
 
@@ -2111,13 +2219,13 @@
         entry.fecha = newFecha;
 
         toast('⏳ Guardando...');
-        google.script.run.withSuccessHandler(function () {
-            google.script.run.withSuccessHandler(function () {
+        FeDe_API.call('addHistoryEntry', entry, function () {
+            FeDe_API.call('deleteHistoryEntry', editingHistId, function () {
                 loadConfigFromGAS();
                 closeEditHistModal();
                 toast('✓ Registro actualizado');
-            }).deleteHistoryEntry(editingHistId, activeSheetId);
-        }).addHistoryEntry(entry, activeSheetId);
+            });
+        });
     }
     function closeEditHistModal() { document.getElementById('modal-edit-hist').classList.remove('open'); }
 
@@ -2303,6 +2411,9 @@
     /**
      * 🧠 NUEVA IMPLEMENTACIÓN: Resumen de Inteligencia en Home
      */
+    /**
+     * 🧠 NUEVA IMPLEMENTACIÓN: Resumen de Inteligencia en Home
+     */
     function renderHomeSummary() {
         var el = document.getElementById('home-alerts-card');
         if (!el) return;
@@ -2310,16 +2421,57 @@
         var alerts = [];
         var now = new Date();
 
-        // 1. Control obligatorio (domingo=0 o martes=2)
+        // 1. Trabajo Pendiente (Draft) - HIGHEST PRIORITY
+        var draftStr = localStorage.getItem('fede_draft');
+        var draft = draftStr ? JSON.parse(draftStr) : null;
+        if (draft && draft.items && Object.keys(draft.items).length > 0) {
+            alerts.unshift({ 
+                icon: 'database', 
+                color: 'var(--mcf-amber)', 
+                title: 'RESUMIR TRABAJO', 
+                desc: 'Borrador sin guardar detectado', 
+                urgent: true,
+                action: 'restoreDraft'
+            });
+        }
+
+        // 2. Próximo Pedido Programado
+        var orderDays = (CONFIG.orderDays && CONFIG.orderDays.length > 0) ? CONFIG.orderDays : [1, 4];
+        var todayIdx = now.getDay();
+        var minDiff = 8;
+        for (var i = 0; i < orderDays.length; i++) {
+            var diff = (orderDays[i] - todayIdx + 7) % 7;
+            if (diff < minDiff) minDiff = diff;
+        }
+
+        var orderTitle = 'Próximo Pedido';
+        var orderDesc = minDiff === 0 ? 'HACER HOY' : (minDiff === 1 ? 'MAÑANA' : 'En ' + minDiff + ' días');
+        alerts.push({ 
+            icon: minDiff === 0 ? 'truck' : 'clock', 
+            color: 'var(--mcf-amber)', 
+            title: orderTitle, 
+            desc: orderDesc, 
+            urgent: minDiff <= 1,
+            action: "initRelevamiento('pedido')" 
+        });
+
+        // 3. Control obligatorio (ej: Domingos y Martes)
         var day = now.getDay();
         if (day === 0 || day === 2) {
             var isDone = sessionStorage.getItem('fede_stock_done') === 'CONTROL DE STOCK';
             if (!isDone) {
-                alerts.push({ icon: 'clipboard-check', color: 'var(--blue)', title: 'Control obligatorio', desc: 'Requerido hoy' });
+                alerts.push({ 
+                    icon: 'alert-octagon', 
+                    color: 'var(--mcf-slate)', 
+                    title: 'Control Obligatorio', 
+                    desc: 'Falta registro de hoy', 
+                    urgent: true,
+                    action: "initRelevamiento('stock')"
+                });
             }
         }
 
-        // 2. Feriados próximos (usa función de holidays.html)
+        // 4. Feriados próximos
         if (typeof getUpcomingHolidays === 'function') {
             var upcoming = getUpcomingHolidays(7);
             for (var i = 0; i < upcoming.length; i++) {
@@ -2327,76 +2479,67 @@
                 var diffMs = h.date.getTime() - now.getTime();
                 var daysLeft = Math.ceil(diffMs / (1000 * 3600 * 24));
                 var timeText = daysLeft <= 0 ? 'Es hoy' : (daysLeft === 1 ? 'Mañana' : 'En ' + daysLeft + ' días');
-                alerts.push({ icon: 'calendar-clock', color: '#098b8c', title: h.name, desc: timeText });
+                alerts.push({ icon: 'calendar', color: 'var(--mcf-rose)', title: h.name, desc: timeText });
             }
         }
 
-        // 3. Días sin control de stock
-        var lastStock = null;
-        for (var j = 0; j < HIST.length; j++) {
-            if (HIST[j].mode === 'stock') { lastStock = new Date(HIST[j].fecha); break; }
-        }
-        if (lastStock) {
-            var daysSinceStock = Math.floor((now - lastStock) / (1000 * 3600 * 24));
-            if (daysSinceStock >= 2) {
-                alerts.push({ icon: 'alert-triangle', color: 'var(--warning)', title: 'Sin control de stock', desc: 'Último hace ' + daysSinceStock + ' días' });
-            }
-        } else if (HIST.length > 0) {
-            alerts.push({ icon: 'alert-triangle', color: 'var(--warning)', title: 'Sin control de stock', desc: 'Nunca se registró uno' });
-        }
+        // Render with Toggle Support
+        var isExpanded = el.classList.contains('expanded');
+        var html = '<div class="mcf-status-title" onclick="toggleHomeAlerts()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
+                   '<div style="display:flex; align-items:center; gap:12px;">' +
+                   '<i data-lucide="zap" style="width:16px;"></i>' +
+                   'ALERTAS OPERATIVAS' +
+                   '</div>' +
+                   '<i data-lucide="' + (isExpanded ? 'chevron-up' : 'chevron-down') + '" style="width:16px; opacity:0.5;"></i>' +
+                   '</div>';
 
-        // 4. Días sin pedido
-        var lastPedido = null;
-        for (var k = 0; k < HIST.length; k++) {
-            if (HIST[k].mode === 'pedido') { lastPedido = new Date(HIST[k].fecha); break; }
-        }
-        if (lastPedido) {
-            var daysSincePedido = Math.floor((now - lastPedido) / (1000 * 3600 * 24));
-            if (daysSincePedido >= 3) {
-                alerts.push({ icon: 'package', color: 'var(--orange)', title: 'Sin pedido reciente', desc: 'Último hace ' + daysSincePedido + ' días' });
-            }
-        }
-
-        // 5. Merma del día
-        var todayStr = now.getFullYear() + '-' + (now.getMonth() + 1 < 10 ? '0' : '') + (now.getMonth() + 1) + '-' + (now.getDate() < 10 ? '0' : '') + now.getDate();
-        var mermaItemsToday = 0;
-        for (var m = 0; m < HIST.length; m++) {
-            if (HIST[m].mode === 'merma' && HIST[m].fecha && HIST[m].fecha.indexOf(todayStr) === 0) {
-                mermaItemsToday += (HIST[m].total || 0);
-            }
-        }
-        if (mermaItemsToday > 0) {
-            alerts.push({ icon: 'trending-down', color: 'var(--violet)', title: 'Merma registrada hoy', desc: mermaItemsToday + ' items perdidos' });
-        }
-
-
-        // Render
-        var html = '<div class="alert-header"><i data-lucide="activity" style="width:14px; color:var(--dim);"></i> Centro Operativo</div>';
-
+        html += '<div id="home-alerts-content" class="mcf-alerts-collapsible ' + (isExpanded ? 'expanded' : '') + '">';
+        
         if (alerts.length === 0) {
-            html += '<div class="home-alert-ok">' +
-                '<i data-lucide="check-circle" style="width:28px; height:28px; display:block; margin:0 auto 8px;"></i>' +
-                '<div style="font-size:14px; font-weight:800;">Operación al día</div>' +
-                '<div style="font-size:11px; color:var(--dim); margin-top:2px;">Sin alertas pendientes</div>' +
+            html += '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 20px; text-align:center;">' +
+                '<div style="font-size:32px; margin-bottom:12px;">✅</div>' +
+                '<div style="font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:1px;">Operación al día</div>' +
                 '</div>';
         } else {
-            var limit = Math.min(alerts.length, 4);
-            for (var a = 0; a < limit; a++) {
-                var al = alerts[a];
-                html += '<div class="home-alert-item">' +
-                    '<div class="home-alert-icon" style="background:' + al.color + '; background: color-mix(in srgb, ' + al.color + ' 15%, transparent);">' +
-                    '<i data-lucide="' + al.icon + '" style="width:18px; color:' + al.color + ';"></i>' +
+            alerts.forEach(function(al) {
+                var clickAttr = al.action ? 'onclick="' + al.action + '"' : '';
+                html += '<div class="home-alert-item ' + (al.urgent ? 'urgent' : '') + '" ' + clickAttr + ' style="' + (al.action ? 'cursor:pointer;' : '') + '">' +
+                    '<div class="home-alert-icon" style="background:' + al.color + '22; border: 2px solid ' + al.color + ';">' +
+                    '<i data-lucide="' + al.icon + '" style="width:22px; color:var(--mcf-ink);"></i>' +
                     '</div>' +
                     '<div class="home-alert-text">' +
                     '<div class="home-alert-title">' + al.title + '</div>' +
                     '<div class="home-alert-desc">' + al.desc + '</div>' +
                     '</div>' +
+                    (al.urgent ? '<div class="mcf-urgent-indicator">!</div>' : '') +
                     '</div>';
-            }
+            });
         }
+        html += '</div>';
 
         el.innerHTML = html;
-        refreshIcons(el);
+        if (window.lucide) lucide.createIcons();
+    }
+
+    /**
+     * Alterna la visibilidad de las alertas con animación
+     */
+    function toggleHomeAlerts() {
+        var card = document.getElementById('home-alerts-card');
+        var content = document.getElementById('home-alerts-content');
+        if (!card || !content) return;
+
+        var isExpanding = !card.classList.contains('expanded');
+        
+        if (isExpanding) {
+            card.classList.add('expanded');
+            content.classList.add('expanded');
+        } else {
+            card.classList.remove('expanded');
+            content.classList.remove('expanded');
+        }
+        
+        renderHomeSummary(); // Refresh to update icons (chevron)
     }
 
     /**
@@ -2435,141 +2578,50 @@
             addLog("Estructura UI", missing.length === 0);
 
             // 4. Versión y Build
-            addLog("v10.0.0 FOCACCIA", true);
+            addLog("v11.0.17 ARCHITECTED", true);
 
             // 5. Conectividad con Servidor (Async)
             addLog("Verificando Cloud...", true);
             
-            google.script.run
-                .withSuccessHandler(function(r) {
-                    addLog("Servidor GAS (Conexión OK)", true);
-                    addLog("ID Planilla: " + (activeSheetId.length > 20 ? 'VÁLIDO' : 'DE TEST/DEFAULT'), true);
-                    toast("✓ Diagnóstico completado");
-                })
-                .withFailureHandler(function(err) {
-                    addLog("Servidor GAS: " + err.message, false);
-                })
-                .getAppState(activeSheetId);
+            FeDe_API.call('getAppState', null, function(r) {
+                addLog("Servidor GAS (Conexión OK)", true);
+                addLog("ID Planilla: " + (activeSheetId.length > 20 ? 'VÁLIDO' : 'DE TEST/DEFAULT'), true);
+                toast("✓ Diagnóstico completado");
+            }, function(err) {
+                addLog("Servidor GAS: " + err, false);
+            });
 
         } catch (e) {
             addLog("EXCEPCIÓN: " + e.message, false);
         }
     }
     /**
-     * 🔍 SISTEMA DE BÚSQUEDA EXPANSIVA PRO
+     * 📅 INTEGRACIÓN CON GOOGLE CALENDAR
      */
-    function toggleHdrSearch(open) {
-        var container = document.getElementById('hdr-search-container');
-        var input = document.getElementById('hdr-search-input');
-        var results = document.getElementById('hdr-search-res');
+    function refreshGCalendar() {
+        var listEl = document.getElementById('dash-gcal-list');
+        if (!listEl) return;
 
-        if (open) {
-            container.classList.add('hdr-search-active');
-            container.classList.remove('hdr-search-hidden');
-            setTimeout(function () { input.focus(); }, 300);
-        } else {
-            container.classList.remove('hdr-search-active');
-            container.classList.add('hdr-search-hidden');
-            input.value = '';
-            results.style.display = 'none';
-        }
-    }
-
-    /**
-     * 🔍 NORMALIZACIÓN (IGNORAR TILDES)
-     */
-    function normalizeStr(str) {
-        if (!str) return '';
-        return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    }
-
-    function handleHdrSearch(q) {
-        var res = document.getElementById('hdr-search-res');
-        if (!q || q.length < 1) { res.style.display = 'none'; return; }
-
-        var query = normalizeStr(q);
-        var matches = [];
-
-        // Buscamos en todas las categorías
-        Object.keys(CATS).forEach(function (cat) {
-            var prods = CATS[cat].prods || [];
-            for (var i = 0; i < prods.length; i++) {
-                var p = prods[i];
-                if (normalizeStr(p).indexOf(query) !== -1) {
-                    matches.push({ p: p, cat: cat });
-                }
+        FeDe_API.call('getCalendarEvents', null, function(res) {
+            if (!res.success || !res.events || res.events.length === 0) {
+                listEl.innerHTML = '<div style="font-size:12px; color:var(--muted); text-align:center; padding:10px;">No hay eventos esta semana</div>';
+                return;
             }
+
+            var html = '';
+            res.events.forEach(function(ev) {
+                var start = new Date(ev.start);
+                var timeStr = ev.isAllDay ? "TODO EL DÍA" : start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                html += '<div class="gcal-item">' +
+                            '<div class="gcal-time">' + timeStr + '</div>' +
+                            '<div class="gcal-title">' + ev.title + '</div>' +
+                        '</div>';
+            });
+            listEl.innerHTML = html;
+        }, function(err) {
+            listEl.innerHTML = '<div style="font-size:10px; color:var(--red); text-align:center;">Error: Google Calendar no responde</div>';
         });
-
-        if (matches.length === 0) {
-            res.innerHTML = '<div style="padding:16px; text-align:center; color:var(--dim); font-size:12px; font-weight:700;">Sin resultados para "' + q + '"</div>';
-            res.style.display = 'block';
-            return;
-        }
-
-        var html = '';
-        // Limitar a 10 resultados para rendimiento
-        matches.slice(0, 10).forEach(function (m) {
-            var ep = m.p.replace(/'/g, "\\'");
-            var ec = m.cat.replace(/'/g, "\\'");
-            html += '<div class="search-res-item" onclick="goToProduct(\'' + ep + '\', \'' + ec + '\')" style="padding: 16px; border-bottom: 1px solid var(--bd2); cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--bg-alt);">' +
-                '<div style="display:flex; flex-direction:column; gap:2px;">' +
-                '<span style="font-weight:700; color:var(--text); font-size:15px;">' + m.p + '</span>' +
-                '<span style="font-size:11px; color:var(--primary); text-transform:uppercase; font-weight:800; letter-spacing:1px; background:rgba(6,182,212,0.1); padding:2px 6px; border-radius:4px; align-self:flex-start;">' + m.cat + '</span>' +
-                '</div>' +
-                '<i data-lucide="chevron-right" style="width:16px; color:var(--dim);"></i>' +
-                '</div>';
-        });
-
-        res.innerHTML = html;
-        res.style.display = 'block';
-        if (window.lucide) lucide.createIcons({ root: res });
-    }
-
-    function goToProduct(p, cat) {
-        // 1. Cerrar búsqueda solo si no es persistente
-        var container = document.getElementById('hdr-search-container');
-        var isPersistent = container && container.classList.contains('hdr-search-persistent');
-
-        if (!isPersistent) {
-            toggleHdrSearch(false);
-        } else {
-            // Si es persistente, solo limpiamos para el siguiente item
-            document.getElementById('hdr-search-input').value = '';
-            document.getElementById('hdr-search-res').style.display = 'none';
-        }
-
-        // 2. Navegar a relevamiento si no estamos allí
-        var isAppVisible = document.getElementById('app').classList.contains('visible');
-        if (!isAppVisible) {
-            goTab('relevamiento');
-        }
-
-        // 3. Abrir categoría (usando la función nativa selectCat)
-        setTimeout(function () {
-            selectCat(cat);
-
-            // 4. Scroll al producto y resaltar
-            setTimeout(function () {
-                var el = document.querySelector('[data-prow="' + encodeURIComponent(p) + '"]');
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    var originalBorder = el.style.borderColor;
-                    var originalBg = el.style.background;
-
-                    el.style.background = 'var(--s2)';
-                    el.style.borderColor = 'var(--primary)';
-                    el.style.boxShadow = '0 0 20px rgba(6, 182, 212, 0.2)';
-
-                    // Efecto flash
-                    setTimeout(function () {
-                        el.style.background = originalBg;
-                        el.style.borderColor = originalBorder;
-                        el.style.boxShadow = '';
-                    }, 2000);
-                }
-            }, 500);
-        }, 50);
     }
 
     /* ═══════════════════════════════════════════════════════════════════════════
@@ -2706,26 +2758,17 @@
         content.classList.add('hidden');
 
         toggleSync(true, 'Analizando historial...');
-        google.script.run
-            .withSuccessHandler(function(res) {
-                toggleSync(false);
-                if (res && res.success) {
-                    ORDER_DATA = res;
-                    saveOrderDataCache(res);
-                    renderOrderModule(res);
-                } else {
-                    loading.style.display = 'none';
-                    content.classList.remove('hidden');
-                    content.innerHTML = '<div style="text-align:center; padding:40px; color:var(--red);">Error al cargar sugerencias.</div>';
-                }
-            })
-            .withFailureHandler(function(err) {
-                toggleSync(false);
-                loading.style.display = 'none';
-                content.classList.remove('hidden');
-                content.innerHTML = '<div style="text-align:center; padding:40px; color:var(--red);">Error de conexión.</div>';
-            })
-            .getSmartOrderSuggestions(activeSheetId);
+        FeDe_API.call('getSmartOrderSuggestions', null, function(res) {
+            toggleSync(false);
+            ORDER_DATA = res;
+            saveOrderDataCache(res);
+            renderOrderModule(res);
+        }, function(err) {
+            toggleSync(false);
+            loading.style.display = 'none';
+            content.classList.remove('hidden');
+            content.innerHTML = '<div style="text-align:center; padding:40px; color:var(--red);">Error de conexión.</div>';
+        });
     }
 
     // ── CERRAR EL MÓDULO ──
@@ -3007,23 +3050,265 @@
 
     function saveAnchors() {
         toggleSync(true, 'Guardando anclajes...');
-        google.script.run
-            .withSuccessHandler(function(res) {
-                toggleSync(false);
-                if (res && res.success) {
-                    if (ORDER_DATA) ORDER_DATA.anchors = ORDER_ANCHORS;
-                    closeOrderAnchorsConfig();
-                    showToast('📌 Anclajes guardados');
-                } else {
-                    toggleSync(false);
-                    showToast('Error al guardar anclajes.');
+        FeDe_API.call('saveOrderAnchors', ORDER_ANCHORS, function(res) {
+            toggleSync(false);
+            if (ORDER_DATA) ORDER_DATA.anchors = ORDER_ANCHORS;
+            closeOrderAnchorsConfig();
+            showToast('Anclajes guardados');
+        });
+    }
+
+    function initOrderDaysUI() {
+        var container = document.getElementById('cfg-order-days');
+        if (!container) return;
+        var days = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+        var currentDays = CONFIG.orderDays || [1, 4];
+        var html = '';
+        days.forEach(function(d, idx) {
+            var active = currentDays.indexOf(idx) !== -1;
+            html += '<div onclick="toggleOrderDay(' + idx + ')" class="cchip ' + (active ? 'active' : '') + '" style="width:40px;height:40px;display:flex !important;justify-content:center;align-items:center;font-size:14px;font-weight:900;">' + d + '</div>';
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleOrderDay(idx) {
+        if (!CONFIG.orderDays) CONFIG.orderDays = [1, 4];
+        var pos = CONFIG.orderDays.indexOf(idx);
+        if (pos === -1) CONFIG.orderDays.push(idx); else CONFIG.orderDays.splice(pos, 1);
+        initOrderDaysUI();
+        FeDe_API.call('saveConfig', { key: 'orderDays', value: CONFIG.orderDays }, function(res) {
+            toast('Calendario actualizado');
+            renderHomeSummary();
+        });
+    }
+
+    /**
+     * 🔍 SISTEMA DE BÚSQUEDA EXPANSIVA PRO (Adaptado)
+     */
+    function toggleHdrSearch(open) {
+        var container = document.getElementById('mcf-bottom-search-bar');
+        var input = document.getElementById('hdr-search-input');
+        var results = document.getElementById('hdr-search-res');
+        var clearBtn = document.getElementById('mcf-search-clear');
+
+        if (!container) return;
+
+        if (open) {
+            container.classList.add('hdr-search-active');
+            container.classList.remove('hdr-search-hidden');
+            setTimeout(function () { if(input) input.focus(); }, 300);
+        } else {
+            container.classList.remove('hdr-search-active');
+            if (!container.classList.contains('hdr-search-persistent')) {
+                container.classList.add('hdr-search-hidden');
+            }
+            if(input) input.value = '';
+            if(results) { results.style.display = 'none'; results.innerHTML = ''; }
+            if(clearBtn) clearBtn.style.display = 'none';
+        }
+    }
+
+    // Auto-colapsar al hacer click fuera
+    window.addEventListener('pointerdown', function(e) {
+        var container = document.getElementById('mcf-bottom-search-bar');
+        var isTrigger = e.target.closest && e.target.closest('[onclick*="toggleHdrSearch"]');
+        
+        if (container && !container.classList.contains('hdr-search-hidden') && !container.contains(e.target) && !isTrigger) {
+            // Blur first to hide virtual keyboard on mobile
+            var searchInput = document.getElementById('hdr-search-input');
+            if (searchInput) searchInput.blur();
+            
+            if (!container.classList.contains('hdr-search-persistent')) {
+                toggleHdrSearch(false);
+            } else {
+                // Modo persistente: solo cerrar lista de resultados
+                var resEl = document.getElementById('hdr-search-res');
+                if (resEl) resEl.style.display = 'none';
+            }
+        }
+    });
+
+    /**
+     * 🔍 NORMALIZACIÓN (IGNORAR TILDES)
+     */
+    function normalizeStr(str) {
+        if (!str) return '';
+        return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function handleHdrSearch(val) {
+        var resEl = document.getElementById('hdr-search-res');
+        var clearBtn = document.getElementById('mcf-search-clear');
+        if (clearBtn) clearBtn.style.display = (val ? 'block' : 'none');
+        
+        if (!resEl) return;
+        if (!val || val.length < 1) { 
+            resEl.innerHTML = ''; 
+            resEl.style.display = 'none'; 
+            return; 
+        }
+        
+        var query = normalizeStr(val.trim());
+        var matches = [];
+        
+        if (typeof CATS !== 'object' || !CATS) return;
+
+        Object.keys(CATS).forEach(function(cat) {
+            var catObj = CATS[cat];
+            var prods = (catObj && catObj.prods) ? catObj.prods : [];
+            
+            for (var i = 0; i < prods.length; i++) {
+                var p = prods[i];
+                if (typeof p === 'string') {
+                    var np = normalizeStr(p);
+                    var idx = np.indexOf(query);
+                    if (idx !== -1) {
+                        matches.push({ name: p, cat: cat.toUpperCase(), idx: idx });
+                    }
                 }
-            })
-            .withFailureHandler(function() {
-                toggleSync(false);
-                showToast('Error de conexión.');
-            })
-            .saveOrderAnchors(ORDER_ANCHORS, activeSheetId);
+            }
+        });
+
+        // 🧠 Relevancia PRO (Prioridad exactitud corta y al inicio)
+        matches.sort(function(a, b) {
+            var startsA = a.idx === 0;
+            var startsB = b.idx === 0;
+            if (startsA && !startsB) return -1;
+            if (startsB && !startsA) return 1;
+            if (a.idx !== b.idx) return a.idx - b.idx;
+            return a.name.length - b.name.length;
+        });
+
+        if (matches.length === 0) {
+            resEl.innerHTML = '<div style="padding:16px; text-align:center; color:var(--dim); font-size:12px; font-weight:700;">Sin resultados para "' + FeDe_Utils.sanitize(val) + '"</div>';
+            resEl.style.display = 'block';
+            return;
+        }
+
+        var displayMatches = matches.slice(0, 15).reverse();
+        if (displayMatches.length > 0 && query.length > 2) {
+            if (navigator.vibrate) navigator.vibrate(5);
+        }
+
+        var html = '';
+        displayMatches.forEach(function(m) {
+            // Encode data for safe attribute storage (fixes touch event issues)
+            var eProdName = encodeURIComponent(m.name);
+            var eCatName = encodeURIComponent(m.cat);
+            // Sanitize output to prevent XSS
+            var safeName = FeDe_Utils.sanitize(m.name);
+            var safeCat = FeDe_Utils.sanitize(m.cat);
+            html += '<div class="mcf-res-item" data-prod-name="' + eProdName + '" data-cat-name="' + eCatName + '" role="button" tabindex="0">' +
+                    '<span class="mcf-res-name">' + safeName + '</span>' +
+                    '<span class="mcf-res-cat">' + safeCat + '</span>' +
+                    '</div>';
+        });
+        
+        if (resEl) {
+            resEl.innerHTML = html;
+            resEl.style.display = (html ? 'block' : 'none');
+            // Force scroll to bottom for thumb-proximity
+            resEl.scrollTop = resEl.scrollHeight;
+            
+            // 🎯 EVENT DELEGATION: Handle search item selection via click
+            // Using click with touch-action: manipulation provides instant response and preserves mobile scrolling
+            resEl.querySelectorAll('.mcf-res-item').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var prodName = decodeURIComponent(this.dataset.prodName);
+                    var catName = decodeURIComponent(this.dataset.catName);
+                    selectSearchItem(prodName, catName);
+                });
+                
+                // Keyboard support (Enter key)
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var prodName = decodeURIComponent(this.dataset.prodName);
+                        var catName = decodeURIComponent(this.dataset.catName);
+                        selectSearchItem(prodName, catName);
+                    }
+                });
+            });
+        }
+    }
+
+    /**
+     * SEARCH CONTROLLER: Selection logic with industrial mobile mechanics.
+     */
+    function selectSearchItem(prod, cat) {
+        if (navigator.vibrate) navigator.vibrate([15, 30]);
+
+        // 1. UI Reset & Authority Clearance
+        var inp = document.getElementById('hdr-search-input');
+        var resEl = document.getElementById('hdr-search-res');
+        var clearBtn = document.getElementById('mcf-search-clear');
+        if (inp) { inp.value = ''; inp.blur(); }
+        if (resEl) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+        if (clearBtn) clearBtn.style.display = 'none';
+
+        if (typeof exitFullscreenMode === 'function') exitFullscreenMode();
+        
+        // 2. Data Resolution
+        var targetCat = null;
+        Object.keys(CATS).forEach(function(c) {
+            if (c.toUpperCase() === cat.toUpperCase()) targetCat = c;
+        });
+
+        if (!targetCat) {
+            toast("⚠️ Error de arquitectura: Categoría desconocida");
+            return;
+        }
+
+        // 3. Navigation Trigger
+        if (!currentMode) {
+            var lastMode = localStorage.getItem('fede_last_mode') || 'pedido';
+            initRelevamiento(lastMode);
+        } else {
+            goTab('relevamiento');
+        }
+        
+        // Immediate Category Switch
+        selectCat(targetCat);
+        
+        // 4. Polling Seeker securely by data-attribute
+        var attempts = 0;
+        var safeSelector = '[data-prow="' + encodeURIComponent(prod) + '"]';
+        
+        if (window._mcf_search_seeker) clearInterval(window._mcf_search_seeker);
+        window._mcf_search_seeker = setInterval(function() {
+            attempts++;
+            var target = document.querySelector(safeSelector);
+
+            if (target) {
+                clearInterval(window._mcf_search_seeker);
+                
+                // Asegurar que el elemento es visible antes de hacer smooth scroll
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('mcf-found-highlight');
+                
+                setTimeout(function(){ 
+                    target.classList.remove('mcf-found-highlight');
+                }, 1500);
+            }
+
+            if (attempts > 40) {
+                clearInterval(window._mcf_search_seeker);
+                console.warn("Element not found after 40 attempts:", prod);
+            }
+        }, 120);
+    }
+
+    function clearHdrSearch() {
+        var inp = document.getElementById('hdr-search-input');
+        var resEl = document.getElementById('hdr-search-res');
+        var clearBtn = document.getElementById('mcf-search-clear');
+        if (inp) { inp.value = ''; inp.focus(); }
+        if (resEl) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (navigator.vibrate) navigator.vibrate(10);
     }
 
     // Inicializar estado del botón al cargar
@@ -3031,4 +3316,4 @@
         setTimeout(initOrderButtonState, 800);
     });
 
-</script>
+</script>
