@@ -5592,7 +5592,120 @@
         background: transparent !important;
     }
 
+
+    /* ── HISTORIAL — FILTER CHIPS ───────────────────────────────────────────── */
+    .fede-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: var(--fede-r-pill);
+        font: var(--fede-caption);
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        touch-action: manipulation;
+        border: 1.5px solid var(--fede-border);
+        background: transparent;
+        color: var(--fede-on-surface-2);
+        transition: background 0.1s, color 0.1s, border-color 0.1s;
+        flex-shrink: 0;
+    }
+    .fede-filter-chip.active {
+        background: var(--fede-on-surface);
+        color: var(--fede-bg);
+        border-color: var(--fede-on-surface);
+    }
+    /* Chips por modo (color semántico cuando no están activos pero están seleccionados) */
+    .fede-chip-pedido.active    { background: var(--fede-accent-pedido);    border-color: var(--fede-accent-pedido);    color: #fff; }
+    .fede-chip-stock.active     { background: var(--fede-accent-stock);     border-color: var(--fede-accent-stock);     color: #fff; }
+    .fede-chip-recepcion.active { background: var(--fede-accent-recepcion); border-color: var(--fede-accent-recepcion); color: #fff; }
+    .fede-chip-merma.active     { background: var(--fede-accent-merma);     border-color: var(--fede-accent-merma);     color: #fff; }
+
+    /* Filas de historial generadas por JS */
+    #hist-list .hist-row,
+    #hist-list > * {
+        background: var(--fede-surface) !important;
+        border: 1px solid var(--fede-border) !important;
+        border-radius: var(--fede-r-md) !important;
+        padding: 12px 14px !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        box-shadow: none !important;
+        border-left: none !important;
+    }
+    #hist-list .hist-row-mode {
+        font: var(--fede-caption) !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    #hist-list .hist-row-date {
+        font: var(--fede-caption) !important;
+        color: var(--fede-on-surface-3) !important;
+    }
+    #hist-list .hist-row-title {
+        font: var(--fede-body) !important;
+        font-weight: 500 !important;
+        color: var(--fede-on-surface) !important;
+    }
+
+    /* ── DASHBOARD — KPI CARDS ──────────────────────────────────────────────── */
+    .fede-kpi-card {
+        background: var(--fede-surface);
+        border: 1px solid var(--fede-border);
+        border-radius: var(--fede-r-lg);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    .fede-kpi-label {
+        font: var(--fede-caption);
+        font-weight: 600;
+        color: var(--fede-on-surface-3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .fede-kpi-value {
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--fede-on-surface);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -1px;
+    }
+    .fede-kpi-sub {
+        font: var(--fede-caption);
+        color: var(--fede-on-surface-3);
+        margin-top: 2px;
+    }
+
+    /* Dashboard recent-cats: tarjetas de categoría (dinámicas JS) */
+    #dash-recent-cats .dash-cat-chip,
+    #dash-recent-cats > * {
+        display: inline-flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        padding: 10px 14px !important;
+        background: var(--fede-surface) !important;
+        border: 1px solid var(--fede-border) !important;
+        border-radius: var(--fede-r-md) !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        min-width: 100px !important;
+        box-shadow: none !important;
+        white-space: nowrap !important;
+    }
+
+    /* Celdas del heatmap calendar */
+    #dash-calendar .cal-day {
+        aspect-ratio: 1;
+        border-radius: 4px;
+        background: var(--fede-surface-sunken);
+    }
+
     /* ╔══════════════════════════════════════════════════════════════════════════╗
        ║  FIN FEDE DESIGN SYSTEM v2 OVERRIDE FINAL                              ║
        ╚══════════════════════════════════════════════════════════════════════════╝ */
-</style>
+</style>
+
