@@ -72,7 +72,236 @@
         --mcf-font-body:   'Helvetica Neue', Arial, sans-serif;
     }
 
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       FEDE DESIGN SYSTEM v2 — Tokens (Claude Design Handoff)
+       Coexiste con --mcf-*. Migración gradual pantalla por pantalla.
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    /* Fuente Inter para las nuevas vistas */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root,
+    [data-theme="light"] {
+        /* Superficies */
+        --fede-bg:            #f4f5f7;
+        --fede-surface:       #ffffff;
+        --fede-surface-sunken:#eef0f4;
+        --fede-on-surface:    #0f1217;
+        --fede-on-surface-2:  #3a4150;
+        --fede-on-surface-3:  #6b7280;
+        --fede-border:        #e2e4e9;
+        --fede-divider:       #eef0f4;
+
+        /* Acentos semánticos por modo operativo */
+        --fede-accent-pedido:    #2563eb;   /* Azul    */
+        --fede-accent-stock:     #16a34a;   /* Verde   */
+        --fede-accent-recepcion: #7c3aed;   /* Violeta */
+        --fede-accent-merma:     #d97706;   /* Ámbar   */
+
+        /* Estados */
+        --fede-success: #16a34a;
+        --fede-warning: #d97706;
+        --fede-danger:  #dc2626;
+        --fede-info:    #2563eb;
+
+        /* Escala tipográfica — Inter, 7 pasos */
+        --fede-display:  600 28px/34px "Inter", system-ui, sans-serif;
+        --fede-title:    600 22px/28px "Inter", system-ui, sans-serif;
+        --fede-h2:       600 18px/24px "Inter", system-ui, sans-serif;
+        --fede-body-lg:  400 16px/22px "Inter", system-ui, sans-serif;
+        --fede-body:     400 15px/20px "Inter", system-ui, sans-serif;
+        --fede-label:    500 13px/16px "Inter", system-ui, sans-serif;
+        --fede-caption:  400 11px/14px "Inter", system-ui, sans-serif;
+        --fede-mono:     400 12px/16px "JetBrains Mono", monospace;
+
+        /* Radio de bordes */
+        --fede-r-sm:   8px;
+        --fede-r-md:   12px;
+        --fede-r-lg:   16px;
+        --fede-r-pill: 24px;
+    }
+
+    [data-theme="dark"] {
+        --fede-bg:            #0f1217;
+        --fede-surface:       #181c24;
+        --fede-surface-sunken:#0b0e14;
+        --fede-on-surface:    #f0f2f7;
+        --fede-on-surface-2:  #9ba5b8;
+        --fede-on-surface-3:  #5a6478;
+        --fede-border:        #252b38;
+        --fede-divider:       #1e2430;
+    }
+
+    /* Acento dinámico por modo operativo (usado vía data-mode en el root) */
+    [data-mode="pedido"]    { --fede-accent: var(--fede-accent-pedido); }
+    [data-mode="stock"]     { --fede-accent: var(--fede-accent-stock); }
+    [data-mode="recepcion"] { --fede-accent: var(--fede-accent-recepcion); }
+    [data-mode="merma"]     { --fede-accent: var(--fede-accent-merma); }
+
+    /* ── FeDe Components Base Layer ─────────────────────────────────────────── */
+
+    /* Shimmer skeleton animation */
+    @keyframes fede-shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .fede-skeleton {
+        background: linear-gradient(90deg,
+            var(--fede-surface-sunken) 25%,
+            var(--fede-border) 50%,
+            var(--fede-surface-sunken) 75%
+        );
+        background-size: 200% 100%;
+        animation: fede-shimmer 1.4s ease infinite;
+        border-radius: var(--fede-r-sm);
+    }
+
+    /* SyncPill — estado de sincronización */
+    .fede-sync-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: var(--fede-r-pill);
+        font: var(--fede-caption);
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }
+    .fede-sync-pill::before {
+        content: '';
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+    .fede-sync-pill[data-state="online"]  { background: #dcfce7; color: #166534; }
+    .fede-sync-pill[data-state="online"]::before  { background: #16a34a; }
+    .fede-sync-pill[data-state="syncing"] { background: #dbeafe; color: #1e40af; }
+    .fede-sync-pill[data-state="syncing"]::before { background: #2563eb; animation: fede-pulse 1s infinite; }
+    .fede-sync-pill[data-state="offline"] { background: #f3f4f6; color: #4b5563; }
+    .fede-sync-pill[data-state="offline"]::before { background: #9ca3af; }
+    .fede-sync-pill[data-state="error"]   { background: #fee2e2; color: #991b1b; }
+    .fede-sync-pill[data-state="error"]::before   { background: #dc2626; }
+
+    @keyframes fede-pulse {
+        0%,100% { opacity: 1; }
+        50%      { opacity: 0.4; }
+    }
+
+    /* AlertCard */
+    .fede-alert {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px 14px;
+        border-radius: var(--fede-r-md);
+        border-left: 3px solid;
+        font-family: "Inter", system-ui, sans-serif;
+    }
+    .fede-alert[data-tone="info"]    { background: #eff6ff; border-color: var(--fede-info);    color: #1e3a8a; }
+    .fede-alert[data-tone="warning"] { background: #fffbeb; border-color: var(--fede-warning); color: #92400e; }
+    .fede-alert[data-tone="danger"]  { background: #fef2f2; border-color: var(--fede-danger);  color: #7f1d1d; }
+    .fede-alert-title { font: var(--fede-label); font-weight: 600; }
+    .fede-alert-body  { font: var(--fede-caption); opacity: 0.85; }
+    .fede-alert-cta   {
+        margin-top: 4px;
+        align-self: flex-start;
+        font: var(--fede-caption);
+        font-weight: 600;
+        text-decoration: underline;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        color: inherit;
+    }
+
+    /* ActionCard — acceso rápido a modos */
+    .fede-action-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+        border-radius: var(--fede-r-lg);
+        background: var(--fede-surface);
+        border: 1px solid var(--fede-border);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        position: relative;
+        overflow: hidden;
+        touch-action: manipulation;
+        font-family: "Inter", system-ui, sans-serif;
+    }
+    .fede-action-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--fede-accent, var(--fede-accent-pedido));
+    }
+    .fede-action-card:active {
+        transform: scale(0.97);
+        box-shadow: 0 0 0 2px var(--fede-accent, var(--fede-accent-pedido));
+    }
+    .fede-action-card-icon {
+        width: 36px; height: 36px;
+        border-radius: var(--fede-r-sm);
+        background: color-mix(in srgb, var(--fede-accent, var(--fede-accent-pedido)) 12%, transparent);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--fede-accent, var(--fede-accent-pedido));
+    }
+    .fede-action-card-label { font: var(--fede-label); font-weight: 600; color: var(--fede-on-surface); }
+    .fede-action-card-badge { font: var(--fede-caption); color: var(--fede-on-surface-3); }
+
+    /* Stepper FeDe */
+    .fede-stepper {
+        display: flex;
+        align-items: stretch;
+        border: 1.5px solid var(--fede-border);
+        border-radius: var(--fede-r-md);
+        overflow: hidden;
+        height: 48px;
+        background: var(--fede-surface);
+        font-family: "Inter", system-ui, sans-serif;
+    }
+    .fede-stepper-btn {
+        width: 48px; min-width: 48px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--fede-surface-sunken);
+        border: none;
+        font-size: 18px; font-weight: 600;
+        color: var(--fede-on-surface);
+        cursor: pointer;
+        transition: background 0.1s ease;
+        touch-action: manipulation;
+    }
+    .fede-stepper-btn:active { background: var(--fede-border); }
+    .fede-stepper-val {
+        flex: 1;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        border-left: 1.5px solid var(--fede-border);
+        border-right: 1.5px solid var(--fede-border);
+        font-size: 16px; font-weight: 600;
+        color: var(--fede-on-surface);
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+    }
+    .fede-stepper-unit {
+        font: var(--fede-caption);
+        color: var(--fede-on-surface-3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       FIN FEDE DESIGN SYSTEM v2
+       ═══════════════════════════════════════════════════════════════════════════ */
+
     html.theme-mcf {
+
         background: var(--mcf-bg) !important;
         min-height: 100vh !important;
         margin: 0;
