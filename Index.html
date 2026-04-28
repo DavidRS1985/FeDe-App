@@ -338,23 +338,42 @@
 
     <!-- CONTENEDOR PRINCIPAL APP -->
     <div id="app">
-        <main id="view-relevamiento" class="view scroll">
-            <div class="scroll-content">
+        <main id="view-relevamiento" class="view scroll" style="background:var(--fede-bg);">
+
+            <!-- AppBar modo operativo — fede-app-bar (sticky) -->
+            <!-- data-mode se hereda del padre via JS cuando setea body[data-mode] -->
+            <div class="fede-app-bar" id="modo-app-bar">
+                <button onclick="goHome()" class="fede-app-bar-btn" aria-label="Volver al inicio">
+                    <i data-lucide="chevron-left" style="width:16px;height:16px;color:var(--fede-on-surface-2);stroke-width:2;"></i>
+                </button>
+                <div class="fede-app-bar-mode-dot"></div>
+                <div class="fede-app-bar-title" id="modo-bar-title">Modo</div>
+                <span class="fede-app-bar-count" id="modo-bar-count" style="display:none;">0 items</span>
+                <button onclick="enterFullscreenMode()" class="fede-app-bar-btn" aria-label="Modo rápido">
+                    <i data-lucide="zap" style="width:15px;height:15px;color:var(--fede-on-surface-2);stroke-width:1.5;fill:currentColor;"></i>
+                </button>
+            </div>
+
+            <div class="scroll-content" style="padding-bottom: 100px;">
+                <!-- #cat-grid: JS genera los botones de categoría (.cat-btn) -->
                 <div id="cat-grid" class="cat-grid"></div>
-                
+
                 <div id="prod-section" class="hidden">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0 10px;padding:0 4px;">
-                        <h2 id="cat-title" style="font-family: inherit; font-size:24px; font-weight:900; text-transform:uppercase;">Categoría</h2>
-                        <button onclick="enterFullscreenMode()" class="btn btn-ghost mcf-mode-btn" aria-label="Activar modo rápido de carga">
-                            <i data-lucide="zap" style="width: 14px; fill: currentColor;"></i> MODO RÁPIDO
+                    <!-- Header de categoría con pill modo rápido -->
+                    <div class="fede-cat-header">
+                        <h2 id="cat-title">Categoría</h2>
+                        <button onclick="enterFullscreenMode()" class="fede-mode-pill" aria-label="Activar modo rápido">
+                            <i data-lucide="zap" style="width:12px;height:12px;fill:currentColor;stroke-width:1.5;"></i>
+                            Modo rápido
                         </button>
                     </div>
-                    
-                    <!-- Local Search removed by user request -->
-                    <div id="prod-list"></div>
+
+                    <!-- #prod-list: JS genera las filas de producto (.prod-row + .stepper) -->
+                    <div id="prod-list" style="margin: 12px 16px; border-radius: var(--fede-r-md); overflow:hidden; border: 1px solid var(--fede-border);"></div>
                 </div>
             </div>
         </main>
+
 
 
 
