@@ -1,4 +1,4 @@
-<? var st = (typeof theme !== 'undefined') ? theme : 'mcf'; ?>
+﻿<? var st = (typeof theme !== 'undefined') ? theme : 'mcf'; ?>
 <!DOCTYPE html>
 <html lang="es" data-icon-size="medium" class="theme-<?= st ?>">
 
@@ -93,161 +93,152 @@
         <div id="loader-status" class="loader-status">Sincronizando Trazabilidad...</div>
     </div>
 
-    <!-- PANTALLA HOME - REDISEÑO MODERNO -->
-    <div id="home" style="position:relative; min-height:100vh; background: transparent; overflow-x: hidden;">
+    <!-- PANTALLA HOME - FEDE DESIGN SYSTEM v2 -->
+    <div id="home" style="position:relative; min-height:100vh; overflow-x: hidden;">
 
-        <main id="home-content" class="view active"
-            style="display: flex; flex-direction: column; align-items: center; padding: 40px 24px; min-height: 100vh; position: relative; z-index: 10; pointer-events: auto !important;">
-
-            <!-- HEADER COMANDO (Technical Authority) -->
-            <header class="mcf-header mcf-reveal" style="position: relative; margin-bottom: 32px; width: 100%;">
-                <div class="mcf-header-controls" style="z-index: 10;">
-                    <button onclick="toggleAppFullscreen()" class="btn btn-ghost mcf-mini-btn" aria-label="Fullscreen">
-                        <i data-lucide="maximize"></i>
+        <main id="home-content" class="view active" style="
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto !important;
+            background: var(--fede-bg);
+            font-family: 'Inter', system-ui, sans-serif;
+        ">
+            <!-- ── HEADER ─────────────────────────────────────────────────── -->
+            <header style="padding:12px 16px 6px;display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <div id="home-date-display" style="font:var(--fede-caption);color:var(--fede-on-surface-3);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;"></div>
+                    <h1 id="app-title-display" style="font:var(--fede-title);color:var(--fede-on-surface);margin:2px 0 0;font-weight:600;">Federico</h1>
+                    <p id="app-subtitle-display" style="display:none;"></p>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="home-sync-pill" class="fede-sync-pill" data-state="online">Online</span>
+                    <button onclick="goTab('datos')" style="width:36px;height:36px;border-radius:var(--fede-r-sm);border:1px solid var(--fede-border);background:var(--fede-surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;" aria-label="Settings">
+                        <i data-lucide="settings" style="width:16px;height:16px;color:var(--fede-on-surface-2);stroke-width:1.5;"></i>
                     </button>
-                    <button onclick="goTab('datos')" class="btn btn-ghost mcf-mini-btn" aria-label="Settings">
-                        <i data-lucide="settings"></i>
+                    <button onclick="toggleAppFullscreen()" style="width:36px;height:36px;border-radius:var(--fede-r-sm);border:1px solid var(--fede-border);background:var(--fede-surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;" aria-label="Pantalla completa">
+                        <i data-lucide="maximize" style="width:16px;height:16px;color:var(--fede-on-surface-2);stroke-width:1.5;"></i>
                     </button>
                 </div>
-                <div style="position: relative; z-index: 5;">
-                    <h1 id="app-title-display" class="home-logo" style="margin: 0; line-height: 1;">FEDE</h1>
-                    <p id="app-subtitle-display" class="subtitle" style="margin: 0;">GASTRO PRO</p>
-                </div>
-                <!-- Background Accent Motif -->
-                <div class="mcf-ill motif-outline" style="position: absolute; top: -20px; left: -10px; width: 140px; height: 100px; opacity: 0.05; z-index: 1; border: none;"></div>
             </header>
 
-            <!-- PANEL DE ALERTAS OPERATIVAS (Technical Manifest) -->
-            <div id="home-alerts-card" class="card home-alerts-card mcf-reveal mcf-delay-1" style="margin-bottom: 24px; border-left: 6px solid var(--mcf-amber);">
-                <!-- Cargado dinámicamente por renderHomeSummary() -->
-            </div>
+            <!-- ── CONTENIDO ──────────────────────────────────────────────── -->
+            <div style="flex:1;overflow-y:auto;padding:10px 16px 120px;display:flex;flex-direction:column;gap:12px;">
 
-            <!-- ACTION GRID — High-Density 2-Column Surgical Layout (DESIGN.md §4) -->
-            <div class="ag-grid mcf-reveal mcf-delay-2">
+                <!-- Alertas operativas — JS inyecta fede-alert cards aquí -->
+                <div id="home-alerts-card"></div>
 
-                <!-- Fila 1: Análisis -->
-                <div onclick="enterDashboard()" class="ag-btn ag-roi" aria-label="Dashboard ROI">
-                    <div class="ag-accent ag-accent-slate"></div>
-                    <div class="ag-icon-wrap">
-                        <i data-lucide="bar-chart-3"></i>
-                    </div>
-                    <div class="ag-label-wrap">
-                        <span class="ag-label">Dashboard</span>
-                        <span class="ag-sublabel">ROI</span>
-                    </div>
-                </div>
-                <div onclick="goTab('historial')" class="ag-btn ag-hist" aria-label="Historial">
-                    <div class="ag-accent ag-accent-ink"></div>
-                    <div class="ag-icon-wrap">
-                        <i data-lucide="history"></i>
-                    </div>
-                    <div class="ag-label-wrap">
-                        <span class="ag-label">Historial</span>
-                        <span class="ag-sublabel">Registros</span>
+                <!-- Recovery Banner -->
+                <div id="draft-banner" class="hidden">
+                    <div class="fede-alert" data-tone="warning">
+                        <div class="fede-alert-title">Sesión sin terminar</div>
+                        <div class="fede-alert-body">Se detectó un borrador local sin sincronizar.</div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button onclick="restoreDraft()" style="font:var(--fede-label);font-weight:600;background:var(--fede-warning);color:#fff;border:none;border-radius:var(--fede-r-sm);padding:7px 14px;cursor:pointer;touch-action:manipulation;">Reanudar</button>
+                            <button onclick="discardDraft()" style="font:var(--fede-label);background:transparent;color:var(--fede-on-surface-2);border:1px solid var(--fede-border);border-radius:var(--fede-r-sm);padding:7px 14px;cursor:pointer;touch-action:manipulation;">Descartar</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Fila 2-3: Modos Operativos -->
-                <div onclick="initRelevamiento('pedido')" class="ag-btn ag-pedido" aria-label="Pedido">
-                    <div class="ag-accent ag-accent-rose"></div>
-                    <div class="ag-icon-wrap">
-                        <i data-lucide="shopping-cart"></i>
+                <!-- Sección operación -->
+                <div style="font:var(--fede-caption);color:var(--fede-on-surface-3);text-transform:uppercase;letter-spacing:0.6px;font-weight:600;padding:4px 0 0;">Operación</div>
+
+                <!-- Action Grid 2×2 -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+                    <div onclick="initRelevamiento('pedido')" data-mode="pedido" class="fede-action-card" role="button" aria-label="Modo Pedido" tabindex="0">
+                        <div class="fede-action-card-icon"><i data-lucide="shopping-cart" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
+                        <div>
+                            <div class="fede-action-card-label">Pedido</div>
+                            <div id="ag-badge-pedido" class="fede-action-card-badge">Relevamiento</div>
+                        </div>
                     </div>
-                    <div class="ag-label-wrap">
-                        <span class="ag-label">Pedido</span>
-                        <span class="ag-sublabel">Relevamiento</span>
+
+                    <div onclick="initRelevamiento('stock')" data-mode="stock" class="fede-action-card" role="button" aria-label="Modo Stock" tabindex="0">
+                        <div class="fede-action-card-icon"><i data-lucide="package" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
+                        <div>
+                            <div class="fede-action-card-label">Stock</div>
+                            <div id="ag-badge-stock" class="fede-action-card-badge">Control</div>
+                        </div>
                     </div>
-                </div>
-                <div onclick="initRelevamiento('stock')" class="ag-btn ag-stock" aria-label="Stock">
-                    <div class="ag-accent ag-accent-slate"></div>
-                    <div class="ag-icon-wrap">
-                        <i data-lucide="package"></i>
+
+                    <div onclick="initRelevamiento('recepcion')" data-mode="recepcion" class="fede-action-card" role="button" aria-label="Modo Recepción" tabindex="0">
+                        <div class="fede-action-card-icon"><i data-lucide="truck" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
+                        <div>
+                            <div class="fede-action-card-label">Recepción</div>
+                            <div id="ag-badge-recepcion" class="fede-action-card-badge">Ingreso</div>
+                        </div>
                     </div>
-                    <div class="ag-label-wrap">
-                        <span class="ag-label">Stock</span>
-                        <span class="ag-sublabel">Control</span>
+
+                    <div onclick="initRelevamiento('merma')" data-mode="merma" class="fede-action-card" role="button" aria-label="Modo Merma" tabindex="0">
+                        <div class="fede-action-card-icon"><i data-lucide="trash-2" style="width:18px;height:18px;stroke-width:1.5;"></i></div>
+                        <div>
+                            <div class="fede-action-card-label">Merma</div>
+                            <div id="ag-badge-merma" class="fede-action-card-badge">Descarte</div>
+                        </div>
                     </div>
-                </div>
-                <div onclick="initRelevamiento('recepcion')" class="ag-btn ag-recepc" aria-label="Recepción">
-                    <div class="ag-accent ag-accent-sage"></div>
-                    <div class="ag-icon-wrap">
-                        <i data-lucide="truck"></i>
-                    </div>
-                    <div class="ag-label-wrap">
-                        <span class="ag-label">Recepción</span>
-                        <span class="ag-sublabel">Ingreso</span>
-                    </div>
-                </div>
-                <div onclick="initRelevamiento('merma')" class="ag-btn ag-merma" aria-label="Merma">
-                    <div class="ag-accent ag-accent-mauve"></div>
-                    <div class="ag-icon-wrap">
-                        <i data-lucide="trash-2"></i>
-                    </div>
-                    <div class="ag-label-wrap">
-                        <span class="ag-label">Merma</span>
-                        <span class="ag-sublabel">Descarte</span>
-                    </div>
+
+                </div><!-- /Action Grid -->
+
+                <!-- Dashboard y Historial (accesos rápidos) -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <button onclick="enterDashboard()" style="display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--fede-surface);border:1px solid var(--fede-border);border-radius:var(--fede-r-md);cursor:pointer;touch-action:manipulation;font-family:inherit;" aria-label="Dashboard ROI">
+                        <i data-lucide="bar-chart-3" style="width:16px;height:16px;color:var(--fede-on-surface-3);stroke-width:1.5;"></i>
+                        <span style="font:var(--fede-label);font-weight:600;color:var(--fede-on-surface);">Dashboard</span>
+                    </button>
+                    <button onclick="goTab('historial')" style="display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--fede-surface);border:1px solid var(--fede-border);border-radius:var(--fede-r-md);cursor:pointer;touch-action:manipulation;font-family:inherit;" aria-label="Historial">
+                        <i data-lucide="history" style="width:16px;height:16px;color:var(--fede-on-surface-3);stroke-width:1.5;"></i>
+                        <span style="font:var(--fede-label);font-weight:600;color:var(--fede-on-surface);">Historial</span>
+                    </button>
                 </div>
 
-            </div>
-
-
-                <!-- NUEVA RESERVA — Quick Calendar Action -->
-                <button onclick="openReservationModal()" class="btn" style="width:100%;margin-bottom:16px;justify-content:center;gap:10px;" aria-label="Nueva reserva en calendario">
-                    <i data-lucide="calendar-plus" style="width:16px;height:16px;"></i>
-                    NUEVA RESERVA
+                <!-- Nueva Reserva -->
+                <button onclick="openReservationModal()" aria-label="Nueva reserva en calendario" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1px dashed var(--fede-border);border-radius:var(--fede-r-md);background:var(--fede-surface);color:var(--fede-on-surface-2);font:var(--fede-label);font-weight:600;cursor:pointer;touch-action:manipulation;font-family:inherit;">
+                    <i data-lucide="calendar-plus" style="width:16px;height:16px;stroke-width:1.5;"></i>
+                    Nueva reserva
                 </button>
 
-                <!-- TRABAJO PENDIENTE BANNER (Recovery Module) -->
-                <div id="draft-banner" class="mcf-draft-banner hidden mcf-reveal mcf-delay-4">
-                    <div class="mcf-ill motif-split" style="width: 52px; height: 52px; flex-shrink: 0; border: 2px solid var(--mcf-ink);">
-                        <div class="s1" style="background: var(--mcf-rose);"></div>
-                        <div class="s2" style="background: var(--mcf-ink);"></div>
-                    </div>
-                    <div>
-                        <div class="mcf-draft-title">Recuperar Sesión</div>
-                        <div class="mcf-draft-subtitle">Se detectó un borrador local sin sincronizar.</div>
-                        <div class="mcf-draft-btns" style="display:flex; gap:12px;">
-                            <button onclick="restoreDraft()" class="mcf-banner-btn mcf-banner-btn-rose">REANUDAR</button>
-                            <button onclick="discardDraft()" class="mcf-banner-btn mcf-banner-btn-ghost">DESCARTAR</button>
+                <!-- Realizar Pedido — CTA alta jerarquía, gestionado por JS -->
+                <button id="btn-realizar-pedido" onclick="openOrderModule()" class="hidden" aria-label="Realizar Pedido" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--fede-on-surface);border:none;border-radius:var(--fede-r-lg);cursor:pointer;touch-action:manipulation;font-family:inherit;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="width:40px;height:40px;border-radius:var(--fede-r-sm);background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;">
+                            <i data-lucide="truck" style="width:20px;height:20px;color:#fff;stroke-width:1.5;"></i>
+                        </div>
+                        <div style="text-align:left;">
+                            <div style="font:var(--fede-label);font-weight:700;color:#fff;">Realizar Pedido</div>
+                            <div style="font:var(--fede-caption);color:rgba(255,255,255,0.6);margin-top:1px;">Enviar a proveedor</div>
                         </div>
                     </div>
-                </div>
-
-                <!-- REALIZAR PEDIDO — CTA de alta jerarquía -->
-                <button id="btn-realizar-pedido" onclick="openOrderModule()" class="hidden" aria-label="Realizar Pedido">
-                    <div style="display:flex; align-items:center; gap:14px;">
-                        <div style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--mcf-paper); flex-shrink:0;">
-                            <i data-lucide="truck" style="width:24px; height:24px; color:var(--mcf-paper); stroke-width:1.5px;"></i>
-                        </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-                            <span style="font-family:var(--mcf-font-display); font-size:13px; font-weight:950; text-transform:uppercase; letter-spacing:1.5px; color:var(--mcf-paper); line-height:1;">Realizar Pedido</span>
-                            <span style="font-family:var(--mcf-font-display); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.55);">Enviar a proveedor</span>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-family:var(--mcf-font-display); font-size:9px; font-weight:950; text-transform:uppercase; letter-spacing:1.5px; color:var(--mcf-amber); padding:4px 10px; border:1px solid var(--mcf-amber);">EJECUTAR</span>
-                        <i data-lucide="chevron-right" style="width:18px; height:18px; color:var(--mcf-amber); stroke-width:2px;"></i>
-                    </div>
+                    <i data-lucide="chevron-right" style="width:18px;height:18px;color:rgba(255,255,255,0.6);stroke-width:2;"></i>
                 </button>
 
-
-
-
-
-
-            <!-- 3. Metadata Inferior (Technical Drawing Skin) -->
-            <div class="card motif-outline" style="margin-top: 40px; width: 100%; border: var(--border-main); background: var(--mcf-paper); overflow: hidden;">
-                <div style="padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--mcf-ink);"></i>
-                        <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 0.5px;">SISTEMA ACTIVO</span>
+                <!-- Sugerencia inteligente -->
+                <div style="background:var(--fede-surface);border:1px solid var(--fede-border);border-radius:var(--fede-r-md);padding:14px 16px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <i data-lucide="sparkles" style="width:16px;height:16px;color:var(--fede-on-surface);stroke-width:1.5;"></i>
+                        <span style="font:var(--fede-label);font-weight:600;color:var(--fede-on-surface);">Sugerencia inteligente</span>
                     </div>
-                    <div class="badge badge-dark" style="font-size: 10px; font-weight: 950; letter-spacing: 1px;">v11.4.5</div>
+                    <p id="smart-suggestion-text" style="font:var(--fede-body);color:var(--fede-on-surface-2);margin:0 0 12px;">Cargando sugerencia de pedido…</p>
+                    <div style="display:flex;gap:8px;">
+                        <button id="btn-smart-generate" onclick="openOrderModule()" style="font:var(--fede-label);font-weight:600;background:var(--fede-on-surface);color:#fff;border:none;border-radius:var(--fede-r-sm);padding:7px 14px;cursor:pointer;touch-action:manipulation;">Generar pedido</button>
+                        <button style="font:var(--fede-label);background:transparent;color:var(--fede-on-surface-2);border:1px solid var(--fede-border);border-radius:var(--fede-r-sm);padding:7px 14px;cursor:pointer;touch-action:manipulation;">No ahora</button>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Footer versión -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--fede-surface);border:1px solid var(--fede-border);border-radius:var(--fede-r-sm);">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <i data-lucide="shield-check" style="width:13px;height:13px;color:var(--fede-on-surface-3);stroke-width:1.5;"></i>
+                        <span style="font:var(--fede-caption);font-weight:600;color:var(--fede-on-surface-3);text-transform:uppercase;letter-spacing:0.4px;">Sistema activo</span>
+                    </div>
+                    <span style="font:var(--fede-caption);color:var(--fede-on-surface-3);">v11.4.5</span>
+                </div>
+
+            </div><!-- /scroll -->
         </main>
-    </div> <!-- End Home -->
+    </div><!-- End Home -->
 
     <!-- CONTENEDOR PRINCIPAL APP -->
     <div id="app">
