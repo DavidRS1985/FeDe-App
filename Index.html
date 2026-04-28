@@ -78,15 +78,19 @@
     </script>
 </head>
 
-<body class="theme-<?= st ?>">
+<body class="theme-<?= st ?> view-loader">
 
-    <!-- PANTALLA DE CARGA MODERNA -->
-    <div id="loader" role="status" aria-live="polite" aria-label="Cargando aplicación">
+    <!-- PANTALLA DE CARGA (Zen-Tech Blueprint) -->
+    <div id="loader" role="status" aria-live="polite" aria-label="Cargando sistema industrial">
         <div class="loader-wrapper">
-            <div class="loader-circle"></div>
-            <div id="loader-perc" class="loader-perc">0%</div>
+            <div class="loader-core">
+                <div class="c1"></div><div class="c2"></div>
+                <div class="c3"></div><div class="c4"></div>
+                <div class="loader-scanner"></div>
+            </div>
+            <div id="loader-perc" class="loader-perc">00%</div>
         </div>
-        <div id="loader-status" class="loader-status">Iniciando sistema...</div>
+        <div id="loader-status" class="loader-status">Sincronizando Trazabilidad...</div>
     </div>
 
     <!-- PANTALLA HOME - REDISEÑO MODERNO -->
@@ -95,86 +99,151 @@
         <main id="home-content" class="view active"
             style="display: flex; flex-direction: column; align-items: center; padding: 40px 24px; min-height: 100vh; position: relative; z-index: 10; pointer-events: auto !important;">
 
-            <!-- HEADER COMANDO (McFetridge Aesthetic) -->
-            <header class="mcf-header">
-                <div class="mcf-header-controls">
-                    <button onclick="toggleAppFullscreen()" class="mcf-mini-btn" aria-label="Fullscreen">
+            <!-- HEADER COMANDO (Technical Authority) -->
+            <header class="mcf-header mcf-reveal" style="position: relative; margin-bottom: 32px; width: 100%;">
+                <div class="mcf-header-controls" style="z-index: 10;">
+                    <button onclick="toggleAppFullscreen()" class="btn btn-ghost mcf-mini-btn" aria-label="Fullscreen">
                         <i data-lucide="maximize"></i>
                     </button>
-                    <button onclick="goTab('datos')" class="mcf-mini-btn" aria-label="Settings">
+                    <button onclick="goTab('datos')" class="btn btn-ghost mcf-mini-btn" aria-label="Settings">
                         <i data-lucide="settings"></i>
                     </button>
                 </div>
-                <h1 id="app-title-display" class="home-logo">FEDE</h1>
-                <p id="app-subtitle-display" class="subtitle">GASTRO PRO</p>
+                <div style="position: relative; z-index: 5;">
+                    <h1 id="app-title-display" class="home-logo" style="margin: 0; line-height: 1;">FEDE</h1>
+                    <p id="app-subtitle-display" class="subtitle" style="margin: 0;">GASTRO PRO</p>
+                </div>
+                <!-- Background Accent Motif -->
+                <div class="mcf-ill motif-outline" style="position: absolute; top: -20px; left: -10px; width: 140px; height: 100px; opacity: 0.05; z-index: 1; border: none;"></div>
             </header>
 
-            <!-- PANEL DE ALERTAS OPERATIVAS (Brutalismo Industrial) -->
-            <div id="home-alerts-card" class="home-alerts-card">
+            <!-- PANEL DE ALERTAS OPERATIVAS (Technical Manifest) -->
+            <div id="home-alerts-card" class="card home-alerts-card mcf-reveal mcf-delay-1" style="margin-bottom: 24px; border-left: 6px solid var(--mcf-amber);">
                 <!-- Cargado dinámicamente por renderHomeSummary() -->
             </div>
 
-            <!-- ACCIONES PRIMARIAS GRID -->
-            <div class="mcf-grid-v2">
-                <div onclick="enterDashboard()" class="mcf-action-btn mcf-btn-roi">
-                    <i data-lucide="bar-chart-3"></i>
-                    <span>Dash ROI</span>
-                </div>
-                <div onclick="goTab('historial')" class="mcf-action-btn mcf-btn-hist">
-                    <i data-lucide="history"></i>
-                    <span>Historial</span>
-                </div>
-            </div>
+            <!-- ACTION GRID — High-Density 2-Column Surgical Layout (DESIGN.md §4) -->
+            <div class="ag-grid mcf-reveal mcf-delay-2">
 
-            <!-- MODOS DE RELEVAMIENTO (2x2 Matrix) -->
-            <div class="mcf-grid-v2">
-                <div class="mcf-action-btn mcf-btn-pedido" onclick="initRelevamiento('pedido')">
-                    <i data-lucide="package"></i>
-                    <span>Pedido</span>
-                </div>
-                <div class="mcf-action-btn mcf-btn-stock" onclick="initRelevamiento('stock')">
-                    <i data-lucide="shelving-unit"></i>
-                    <span>Stock</span>
-                </div>
-                <div class="mcf-action-btn mcf-btn-recepc" onclick="initRelevamiento('recepcion')">
-                    <i data-lucide="truck"></i>
-                    <span>Recepción</span>
-                </div>
-                <div class="mcf-action-btn mcf-btn-merma" onclick="initRelevamiento('merma')">
-                    <i data-lucide="trash-2"></i>
-                    <span>Merma</span>
-                </div>
-            </div>
-
-                <!-- TRABAJO PENDIENTE BANNER -->
-                <div id="draft-banner" class="mcf-draft-banner hidden">
-                    <div class="mcf-draft-title">
-                        <i data-lucide="database" style="width:16px;"></i>
-                        Trabajo Pendiente
+                <!-- Fila 1: Análisis -->
+                <div onclick="enterDashboard()" class="ag-btn ag-roi" aria-label="Dashboard ROI">
+                    <div class="ag-accent ag-accent-slate"></div>
+                    <div class="ag-icon-wrap">
+                        <i data-lucide="bar-chart-3"></i>
                     </div>
-                    <div class="mcf-draft-btns">
-                        <button onclick="restoreDraft()" class="mcf-draft-btn resume">REANUDAR</button>
-                        <button onclick="discardDraft()" class="mcf-draft-btn discard">DESCARTAR</button>
+                    <div class="ag-label-wrap">
+                        <span class="ag-label">Dashboard</span>
+                        <span class="ag-sublabel">ROI</span>
+                    </div>
+                </div>
+                <div onclick="goTab('historial')" class="ag-btn ag-hist" aria-label="Historial">
+                    <div class="ag-accent ag-accent-ink"></div>
+                    <div class="ag-icon-wrap">
+                        <i data-lucide="history"></i>
+                    </div>
+                    <div class="ag-label-wrap">
+                        <span class="ag-label">Historial</span>
+                        <span class="ag-sublabel">Registros</span>
                     </div>
                 </div>
 
-                <!-- REALIZAR PEDIDO (Dinámico) -->
-                <button id="btn-realizar-pedido" onclick="openOrderModule()" class="mcf-btn-full hidden" style="border: var(--mcf-border); background: var(--mcf-amber); color: var(--mcf-ink); font-weight: 950; box-shadow: var(--mcf-shadow); text-transform: uppercase; letter-spacing: 1px; padding: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer;">
-                    <i data-lucide="truck" style="width: 24px; height: 24px;"></i>
-                    Realizar Pedido
+                <!-- Fila 2-3: Modos Operativos -->
+                <div onclick="initRelevamiento('pedido')" class="ag-btn ag-pedido" aria-label="Pedido">
+                    <div class="ag-accent ag-accent-rose"></div>
+                    <div class="ag-icon-wrap">
+                        <i data-lucide="shopping-cart"></i>
+                    </div>
+                    <div class="ag-label-wrap">
+                        <span class="ag-label">Pedido</span>
+                        <span class="ag-sublabel">Relevamiento</span>
+                    </div>
+                </div>
+                <div onclick="initRelevamiento('stock')" class="ag-btn ag-stock" aria-label="Stock">
+                    <div class="ag-accent ag-accent-slate"></div>
+                    <div class="ag-icon-wrap">
+                        <i data-lucide="package"></i>
+                    </div>
+                    <div class="ag-label-wrap">
+                        <span class="ag-label">Stock</span>
+                        <span class="ag-sublabel">Control</span>
+                    </div>
+                </div>
+                <div onclick="initRelevamiento('recepcion')" class="ag-btn ag-recepc" aria-label="Recepción">
+                    <div class="ag-accent ag-accent-sage"></div>
+                    <div class="ag-icon-wrap">
+                        <i data-lucide="truck"></i>
+                    </div>
+                    <div class="ag-label-wrap">
+                        <span class="ag-label">Recepción</span>
+                        <span class="ag-sublabel">Ingreso</span>
+                    </div>
+                </div>
+                <div onclick="initRelevamiento('merma')" class="ag-btn ag-merma" aria-label="Merma">
+                    <div class="ag-accent ag-accent-mauve"></div>
+                    <div class="ag-icon-wrap">
+                        <i data-lucide="trash-2"></i>
+                    </div>
+                    <div class="ag-label-wrap">
+                        <span class="ag-label">Merma</span>
+                        <span class="ag-sublabel">Descarte</span>
+                    </div>
+                </div>
+
+            </div>
+
+
+                <!-- NUEVA RESERVA — Quick Calendar Action -->
+                <button onclick="openReservationModal()" class="btn" style="width:100%;margin-bottom:16px;justify-content:center;gap:10px;" aria-label="Nueva reserva en calendario">
+                    <i data-lucide="calendar-plus" style="width:16px;height:16px;"></i>
+                    NUEVA RESERVA
+                </button>
+
+                <!-- TRABAJO PENDIENTE BANNER (Recovery Module) -->
+                <div id="draft-banner" class="mcf-draft-banner hidden mcf-reveal mcf-delay-4">
+                    <div class="mcf-ill motif-split" style="width: 52px; height: 52px; flex-shrink: 0; border: 2px solid var(--mcf-ink);">
+                        <div class="s1" style="background: var(--mcf-rose);"></div>
+                        <div class="s2" style="background: var(--mcf-ink);"></div>
+                    </div>
+                    <div>
+                        <div class="mcf-draft-title">Recuperar Sesión</div>
+                        <div class="mcf-draft-subtitle">Se detectó un borrador local sin sincronizar.</div>
+                        <div class="mcf-draft-btns" style="display:flex; gap:12px;">
+                            <button onclick="restoreDraft()" class="mcf-banner-btn mcf-banner-btn-rose">REANUDAR</button>
+                            <button onclick="discardDraft()" class="mcf-banner-btn mcf-banner-btn-ghost">DESCARTAR</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REALIZAR PEDIDO — CTA de alta jerarquía -->
+                <button id="btn-realizar-pedido" onclick="openOrderModule()" class="hidden" aria-label="Realizar Pedido">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--mcf-paper); flex-shrink:0;">
+                            <i data-lucide="truck" style="width:24px; height:24px; color:var(--mcf-paper); stroke-width:1.5px;"></i>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+                            <span style="font-family:var(--mcf-font-display); font-size:13px; font-weight:950; text-transform:uppercase; letter-spacing:1.5px; color:var(--mcf-paper); line-height:1;">Realizar Pedido</span>
+                            <span style="font-family:var(--mcf-font-display); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.55);">Enviar a proveedor</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-family:var(--mcf-font-display); font-size:9px; font-weight:950; text-transform:uppercase; letter-spacing:1.5px; color:var(--mcf-amber); padding:4px 10px; border:1px solid var(--mcf-amber);">EJECUTAR</span>
+                        <i data-lucide="chevron-right" style="width:18px; height:18px; color:var(--mcf-amber); stroke-width:2px;"></i>
+                    </div>
                 </button>
 
 
 
 
-            <!-- 3. Metadata Inferior (Brutalist Skin) -->
-            <div style="margin-top: 40px; width: 100%; border: var(--mcf-border); background: var(--mcf-paper); box-shadow: var(--mcf-shadow); font-family: inherit;">
-                <div style="padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+
+
+            <!-- 3. Metadata Inferior (Technical Drawing Skin) -->
+            <div class="card motif-outline" style="margin-top: 40px; width: 100%; border: var(--border-main); background: var(--mcf-paper); overflow: hidden;">
+                <div style="padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--mcf-ink);"></i>
                         <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 0.5px;">SISTEMA ACTIVO</span>
                     </div>
-                    <div style="font-size: 10px; font-weight: 950; background: var(--mcf-ink); color: var(--mcf-bg); padding: 4px 10px; letter-spacing: 1px;">v11.1.0</div>
+                    <div class="badge badge-dark" style="font-size: 10px; font-weight: 950; letter-spacing: 1px;">v11.4.5</div>
                 </div>
             </div>
         </main>
@@ -189,8 +258,8 @@
                 <div id="prod-section" class="hidden">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin:15px 0 10px;padding:0 4px;">
                         <h2 id="cat-title" style="font-family: inherit; font-size:24px; font-weight:900; text-transform:uppercase;">Categoría</h2>
-                        <button onclick="enterFullscreenMode()" class="mcf-mode-btn" aria-label="Activar modo rápido de carga">
-                            <i data-lucide="zap" style="width: 14px; fill: var(--mcf-ink);"></i> MODO RÁPIDO
+                        <button onclick="enterFullscreenMode()" class="btn btn-ghost mcf-mode-btn" aria-label="Activar modo rápido de carga">
+                            <i data-lucide="zap" style="width: 14px; fill: currentColor;"></i> MODO RÁPIDO
                         </button>
                     </div>
                     
@@ -229,12 +298,12 @@
                 </header>
 
                 <!-- 🎛️ MODE FILTERS (Industrial Toggles) -->
-                <div class="mcf-hist-filter-row">
-                    <button class="mcf-hist-filter-btn active" onclick="setHistFilter('mode', 'all', this)">TODO</button>
-                    <button class="mcf-hist-filter-btn mcf-btn-pedido" onclick="setHistFilter('mode', 'pedido', this)">PEDIDO</button>
-                    <button class="mcf-hist-filter-btn mcf-btn-stock" onclick="setHistFilter('mode', 'stock', this)">STOCK</button>
-                    <button class="mcf-hist-filter-btn mcf-btn-recepc" onclick="setHistFilter('mode', 'recepcion', this)">RECEP.</button>
-                    <button class="mcf-hist-filter-btn mcf-btn-merma" onclick="setHistFilter('mode', 'merma', this)">MERMA</button>
+                <div class="mcf-hist-filter-row mcf-gap-sm">
+                    <button class="btn btn-ink mcf-hist-filter-btn active" onclick="setHistFilter('mode', 'all', this)">TODO</button>
+                    <button class="btn btn-ghost mcf-hist-filter-btn mcf-btn-pedido" onclick="setHistFilter('mode', 'pedido', this)">PEDIDO</button>
+                    <button class="btn btn-ghost mcf-hist-filter-btn mcf-btn-stock" onclick="setHistFilter('mode', 'stock', this)">STOCK</button>
+                    <button class="btn btn-ghost mcf-hist-filter-btn mcf-btn-recepc" onclick="setHistFilter('mode', 'recepcion', this)">RECEP.</button>
+                    <button class="btn btn-ghost mcf-hist-filter-btn mcf-btn-merma" onclick="setHistFilter('mode', 'merma', this)">MERMA</button>
                 </div>
 
                 <!-- 📅 DATE FILTERS (McFetridge Surgical Strip) -->
@@ -258,12 +327,57 @@
                 <div class="mcf-hist-search-box">
                     <div class="mcf-deck-wrap">
                         <i data-lucide="search"></i>
-                        <input type="text" id="hist-search" placeholder="BUSCAR REPORTES..."
+                        <input type="text" id="hist-search" class="form-input" style="width:100%; border:none; background:transparent;" placeholder="BUSCAR REPORTES..."
                             oninput="setHistFilter('query', this.value)">
                     </div>
                 </div>
                 <div id="hist-list">
                     <!-- Historial here -->
+                </div>
+                <div class="bottom-spacer"></div>
+            </div>
+        </main>
+
+        <main id="view-portfolio" class="view scroll">
+            <div class="scroll-content">
+                <!-- 🏗️ PORTFOLIO HEADER (Phase 06 Layout) -->
+                <header class="mcf-header">
+                    <h2 class="home-logo">Portfolio</h2>
+                    <p class="subtitle">COMPOSICIÓN TÉCNICA & COMBINATORIA</p>
+                </header>
+
+                <div style="display: flex; flex-direction: column; gap: var(--s-xl); padding: var(--s-lg);">
+                    <!-- Card 1: Flat Figure (Rose) -->
+                    <div class="card" style="padding: var(--s-lg); display: flex; flex-direction: column; gap: 16px;">
+                        <div class="mcf-ill mcf-ill-md motif-figure" style="filter: hue-rotate(0deg);"></div>
+                        <div style="font-weight: 950; font-size: 14px; color: var(--mcf-rose); letter-spacing: 1px;">MOTIVO 01: FLAT FIGURE</div>
+                        <p style="font-size: 11px; color: var(--mcf-muted); line-height: 1.5;">La figura humana simplificada como actor principal de la operación. Geometría pura en tono Rose.</p>
+                        <button class="btn btn-rose" style="width: 100%;">DETALLES</button>
+                    </div>
+
+                    <!-- Card 2: Puzzle Grid (Sage) -->
+                    <div class="card" style="padding: var(--s-lg); display: flex; flex-direction: column; gap: 16px;">
+                        <div class="mcf-ill mcf-ill-md motif-puzzle">
+                            <div class="p2"></div><div class="p2"></div>
+                            <div class="p2"></div><div class="p2"></div>
+                        </div>
+                        <div style="font-weight: 950; font-size: 14px; color: var(--mcf-sage); letter-spacing: 1px;">MOTIVO 02: PUZZLE GRID</div>
+                        <p style="font-size: 11px; color: var(--mcf-muted); line-height: 1.5;">Composición de cuadrantes para categorización y estados binarios. Implementado en tono Sage.</p>
+                        <button class="btn btn-sage" style="width: 100%;">EXPLORAR</button>
+                    </div>
+
+                    <!-- Card 3: Repetition Field (Slate) -->
+                    <div class="card" style="padding: var(--s-lg); display: flex; flex-direction: column; gap: 16px;">
+                        <div class="mcf-ill mcf-ill-md motif-repetition">
+                            <div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div>
+                            <div style="background: var(--mcf-slate-lt);"></div><div class="accent" style="background: var(--mcf-slate);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div>
+                            <div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div>
+                            <div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div><div style="background: var(--mcf-slate-lt);"></div>
+                        </div>
+                        <div style="font-weight: 950; font-size: 14px; color: var(--mcf-slate); letter-spacing: 1px;">MOTIVO 03: REPETITION FIELD</div>
+                        <p style="font-size: 11px; color: var(--mcf-muted); line-height: 1.5;">Patrones de regularidad para visualización de densidad y trazabilidad. Ejecutado en tono Slate.</p>
+                        <button class="btn btn-slate" style="width: 100%;">MÉTRICAS</button>
+                    </div>
                 </div>
                 <div class="bottom-spacer"></div>
             </div>
@@ -284,23 +398,27 @@
 
                 <div id="dash-content">
                     <!-- 📊 KEY PERFORMANCE INDICATORS (Tectonic Grid) -->
-                    <div class="mcf-grid-v2">
-                        <div class="dash-card mcf-appear" style="--delay: 0.1s; background: var(--mcf-paper); border: 4px solid var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-ink);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                                <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mcf-ink-ghost);">Inventario</span>
-                                <i data-lucide="package" style="width: 24px; height: 24px; stroke-width: 1.2px; color: var(--mcf-ink);"></i>
+                    <div class="mcf-grid-v2 mcf-gap-lg">
+                        <div class="card dash-card mcf-appear" style="--delay: 0.1s;">
+                            <div class="card-body">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                    <span class="card-label">Inventario</span>
+                                    <i data-lucide="package" style="width: 24px; height: 24px; color: var(--mcf-ink);"></i>
+                                </div>
+                                <div id="card-totalitems" class="card-title" style="font-size: 42px;">—</div>
+                                <div class="card-desc">Items Activos</div>
                             </div>
-                            <div id="card-totalitems" style="font-family: var(--mcf-font-display); font-size: 42px; font-weight: 950; color: var(--mcf-ink); line-height: 1;">—</div>
-                            <div style="font-size: 10px; font-weight: 950; text-transform: uppercase; color: var(--mcf-ink-ghost); margin-top: 8px;">Items Activos</div>
                         </div>
 
-                        <div class="dash-card mcf-appear" style="--delay: 0.2s; background: var(--mcf-paper); border: 4px solid var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-sky);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                                <span style="font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mcf-ink-ghost);">Hoy</span>
-                                <i data-lucide="activity" style="width: 24px; height: 24px; stroke-width: 1.2px; color: var(--mcf-ink);"></i>
+                        <div class="card dash-card mcf-appear" style="--delay: 0.2s;">
+                            <div class="card-body">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                    <span class="card-label">Hoy</span>
+                                    <i data-lucide="activity" style="width: 24px; height: 24px; color: var(--mcf-ink);"></i>
+                                </div>
+                                <div id="card-movtoday" class="card-title" style="font-size: 42px;">—</div>
+                                <div class="card-desc">Movimientos</div>
                             </div>
-                            <div id="card-movtoday" style="font-family: var(--mcf-font-display); font-size: 42px; font-weight: 950; color: var(--mcf-ink); line-height: 1;">—</div>
-                            <div style="font-size: 10px; font-weight: 950; text-transform: uppercase; color: var(--mcf-ink-ghost); margin-top: 8px;">Movimientos</div>
                         </div>
                     </div>
 
@@ -374,33 +492,33 @@
                 </header>
 
                 <!-- 🪪 IDENTITY SECTION -->
-                <div class="mcf-set-card">
+                <div class="card mcf-set-card">
                     <div class="mcf-set-title">
                         <i data-lucide="signature"></i> Identidad de la App
                     </div>
                     <div style="display:grid; gap:20px;">
                         <div>
                             <label class="mcf-set-label">Nombre Principal</label>
-                            <input type="text" id="cfg-app-title" placeholder="FEDE GASTRO PRO" class="mcf-set-input" onchange="updateAppIdentity()">
+                            <input type="text" id="cfg-app-title" placeholder="FEDE GASTRO PRO" class="form-input mcf-set-input" onchange="updateAppIdentity()">
                         </div>
                         <div>
                             <label class="mcf-set-label">Subtítulo / Versión</label>
-                            <input type="text" id="cfg-app-subtitle" placeholder="v11.1.0" class="mcf-set-input" onchange="updateAppIdentity()">
+                            <input type="text" id="cfg-app-subtitle" placeholder="v11.1.0" class="form-input mcf-set-input" onchange="updateAppIdentity()">
                         </div>
                     </div>
                 </div>
 
                 <!-- 🎨 DESIGN SYSTEM SECTION -->
-                <div class="mcf-set-card">
+                <div class="card mcf-set-card">
                     <div class="mcf-set-title">
                         <i data-lucide="palette"></i> Sistema de Diseño
                     </div>
                     <div class="mcf-set-grid">
-                        <button id="theme-btn-zinc" class="mcf-set-theme-btn" onclick="setSystemTheme('zinc')" aria-label="Cambiar a tema Zinc">
+                        <button id="theme-btn-zinc" class="btn mcf-set-theme-btn" onclick="setSystemTheme('zinc')" aria-label="Cambiar a tema Zinc">
                             <div class="mcf-set-theme-preview" style="background: linear-gradient(135deg, #27272a, #09090b);"></div>
                             <div class="mcf-set-label" style="margin:0; text-align:center;">ZINC (CLASSIC)</div>
                         </button>
-                        <button id="theme-btn-mcf" class="mcf-set-theme-btn" onclick="setSystemTheme('mcf')" aria-label="Cambiar a tema McFetridge">
+                        <button id="theme-btn-mcf" class="btn mcf-set-theme-btn" onclick="setSystemTheme('mcf')" aria-label="Cambiar a tema McFetridge">
                             <div class="mcf-set-theme-preview" style="background: #F4F0E5; border-color: #1a1a1a;"></div>
                             <div class="mcf-set-label" style="margin:0; text-align:center;">McFETRIDGE</div>
                         </button>
@@ -411,7 +529,7 @@
                 </div>
 
                 <!-- 🚚 LOGISTICS SECTION -->
-                <div class="mcf-set-card">
+                <div class="card mcf-set-card">
                     <div class="mcf-set-title">
                         <i data-lucide="truck"></i> Logística y Pedidos
                     </div>
@@ -422,13 +540,13 @@
                 </div>
 
                 <!-- 📐 STRUCTURE SECTION -->
-                <div class="mcf-set-card">
+                <div class="card mcf-set-card">
                     <div class="mcf-set-title">
                         <i data-lucide="layout-grid"></i> Estructura de Categorías
                     </div>
                     <div style="display:flex; gap:10px; margin-bottom:20px;">
-                        <input type="text" id="new-cat-inp" placeholder="NUEVA CATEGORÍA..." class="mcf-set-input">
-                        <button class="mcf-set-action-btn" onclick="addCat()" style="width:64px; box-shadow:none;" aria-label="Añadir nueva categoría">
+                        <input type="text" id="new-cat-inp" placeholder="NUEVA CATEGORÍA..." class="form-input mcf-set-input">
+                        <button class="btn mcf-set-action-btn" onclick="addCat()" style="width:64px; box-shadow:none;" aria-label="Añadir nueva categoría">
                             <i data-lucide="plus"></i>
                         </button>
                     </div>
@@ -442,7 +560,7 @@
                     <div class="mcf-set-title">
                         <i data-lucide="shield-check"></i> Terminal de Diagnóstico
                     </div>
-                    <button class="mcf-set-action-btn" onclick="runSystemTest()">
+                    <button class="btn mcf-set-action-btn" onclick="runSystemTest()">
                         <i data-lucide="terminal"></i> EJECUTAR TEST DE INTEGRIDAD
                     </button>
                     <div id="test-results" class="hidden mcf-set-terminal">
@@ -479,14 +597,57 @@
 
         <!-- BARRA CONTEXTUAL: activa solo durante un relevamiento -->
         <footer class="ctx-bar hidden" id="ctx-bar" role="toolbar" aria-label="Acciones del relevamiento">
-            <button class="ctx-btn ctx-exit" onclick="goHome()" aria-label="Salir del relevamiento">
+            <button class="btn btn-ghost ctx-btn ctx-exit" onclick="goHome()" aria-label="Salir del relevamiento">
                 <i data-lucide="chevron-left" style="width:16px;"></i> SALIR
             </button>
-            <button class="ctx-btn ctx-send" id="ctx-listo-btn" onclick="openResumen()"
+            <button class="btn btn-rose ctx-btn ctx-send" id="ctx-listo-btn" onclick="openResumen()"
                 aria-label="Enviar relevamiento">
                 FINALIZAR <span class="ctx-count" id="ctx-count">0</span>
             </button>
     </footer>
+    <!-- MODAL NUEVA RESERVA -->
+    <div id="reservation-overlay" class="reservation-overlay hidden" onclick="closeReservationModal(event)">
+        <div class="reservation-modal" onclick="event.stopPropagation()">
+            <div class="reservation-modal-header">
+                <div>
+                    <div style="font-size:10px;font-weight:800;color:var(--mcf-amber);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;">GOOGLE CALENDAR</div>
+                    <div style="font-size:18px;font-weight:950;color:var(--mcf-paper);text-transform:uppercase;letter-spacing:-0.5px;">NUEVA RESERVA</div>
+                </div>
+                <button onclick="closeReservationModal()" class="mcf-mini-btn" style="border-color:var(--mcf-paper);color:var(--mcf-paper);box-shadow:2px 2px 0 var(--mcf-paper);" aria-label="Cerrar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="reservation-modal-body">
+                <div class="form-group">
+                    <label class="form-label">Título / Descripción</label>
+                    <input type="text" id="res-title" class="form-input" placeholder="ej. Reserva cumpleaños, Evento privado..." autocomplete="off">
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" id="res-date" class="form-input">
+                    </div>
+                    <div class="form-group" style="flex:1;" id="res-time-group">
+                        <label class="form-label">Hora</label>
+                        <input type="time" id="res-time" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:16px;">
+                    <input type="checkbox" id="res-allday" onchange="toggleReservationAllDay()" style="width:20px;height:20px;cursor:pointer;accent-color:var(--mcf-ink);">
+                    <label for="res-allday" style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--mcf-ink);cursor:pointer;">Todo el día</label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notas operativas</label>
+                    <textarea id="res-notes" class="form-input" rows="2" placeholder="ej. 12 pax, menú celíaco, contacto: Juan..." style="resize:none;font-family:inherit;"></textarea>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:8px;">
+                    <button onclick="closeReservationModal()" class="mcf-edit-btn-cancel" style="flex:1;">CANCELAR</button>
+                    <button onclick="submitReservation()" class="mcf-edit-btn-save" style="flex:2;" id="res-submit-btn">GUARDAR EN CALENDAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="sheet-overlay" class="shov" onclick="closeResumen(event)">
         <div class="sh" onclick="event.stopPropagation()">
             <div class="sh-handle"></div>
@@ -500,24 +661,24 @@
             <div id="merma-motivo-section" class="hidden" style="margin-bottom:24px;">
                 <label style="font-size:10px; font-weight:950; color:var(--mcf-ink-muted); text-transform:uppercase; letter-spacing:1.5px; display:block; margin-bottom:12px;">MOTIVO DE REGISTRO</label>
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                    <button class="motivo-btn" data-motivo="Vencimiento" onclick="selectMotivo(this)">Vencimiento</button>
-                    <button class="motivo-btn" data-motivo="Error elaboración" onclick="selectMotivo(this)">Error elaboración</button>
-                    <button class="motivo-btn" data-motivo="Rotura / Derrame" onclick="selectMotivo(this)">Rotura / Derrame</button>
-                    <button class="motivo-btn" data-motivo="Excedente" onclick="selectMotivo(this)">Excedente</button>
+                    <button class="btn btn-ghost motivo-btn" data-motivo="Vencimiento" onclick="selectMotivo(this)">Vencimiento</button>
+                    <button class="btn btn-ghost motivo-btn" data-motivo="Error elaboración" onclick="selectMotivo(this)">Error elaboración</button>
+                    <button class="btn btn-ghost motivo-btn" data-motivo="Rotura / Derrame" onclick="selectMotivo(this)">Rotura / Derrame</button>
+                    <button class="btn btn-ghost motivo-btn" data-motivo="Excedente" onclick="selectMotivo(this)">Excedente</button>
                 </div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:12px;">
-                <button class="mcf-sheet-btn mcf-btn-wa" onclick="sendWA()" aria-label="Enviar por WhatsApp">
+                <button class="btn btn-whatsapp btn-lg" onclick="sendWA()" aria-label="Enviar por WhatsApp" style="width: 100%;">
                     <i data-lucide="send" style="width:20px;"></i> ENVIAR WHATSAPP
                 </button>
-                <button class="mcf-sheet-btn mcf-btn-cloud" onclick="saveToCloud()" aria-label="Guardar en la nube">
+                <button class="btn btn-confirm btn-lg" onclick="saveToCloud()" aria-label="Guardar en la nube" style="width: 100%;">
                     <i data-lucide="cloud" style="width:20px;"></i> GUARDAR EN NUBE
                 </button>
-                <button class="mcf-sheet-btn mcf-btn-danger-alt" onclick="clearCurrentRel()" aria-label="Borrar relevamiento actual">
+                <button class="btn btn-delete btn-md" onclick="clearCurrentRel()" aria-label="Borrar relevamiento actual" style="width: 100%;">
                     <i data-lucide="trash-2" style="width:20px;"></i> BORRAR RELEVAMIENTO
                 </button>
-                <button class="mcf-sheet-btn mcf-btn-cancel-alt" onclick="closeResumen()" aria-label="Cerrar resumen">
+                <button class="btn btn-ghost btn-md" onclick="closeResumen()" aria-label="Cerrar resumen" style="width: 100%;">
                     CANCELAR OPERACIÓN
                 </button>
             </div>
@@ -542,8 +703,7 @@
                 style="width:100%;margin-bottom:24px;">
             <button class="wa-btn" onclick="handleEditCategory()"
                 style="background:var(--primary);color:#000;box-shadow:0 4px 16px rgba(234,88,12,0.3);">GUARDAR</button>
-            <button onclick="closeEditCatModal()"
-                style="width:100%;background:none;border:none;color:var(--dim);padding:15px;cursor:pointer;">CANCELAR</button>
+            <button onclick="closeEditCatModal()" class="mcf-edit-btn-cancel">CANCELAR</button>
         </div>
     </div>
 
@@ -556,7 +716,7 @@
 
             <!-- SELECCIÓN DE UNIDADES DESDE DB -->
             <div
-                style="background:var(--s2); border:1px solid var(--bd); padding:16px; border-radius:14px; margin-bottom:20px; box-shadow:inset 0 4px 10px rgba(0,0,0,0.1);">
+                style="background:var(--mcf-surface); border:4px solid var(--mcf-ink); padding:16px; border-radius:0; margin-bottom:20px; box-shadow:4px 4px 0px var(--mcf-ink);">
                 <div
                     style="font-size:11px; font-weight:800; color:var(--text); text-transform:uppercase; margin-bottom:12px; display:flex; gap:8px; align-items:center;">
                     <i data-lucide="scale" style="width:16px; color:var(--primary);"></i> Unidades Disponibles
@@ -571,13 +731,9 @@
                 </div>
             </div>
 
-            <button class="wa-btn" onclick="handleEditProduct()"
-                style="background:var(--primary);color:#000;box-shadow:0 4px 16px rgba(234,88,12,0.3);margin-bottom:12px;">GUARDAR
-                CAMBIOS</button>
-            <button class="wa-btn" onclick="handleDeleteProduct()"
-                style="background:none;border:1px solid var(--red);color:var(--red);">ELIMINAR PRODUCTO</button>
-            <button onclick="closeEditProdModal()"
-                style="width:100%;background:none;border:none;color:var(--dim);padding:15px;cursor:pointer;">CANCELAR</button>
+            <button class="mcf-edit-btn-save" onclick="handleEditProduct()" style="margin-bottom:12px;">GUARDAR CAMBIOS</button>
+            <button class="btn btn-delete" onclick="handleDeleteProduct()" style="width:100%;">ELIMINAR PRODUCTO</button>
+            <button onclick="closeEditProdModal()" class="mcf-edit-btn-cancel">CANCELAR</button>
         </div>
     </div>
 
@@ -596,10 +752,8 @@
                 <span style="font-size:11px; font-weight:700; color:var(--red);"><strong style="color:var(--red);">86</strong> = AGOTADO</span>
             </div>
 
-            <button class="wa-btn" onclick="saveManualEntry()"
-                style="background:var(--mcf-ink);color:var(--mcf-paper);box-shadow:6px 6px 0px var(--mcf-slate);">CONFIRMAR VALOR</button>
-            <button onclick="closeManualEntryModal()"
-                style="width:100%;background:none;border:none;color:var(--mcf-ink);padding:15px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:800;letter-spacing:1px;text-transform:uppercase;">CANCELAR</button>
+            <button class="mcf-edit-btn-save" onclick="saveManualEntry()">CONFIRMAR VALOR</button>
+            <button onclick="closeManualEntryModal()" class="mcf-edit-btn-cancel">CANCELAR</button>
         </div>
     </div>
 
@@ -622,7 +776,7 @@
             <!-- Selector de fecha -->
             <div class="mcf-edit-section">
                 <div class="mcf-edit-label">Fecha del registro</div>
-                <input type="datetime-local" id="edit-hist-date" class="mcf-edit-input">
+                <input type="datetime-local" id="edit-hist-date" class="form-input mcf-edit-input">
             </div>
 
             <div id="edit-hist-body" class="mcf-edit-list-container">
@@ -634,19 +788,19 @@
                 <div class="mcf-edit-label">Agregar ítem</div>
                 <div class="mcf-search-box">
                     <i data-lucide="search"></i>
-                    <input type="text" id="edit-hist-search" placeholder="BUSCAR PRODUCTO..."
+                    <input type="text" id="edit-hist-search" class="form-input" placeholder="BUSCAR PRODUCTO..."
                         oninput="searchEditHistProduct(this.value)" autocomplete="off">
                 </div>
                 <div id="edit-hist-search-results" class="mcf-edit-search-results"></div>
             </div>
 
             <!-- Botones de acción -->
-            <div class="mcf-modal-footer">
-                <button onclick="saveHistoryEdit()" class="mcf-edit-btn-save">ACTUALIZAR REGISTRO</button>
-                <button onclick="shareEditHistWA()" class="mcf-edit-btn-wa">
-                    <i data-lucide="message-circle" style="width:16px;"></i> ENVIAR POR WHATSAPP
+            <div class="mcf-modal-footer mcf-gap-md">
+                <button onclick="saveHistoryEdit()" class="btn btn-confirm btn-md" style="flex:1;">ACTUALIZAR</button>
+                <button onclick="shareEditHistWA()" class="btn btn-whatsapp btn-md" style="flex:1;">
+                    <i data-lucide="message-circle" style="width:16px;"></i> WHATSAPP
                 </button>
-                <button onclick="closeEditHistModal()" class="mcf-edit-btn-cancel">CANCELAR EDICIÓN</button>
+                <button onclick="closeEditHistModal()" class="btn btn-ghost btn-md" style="flex:1;">CANCELAR</button>
             </div>
         </div>
     </div>
@@ -679,9 +833,9 @@
                     <i data-lucide="plus"></i>
                 </button>
             </div>
-            <div class="prod-fs-action-row">
-                <button class="prod-fs-btn prod-fs-btn-86" onclick="fs86()">86</button>
-                <button class="prod-fs-btn prod-fs-btn-next" onclick="fsNext()">SIGUIENTE <i data-lucide="chevron-right"
+            <div class="prod-fs-action-row mcf-gap-md">
+                <button class="btn btn-slate prod-fs-btn prod-fs-btn-86" onclick="fs86()">86</button>
+                <button class="btn btn-rose prod-fs-btn prod-fs-btn-next" onclick="fsNext()">SIGUIENTE <i data-lucide="chevron-right"
                         style="width:24px;height:24px;vertical-align:middle;"></i></button>
             </div>
             <div class="prod-fs-nav">
@@ -706,9 +860,9 @@
             <h3 class="confirm-title" id="confirm-title">¿Estás seguro?</h3>
             <p class="confirm-desc" id="confirm-msg">Esta acción no se puede deshacer y los datos se eliminarán
                 permanentemente.</p>
-            <div class="confirm-actions">
-                <button class="confirm-btn-danger" id="confirm-ok">SÍ, ELIMINAR</button>
-                <button class="confirm-btn-cancel" id="confirm-cancel">CANCELAR</button>
+            <div class="confirm-actions mcf-gap-md">
+                <button class="btn btn-delete btn-md" id="confirm-ok" style="flex:1;">SÍ, ELIMINAR</button>
+                <button class="btn btn-ghost btn-md" id="confirm-cancel" style="flex:1;">CANCELAR</button>
             </div>
         </div>
     </div>
@@ -751,8 +905,8 @@
                 <h2 style="font-size:24px; font-weight:950; color:var(--mcf-ink); letter-spacing:-1px; margin:0;">GENERAR PEDIDO</h2>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
-                <div id="order-date-badge" style="font-size:10px; font-weight:900; padding:6px 12px; border-radius:20px; background:var(--s2); border:1.5px solid var(--bd2); color:var(--dim); text-transform:uppercase;"></div>
-                <button onclick="closeOrderModule()" style="background:var(--s2); border:1.5px solid var(--bd2); width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text);">
+                <div id="order-date-badge" style="font-size:10px; font-weight:900; padding:6px 12px; border-radius:0; background:var(--mcf-surface); border:2px solid var(--mcf-ink); color:var(--mcf-ink); text-transform:uppercase; letter-spacing:1px;"></div>
+                <button onclick="closeOrderModule()" class="mcf-mini-btn" style="width:40px; height:40px;">
                     <i data-lucide="x" style="width:18px;"></i>
                 </button>
             </div>
@@ -768,7 +922,7 @@
         <div id="order-content" class="hidden" style="flex:1; overflow-y:auto; padding:0 16px 120px;">
 
             <!-- ALERTA DE PRODUCTOS FALTANTES -->
-            <div id="order-missing-alert" class="hidden" style="margin-bottom:16px; padding:14px 16px; border-radius:14px; background:rgba(220,38,38,0.08); border:1.5px solid rgba(220,38,38,0.3); display:flex; gap:12px; align-items:flex-start;">
+            <div id="order-missing-alert" class="hidden" style="margin-bottom:16px; padding:14px 16px; border-radius:0; background:var(--mcf-rose-lt, rgba(212,147,122,0.15)); border:4px solid var(--mcf-rose); display:flex; gap:12px; align-items:flex-start; box-shadow:4px 4px 0px var(--mcf-rose);">
                 <i data-lucide="alert-triangle" style="width:18px; color:var(--red); flex-shrink:0; margin-top:1px;"></i>
                 <div>
                     <div style="font-size:12px; font-weight:900; color:var(--red); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Productos sin actividad reciente</div>
@@ -777,7 +931,7 @@
             </div>
 
             <!-- INFO BANNER -->
-            <div style="margin-bottom:16px; padding:12px 14px; border-radius:12px; background:var(--s1); border:1.5px solid var(--bd2); display:flex; gap:10px; align-items:center;">
+            <div style="margin-bottom:16px; padding:12px 14px; border-radius:0; background:var(--mcf-surface); border:2px solid var(--mcf-ink); display:flex; gap:10px; align-items:center;">
                 <i data-lucide="info" style="width:16px; color:var(--primary); flex-shrink:0;"></i>
                 <div style="font-size:11px; color:var(--dim); font-weight:600; line-height:1.5;">Basado en historial de recepciones de los últimos <strong style="color:var(--text);">30 días</strong>. Editá las cantidades antes de enviar.</div>
             </div>
@@ -795,10 +949,10 @@
         <!-- FOOTER FIJO -->
         <div class="order-footer">
             <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <button onclick="openOrderAnchorsConfig()" style="flex:1; padding:14px; border-radius:14px; background:var(--s2); border:1.5px solid var(--bd2); color:var(--dim); font-family:'Outfit',sans-serif; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; text-transform:uppercase;">
+                <button onclick="openOrderAnchorsConfig()" class="btn btn-ghost" style="flex:1; padding:14px;">
                     <i data-lucide="pin" style="width:14px;"></i> Anclajes
                 </button>
-                <button onclick="sendOrderByWA()" style="flex:3; padding:14px; border-radius:14px; background:#25D366; border:none; color:var(--mcf-paper); font-family:'Outfit',sans-serif; font-weight:900; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; text-transform:uppercase; box-shadow:0 4px 20px rgba(37,211,102,0.3);">
+                <button onclick="sendOrderByWA()" class="btn btn-sage" style="flex:3; padding:14px;">
                     <i data-lucide="send" style="width:16px;"></i> Enviar por WhatsApp
                 </button>
             </div>
@@ -816,22 +970,25 @@
             <div style="display:flex; gap:8px; margin-bottom:20px;">
                 <div style="position:relative; flex:1;">
                     <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; color:var(--primary); pointer-events:none;"></i>
-                    <input type="text" id="anchor-search-inp" placeholder="Buscar producto..." oninput="searchAnchorProduct(this.value)" autocomplete="off"
-                        style="width:100%; padding:12px 12px 12px 36px; border-radius:12px; border:1.5px solid var(--bd2); background:var(--s1); color:var(--text); font-family:'Outfit',sans-serif; font-size:13px; outline:none; box-sizing:border-box;">
+                    <input type="text" id="anchor-search-inp" class="form-input" placeholder="Buscar producto..." oninput="searchAnchorProduct(this.value)" autocomplete="off"
+                        style="width:100%; padding-left: 36px;">
                 </div>
             </div>
-            <div id="anchor-search-results" style="background:var(--s1); border-radius:12px; max-height:200px; overflow-y:auto; display:none; border:1.5px solid var(--bd2); margin-bottom:16px;"></div>
+            <div id="anchor-search-results" style="background:var(--mcf-bg); border-radius:0; max-height:200px; overflow-y:auto; display:none; border:4px solid var(--mcf-ink); margin-bottom:16px;"></div>
 
-            <button onclick="saveAnchors()" style="width:100%; padding:16px; border-radius:14px; background:var(--primary); color:#000; border:none; font-family:'Outfit',sans-serif; font-weight:900; font-size:14px; cursor:pointer; text-transform:uppercase; margin-bottom:10px;">GUARDAR ANCLAJES</button>
-            <button onclick="closeOrderAnchorsConfig()" style="width:100%; padding:12px; background:none; border:none; color:var(--dim); cursor:pointer; font-weight:700; font-size:13px;">CANCELAR</button>
+            <button onclick="saveAnchors()" class="btn btn-rose" style="width:100%; padding:16px; margin-bottom:10px;">GUARDAR ANCLAJES</button>
+            <button onclick="closeOrderAnchorsConfig()" class="btn btn-ghost" style="width:100%; padding:12px;">CANCELAR</button>
         </div>
     </div>
 
     <!-- SYNC OVERLAY -->
 
+    <!-- SYNC OVERLAY (Technical Diagnostic) -->
     <div id="sync-overlay" class="sync-overlay">
-        <div class="sync-spinner"></div>
-        <div class="sync-text" id="sync-text">SINCRONIZANDO...</div>
+        <div class="mcf-ill motif-outline" style="width: 80px; height: 60px; position: relative; margin-bottom: 20px;">
+            <div class="loader-scanner" style="box-shadow: 0 0 10px var(--mcf-amber);"></div>
+        </div>
+        <div class="sync-text" id="sync-text" style="font-family: 'Outfit', sans-serif; font-weight: 950; letter-spacing: 2px;">SINCRONIZANDO SISTEMA...</div>
     </div>
 
     <!-- 💬 INDUSTRIAL COMMAND DECK (Adaptive Global Dock) -->

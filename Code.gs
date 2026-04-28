@@ -305,22 +305,30 @@ function include(filename) {
 }
 
 /**
- * Obtiene eventos del Google Calendar primario para los próximos 7 días
+ * Obtiene eventos del Google Calendar (específico o primario) para los próximos 7 días
  */
-function getCalendarEvents() {
+function getCalendarEvents(targetId) {
   try {
+    var state = FeDe_Services.getInitialState(targetId);
+    var calId = state.config.calendar_id;
+    var cal = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
+    
+    if (!cal) throw new Error('No se pudo encontrar el calendario configurado.');
+
     var now = new Date();
     var nextWeek = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
-    var events = CalendarApp.getDefaultCalendar().getEvents(now, nextWeek);
+    var events = cal.getEvents(now, nextWeek);
     
     return {
       success: true,
       events: events.map(function(e) {
         return {
-          title: e.getTitle(),
-          start: e.getStartTime().toISOString(),
-          end: e.getEndTime().toISOString(),
-          isAllDay: e.isAllDayEvent()
+          title:       e.getTitle(),
+          start:       e.getStartTime().toISOString(),
+          end:         e.getEndTime().toISOString(),
+          isAllDay:    e.isAllDayEvent(),
+          description: e.getDescription() || '',
+          location:    e.getLocation()    || ''
         };
       })
     };
@@ -330,8 +338,51 @@ function getCalendarEvents() {
   }
 }
 
-/** 
- * Obtiene toda la configuración y el historial de una sola vez 
+/**
+ * Crea un evento en Google Calendar a partir de los datos de una reserva
+ */
+function saveReservation(params, targetId) {
+  try {
+    var state = FeDe_Services.getInitialState(targetId);
+    var calId = state.config.calendar_id;
+    var cal = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
+
+    if (!cal) throw new Error('No se pudo encontrar el calendario configurado.');
+
+    var title   = params.title   || 'Reserva';
+    var date    = params.date;    // 'YYYY-MM-DD'
+    var time    = params.time;    // 'HH:MM' — ignorado si isAllDay
+    var isAllDay = params.isAllDay || false;
+    var notes   = params.notes   || '';
+
+    var parts = date.split('-');
+    var year  = parseInt(parts[0], 10);
+    var month = parseInt(parts[1], 10) - 1;
+    var day   = parseInt(parts[2], 10);
+
+    var event;
+    if (isAllDay) {
+      event = cal.createAllDayEvent(title, new Date(year, month, day));
+    } else {
+      var timeParts = (time || '20:00').split(':');
+      var hour = parseInt(timeParts[0], 10);
+      var min  = parseInt(timeParts[1], 10);
+      var start = new Date(year, month, day, hour, min);
+      var end   = new Date(start.getTime() + 2 * 60 * 60 * 1000); // +2hs por defecto
+      event = cal.createEvent(title, start, end);
+    }
+
+    if (notes) event.setDescription(notes);
+
+    return { success: true, eventId: event.getId() };
+  } catch (err) {
+    Logger_FeDe.error('Error al guardar reserva en Calendar', { error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Obtiene toda la configuración y el historial de una sola vez
  * Refactorizado para usar Capa de Servicios y Repositorio
  */
 function getAppConfig(targetId) {
@@ -1020,15 +1071,4 @@ function getOrderAnchors(targetId) {
   }
 }
 
-/**
- * API GENÉRICA PARA GUARDAR CONFIGURACIÓN
- */
-function saveConfig(params, targetId) {
-  try {
-    var ss = FeDe_Repo.getSS(targetId);
-    FeDe_Repo.saveConfigValue(ss, params.key, params.value);
-    return { success: true };
-  } catch(e) {
-    return { success: false, error: e.message };
-  }
-}
+// saveConfig duplicado eliminado — la implementación completa está en línea ~396

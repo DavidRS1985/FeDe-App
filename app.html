@@ -456,14 +456,15 @@
     }
 
     function hideLoader() {
+        document.body.classList.remove('view-loader');
         var loader = document.getElementById('loader');
         if (loader) {
-            loader.style.opacity = '0';
-            loader.style.pointerEvents = 'none';
+            loader.classList.add('loader-hidden');
+            console.log('✓ Loader iniciado salida');
             setTimeout(function () {
                 loader.style.display = 'none';
-                console.log('✓ Loader ocultado');
-            }, 500);
+                console.log('✓ Loader finalizado (display:none)');
+            }, 700);
         } else {
             console.warn('⚠️ Elemento loader no encontrado');
         }
@@ -548,8 +549,15 @@
             toggleSync(true, 'Aplicando diseño...');
             // Guardar preferencia en configuración para persistencia global
             FeDe_API.call('saveConfig', { key: 'app_theme', value: themeName }, function(res) {
-                var base = window.location.href.split('?')[0];
-                window.location.href = base + '?style=' + themeName;
+                // Preservar todos los parámetros GAS existentes (user_content_key, etc.)
+                // y sólo actualizar/agregar el parámetro style
+                var href = window.location.href;
+                if (/[?&]style=/.test(href)) {
+                    href = href.replace(/([?&])style=[^&]*/g, '$1style=' + themeName);
+                } else {
+                    href = href + (href.indexOf('?') !== -1 ? '&' : '?') + 'style=' + themeName;
+                }
+                window.location.href = href;
             });
         });
     }
@@ -678,7 +686,7 @@
 
         // Limpiar temas y estados de vista
         document.body.classList.remove('theme-stock', 'theme-entrante', 'theme-pedido', 'theme-recepcion', 'theme-merma');
-        document.body.classList.remove('view-home', 'view-relevamiento', 'view-historial', 'view-dashboard', 'view-datos');
+        document.body.classList.remove('view-loader', 'view-home', 'view-relevamiento', 'view-historial', 'view-dashboard', 'view-datos');
         document.body.classList.add('view-home');
         
         currentMode = null;
@@ -809,7 +817,7 @@
         if (tabEl) tabEl.classList.add('active');
 
         // Sincronizar clase de vista en el body para CSS
-        document.body.classList.remove('view-home', 'view-relevamiento', 'view-historial', 'view-dashboard', 'view-datos');
+        document.body.classList.remove('view-loader', 'view-home', 'view-relevamiento', 'view-historial', 'view-dashboard', 'view-datos', 'view-portfolio');
         document.body.classList.add('view-' + id);
 
         // Si no estamos en el home, el tab de home no debe estar activo
@@ -821,6 +829,7 @@
 
         if (id === 'datos') {
             initOrderDaysUI();
+            initThemeUI();
         }
 
         var trig = document.getElementById('hdr-search-trigger');
@@ -891,7 +900,7 @@
             var styleStr = '--cchip-bg: ' + bgColor + ';';
             if (size) styleStr += ' --cat-icon-size: ' + size + 'px;';
             
-            return '<div class="cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" style="' + styleStr + '">' +
+            return '<div class="badge badge-outline cchip" data-cat="' + encoded + '" onclick="selectCatFromEl(this)" style="' + styleStr + '">' +
                 '<i data-lucide="' + icon + '"></i>' +
                 '<span>' + safeCat + '</span>' +
                 '</div>';
@@ -959,21 +968,21 @@
             '<!-- FILA 1: NOMBRE -->' +
             '<div class="pname">' + safeProd + '</div>' +
             
-            '<!-- FILA 2: STEPPER -->' +
+            '<!-- FILA 2: STEPPER (Surgical) -->' +
             '<div class="stepper">' +
-            '<button class="step-btn" data-prod="' + ep + '" data-dir="-1" onclick="stepEl(this)">−</button>' +
-            '<div class="pqty-box" onclick="manualEl(this)" data-prod="' + ep + '" style="touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; cursor:pointer;">' +
-            '<div>' + (is86 ? '86' : (d.qty || '0')) + '</div>' +
-            '<div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; margin-top:2px;">' + (is86 ? 'AGOTADO' : FeDe_Utils.sanitize(d.unit)) + '</div>' +
+            '<button class="stepper-btn" data-prod="' + ep + '" data-dir="-1" onclick="stepEl(this)">-</button>' +
+            '<div class="stepper-val" onclick="manualEl(this)" data-prod="' + ep + '">' +
+            '<div class="stepper-qty">' + (is86 ? '86' : (d.qty || '0')) + '</div>' +
+            '<div class="stepper-unit">' + (is86 ? 'AGOTADO' : FeDe_Utils.sanitize(d.unit)) + '</div>' +
             '</div>' +
-            '<button class="step-btn" data-prod="' + ep + '" data-dir="1" onclick="stepEl(this)">+</button>' +
+            '<button class="stepper-btn" data-prod="' + ep + '" data-dir="1" onclick="stepEl(this)">+</button>' +
             '</div>' +
 
             '<!-- FILA 3: UNIDADES (Flow-based) -->' +
             '<div class="unit-row">' +
             prodUnits.map(function (u) {
                 var safeUnit = FeDe_Utils.sanitize(u);
-                return '<div class="uchip ' + (d.unit === u ? 'active' : '') + ' ' + (u === lastUsed ? 'is-preferred' : '') + '" ' +
+                return '<div class="badge badge-ghost uchip ' + (d.unit === u ? 'active' : '') + ' ' + (u === lastUsed ? 'is-preferred' : '') + '" ' +
                     'data-prod="' + ep + '" data-unit="' + encodeURIComponent(u) + '" onclick="setUnitEl(this)">' +
                     (u === lastUsed ? '<i data-lucide="sparkles" style="width:12px;height:12px;margin-right:4px;"></i>' : '') + safeUnit +
                     '</div>';
@@ -1495,15 +1504,15 @@
                 html += '<div class="tree-leaf">' +
                     '<span>' + safeLeaf + '</span>' +
                     '<div style="display:flex;gap:5px;">' +
-                    '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="openEditProdEl(this)" class="tree-leaf-btn-edit">✏️</button>' +
+                    '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="openEditProdEl(this)" class="btn btn-ghost tree-leaf-btn-edit">✏️</button>' +
                     '<button data-cat="' + ec + '" data-prod="' + ep + '" onclick="deleteProdEl(this)" style="background:none;border:none;color:var(--red);padding:5px;cursor:pointer;">✕</button>' +
                     '</div>' +
                     '</div>';
             }
 
             html += '<div class="tree-add-form">' +
-                '<input data-cat="' + ec + '" class="tree-add-inp tree-prod-inp" placeholder="Nuevo producto..." onkeydown="if(event.key===\'Enter\') addProdInp(this)">' +
-                '<button data-cat="' + ec + '" onclick="addProdBtn(this)" class="tree-add-btn">+ ADD</button>' +
+                '<input data-cat="' + ec + '" class="form-input tree-add-inp tree-prod-inp" placeholder="Nuevo producto..." onkeydown="if(event.key===\'Enter\') addProdInp(this)">' +
+                '<button data-cat="' + ec + '" onclick="addProdBtn(this)" class="btn btn-slate tree-add-btn">+ ADD</button>' +
                 '</div>' +
                 '</div>' +
                 '</div>';
@@ -1714,7 +1723,7 @@
                             recentList.innerHTML = `<div style="font-size:11px; color:var(--mcf-ink-ghost); padding:16px; border:2px dashed var(--mcf-ink-ghost); width:100%; text-align:center; font-weight:950;">NO HAY CAMBIOS RECIENTES</div>`;
                         } else {
                             recentList.innerHTML = data.recentCats.map(c => `
-                                <div class="dash-recent-chip">
+                                <div class="badge badge-outline dash-recent-chip">
                                     <span>${c.name}</span>
                                     <span>${formatRelativeTime(c.ts)}</span>
                                 </div>
@@ -1756,7 +1765,7 @@
                         const dateStr = start.toLocaleDateString([], {day: 'numeric', month: 'short'});
                         
                         return `
-                            <div class="cal-event-card">
+                            <div class="card cal-event-card">
                                 <div class="cal-event-time">${dateStr} — ${timeStr}</div>
                                 <div class="cal-event-title">${e.title}</div>
                             </div>
@@ -1865,9 +1874,9 @@
                 var r = limitedResults[k];
                 var safeP = FeDe_Utils.sanitize(r.p);
                 var safeCat = FeDe_Utils.sanitize(r.cat);
-                searchHtml += '<div class="gs-item" onclick="promptGlobalLoad(\'' + encodeURIComponent(r.p) + '\', \'' + encodeURIComponent(r.cat) + '\')">' +
+                searchHtml += '<div class="btn btn-ghost gs-item" onclick="promptGlobalLoad(\'' + encodeURIComponent(r.p) + '\', \'' + encodeURIComponent(r.cat) + '\')" style="width:100%; justify-content:space-between; padding:12px 16px;">' +
                     '<span class="gs-pname">' + safeP + '</span>' +
-                    '<span class="gs-pcat">' + safeCat + '</span>' +
+                    '<span class="gs-pcat badge badge-ghost">' + safeCat + '</span>' +
                     '</div>';
             }
             resEl.innerHTML = searchHtml;
@@ -2127,9 +2136,9 @@
             var dateStr = dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }).toUpperCase();
             var timeStr = dateObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
-            html += '<div class="mcf-hist-card mcf-appear mcf-hist-card-' + _m + '" style="--delay: ' + (i * 0.05) + 's" onclick="toggleHistExpand(\'' + h.id + '\')">' +
+            html += '<div class="card mcf-hist-card mcf-appear mcf-hist-card-' + _m + '" style="--delay: ' + (i * 0.05) + 's" onclick="toggleHistExpand(\'' + h.id + '\')">' +
                 '<div class="mcf-hist-header">' +
-                '<div class="mcf-hist-mode-tag" style="border-color: ' + _color + '; background: ' + _color + '15; color: ' + _color + '">' + _label + '</div>' +
+                '<div class="badge mcf-hist-mode-tag" style="border-color: ' + _color + '; background: ' + _color + '15; color: ' + _color + '">' + _label + '</div>' +
                 '<div class="mcf-hist-time">' + dateStr + ' // ' + timeStr + '</div>' +
                 '</div>' +
                 '<div class="mcf-hist-title">' + h.total + ' ITEMS REGISTRADOS</div>' +
@@ -2138,12 +2147,10 @@
                 '<!-- Dynamic Items -->' +
                 '</div>' +
                 '<div style="display:flex; gap:10px; margin-top:8px;">' +
-                '<button onclick="event.stopPropagation(); editHistEntry(\'' + h.id + '\')" ' +
-                'style="flex:1; background:var(--mcf-bg); border:2px solid var(--mcf-ink); padding:8px; font-size:10px; font-weight:950; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">' +
+                '<button onclick="event.stopPropagation(); editHistEntry(\'' + h.id + '\')" class="btn btn-ghost" style="flex:1; font-size:10px;">' +
                 '<i data-lucide="edit-3" style="width:12px;"></i> Editar' +
                 '</button>' +
-                '<button onclick="event.stopPropagation(); deleteHistEntryManual(\'' + h.id + '\')" ' +
-                'style="flex:1; background:var(--mcf-bg); border:2px solid var(--mcf-ink); color:var(--mcf-rose); padding:8px; font-size:10px; font-weight:950; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">' +
+                '<button onclick="event.stopPropagation(); deleteHistEntryManual(\'' + h.id + '\')" class="btn btn-ghost" style="flex:1; color:var(--mcf-rose); font-size:10px;">' +
                 '<i data-lucide="trash-2" style="width:12px;"></i> Eliminar' +
                 '</button>' +
                 '</div>' +
@@ -2151,7 +2158,7 @@
         }
 
         if (totalFound > histLimit) {
-            html += '<button onclick="histLimit += 20; renderHistory(true)" class="mcf-hist-filter-btn" style="width:100%; margin-top:20px; background:var(--mcf-surface);">' +
+            html += '<button onclick="histLimit += 20; renderHistory(true)" class="btn btn-ghost mcf-hist-filter-btn" style="width:100%; margin-top:20px;">' +
                 'MOSTRAR MÁS (' + (totalFound - histLimit) + ' RESTANTES)' +
                 '</button>';
         }
@@ -2187,7 +2194,7 @@
 
             el.innerHTML = '<div style="display:flex; flex-direction:column; gap:0;">' + itemsHtml + '</div>' +
                 '<button onclick="sendHistWA(\'' + h.id + '\'); event.stopPropagation();" ' +
-                'class="mcf-hist-filter-btn active" style="width:100%; margin-top:20px; --btn-active-bg: #25D366; --btn-active-color: white;">' +
+                'class="btn btn-sage mcf-hist-filter-btn active" style="width:100%; margin-top:20px;">' +
                 '<i data-lucide="message-circle" style="width:14px; margin-right:8px;"></i> COMPARTIR POR WA' +
                 '</button>';
             setTimeout(function () { refreshIcons(); }, 50);
@@ -2498,21 +2505,15 @@
         var el = document.getElementById('home-alerts-card');
         if (!el) return;
 
+        var isHidden = el.dataset.spHidden === '1';
         var alerts = [];
         var now = new Date();
 
-        // 1. Trabajo Pendiente (Draft) - HIGHEST PRIORITY
+        // 1. Trabajo Pendiente (Draft)
         var draftStr = localStorage.getItem('fede_draft');
         var draft = draftStr ? JSON.parse(draftStr) : null;
         if (draft && draft.items && Object.keys(draft.items).length > 0) {
-            alerts.unshift({ 
-                icon: 'database', 
-                color: 'var(--mcf-amber)', 
-                title: 'RESUMIR TRABAJO', 
-                desc: 'Borrador sin guardar detectado', 
-                urgent: true,
-                action: 'restoreDraft'
-            });
+            alerts.unshift({ icon: 'database', color: 'var(--mcf-amber)', title: 'RESUMIR TRABAJO', desc: 'Borrador sin guardar', urgent: true, action: 'restoreDraft()' });
         }
 
         // 2. Próximo Pedido Programado
@@ -2523,95 +2524,105 @@
             var diff = (orderDays[i] - todayIdx + 7) % 7;
             if (diff < minDiff) minDiff = diff;
         }
+        var orderDesc = minDiff === 0 ? 'HACER HOY' : (minDiff === 1 ? 'MAÑANA' : 'EN ' + minDiff + ' DÍAS');
+        alerts.push({ icon: minDiff === 0 ? 'truck' : 'clock', color: 'var(--mcf-amber)', title: 'Próximo Pedido', desc: orderDesc, urgent: minDiff <= 1, action: "initRelevamiento('pedido')" });
 
-        var orderTitle = 'Próximo Pedido';
-        var orderDesc = minDiff === 0 ? 'HACER HOY' : (minDiff === 1 ? 'MAÑANA' : 'En ' + minDiff + ' días');
-        alerts.push({ 
-            icon: minDiff === 0 ? 'truck' : 'clock', 
-            color: 'var(--mcf-amber)', 
-            title: orderTitle, 
-            desc: orderDesc, 
-            urgent: minDiff <= 1,
-            action: "initRelevamiento('pedido')" 
-        });
-
-        // 3. Control obligatorio (ej: Domingos y Martes)
+        // 3. Control obligatorio
         var day = now.getDay();
         if (day === 0 || day === 2) {
             var isDone = sessionStorage.getItem('fede_stock_done') === 'CONTROL DE STOCK';
             if (!isDone) {
-                alerts.push({ 
-                    icon: 'alert-octagon', 
-                    color: 'var(--mcf-slate)', 
-                    title: 'Control Obligatorio', 
-                    desc: 'Falta registro de hoy', 
-                    urgent: true,
-                    action: "initRelevamiento('stock')"
-                });
+                alerts.push({ icon: 'alert-octagon', color: 'var(--mcf-slate)', title: 'Control Obligatorio', desc: 'Falta registro de hoy', urgent: true, action: "initRelevamiento('stock')" });
             }
         }
 
         // 4. Feriados próximos
         if (typeof getUpcomingHolidays === 'function') {
             var upcoming = getUpcomingHolidays(7);
-            for (var i = 0; i < upcoming.length; i++) {
-                var h = upcoming[i];
+            for (var j = 0; j < upcoming.length; j++) {
+                var h = upcoming[j];
                 var diffMs = h.date.getTime() - now.getTime();
                 var daysLeft = Math.ceil(diffMs / (1000 * 3600 * 24));
-                var timeText = daysLeft <= 0 ? 'Es hoy' : (daysLeft === 1 ? 'Mañana' : 'En ' + daysLeft + ' días');
+                var timeText = daysLeft <= 0 ? 'HOY' : (daysLeft === 1 ? 'MAÑANA' : 'EN ' + daysLeft + ' DÍAS');
                 alerts.push({ icon: 'calendar', color: 'var(--mcf-rose)', title: h.name, desc: timeText });
             }
         }
 
-        // Render with Toggle Support
-        var isExpanded = el.classList.contains('expanded');
-        var html = '<div class="mcf-status-title" onclick="toggleHomeAlerts()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
-                   '<div style="display:flex; align-items:center; gap:12px;">' +
-                   '<i data-lucide="zap" style="width:16px;"></i>' +
+        // 5. Eventos de Google Calendar (reservas, fechas clave)
+        if (window._gcalEvents && window._gcalEvents.length > 0) {
+            for (var ci = 0; ci < window._gcalEvents.length; ci++) {
+                var ev = window._gcalEvents[ci];
+                var evStart = new Date(ev.start);
+                var evDiffMs = evStart.getTime() - now.getTime();
+                var evDaysLeft = Math.ceil(evDiffMs / (1000 * 3600 * 24));
+                var evTime = ev.isAllDay ? '' : evStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                var evWhen = evDaysLeft <= 0 ? 'HOY' : (evDaysLeft === 1 ? 'MAÑANA' : 'EN ' + evDaysLeft + ' DÍAS');
+                // Primera línea de descripción como contexto operativo (pax, notas, etc.)
+                var evNote = ev.description ? ev.description.split('\n')[0].trim() : '';
+                var evDesc = evWhen + (evTime ? ' · ' + evTime : '') + (evNote ? ' · ' + evNote : '');
+                alerts.push({
+                    icon: 'calendar-check',
+                    color: 'var(--mcf-sage)',
+                    title: ev.title,
+                    desc: evDesc,
+                    urgent: evDaysLeft <= 1
+                });
+            }
+        }
+
+        var chevron = isHidden ? 'chevron-down' : 'chevron-up';
+
+        // Header siempre visible con estilos inline para máxima robustez
+        var html = '<div onclick="toggleHomeAlerts()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--mcf-ink);color:var(--mcf-bg);font-family:inherit;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:2px;cursor:pointer;user-select:none;-webkit-user-select:none;">' +
+                   '<div style="display:flex;align-items:center;gap:10px;">' +
+                   '<i data-lucide="zap" style="width:16px;height:16px;color:var(--mcf-amber);"></i>' +
                    'ALERTAS OPERATIVAS' +
                    '</div>' +
-                   '<i data-lucide="' + (isExpanded ? 'chevron-up' : 'chevron-down') + '" style="width:16px; opacity:0.5;"></i>' +
+                   '<i data-lucide="' + chevron + '" style="width:16px;height:16px;opacity:0.6;color:var(--mcf-bg);"></i>' +
                    '</div>';
 
-        html += '<div id="home-alerts-content" class="mcf-alerts-collapsible ' + (isExpanded ? 'expanded' : '') + '">';
-        
+        // Contenido — visible/oculto según isHidden
+        html += '<div style="display:' + (isHidden ? 'none' : 'block') + ';">';
+
         if (alerts.length === 0) {
-            html += '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 20px; text-align:center;">' +
-                '<div style="font-size:32px; margin-bottom:12px;">✅</div>' +
-                '<div style="font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:1px;">Operación al día</div>' +
+            html += '<div style="padding:32px 20px;text-align:center;">' +
+                '<div style="font-size:12px;font-weight:900;text-transform:uppercase;color:var(--mcf-ink);letter-spacing:1px;">Operación al día</div>' +
+                '<div style="font-size:10px;color:var(--mcf-muted);margin-top:4px;text-transform:uppercase;">No hay alertas pendientes</div>' +
                 '</div>';
         } else {
-            alerts.forEach(function(al) {
-                var clickAttr = al.action ? 'onclick="' + al.action + '"' : '';
-                html += '<div class="home-alert-item ' + (al.urgent ? 'urgent' : '') + '" ' + clickAttr + ' style="' + (al.action ? 'cursor:pointer;' : '') + '">' +
-                    '<div class="home-alert-icon" style="background:' + al.color + '22; border: 2px solid ' + al.color + ';">' +
-                    '<i data-lucide="' + al.icon + '" style="width:22px; color:var(--mcf-ink);"></i>' +
+            for (var k = 0; k < alerts.length; k++) {
+                var al = alerts[k];
+                var rowBg = al.urgent ? 'var(--mcf-amber-lt)' : 'var(--mcf-paper)';
+                var clickStr = al.action ? ' onclick="' + al.action + '"' : '';
+                var cursor = al.action ? 'cursor:pointer;' : '';
+                html += '<div' + clickStr + ' style="' + cursor + 'display:flex;flex-direction:row;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid var(--mcf-border);background:' + rowBg + ';box-sizing:border-box;">' +
+                    '<div style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--mcf-ink);background:' + al.color + '22;">' +
+                    '<i data-lucide="' + al.icon + '" style="width:18px;height:18px;color:var(--mcf-ink);"></i>' +
                     '</div>' +
-                    '<div class="home-alert-text">' +
-                    '<div class="home-alert-title">' + al.title + '</div>' +
-                    '<div class="home-alert-desc">' + al.desc + '</div>' +
+                    '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.8px;color:var(--mcf-ink);line-height:1.2;">' + al.title + '</div>' +
+                    '<div style="font-size:10px;font-weight:700;color:var(--mcf-muted);text-transform:uppercase;margin-top:3px;">' + al.desc + '</div>' +
                     '</div>' +
-                    (al.urgent ? '<div class="mcf-urgent-indicator">!</div>' : '') +
+                    (al.urgent ? '<div style="font-size:10px;font-weight:950;padding:2px 8px;background:var(--mcf-rose);color:var(--mcf-ink);border:1.5px solid var(--mcf-ink);flex-shrink:0;">!</div>' : '') +
                     '</div>';
-            });
+            }
         }
-        html += '</div>';
 
+        html += '</div>';
         el.innerHTML = html;
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     /**
-     * Alterna la visibilidad de las alertas operativas
+     * Alterna la visibilidad del Status Panel
      */
     function toggleHomeAlerts() {
         var el = document.getElementById('home-alerts-card');
         if (!el) return;
-        el.classList.toggle('expanded');
-        
-        // Refrescar icono de flecha
+        el.dataset.spHidden = (el.dataset.spHidden === '1') ? '0' : '1';
         renderHomeSummary();
     }
+
 
     function runSystemTest() {
         var resEl = document.getElementById('test-results');
@@ -2669,20 +2680,26 @@
      * 📅 INTEGRACIÓN CON GOOGLE CALENDAR
      */
     function refreshGCalendar() {
-        var listEl = document.getElementById('dash-gcal-list');
-        if (!listEl) return;
-
         FeDe_API.call('getCalendarEvents', null, function(res) {
-            if (!res.success || !res.events || res.events.length === 0) {
+            // Cachear para renderHomeSummary
+            window._gcalEvents = (res.success && res.events) ? res.events : [];
+
+            // Actualizar panel de alertas del Home con los datos frescos
+            try { renderHomeSummary(); } catch(e) {}
+
+            // Si el widget del dashboard está visible, actualizarlo también
+            var listEl = document.getElementById('dash-gcal-list');
+            if (!listEl) return;
+
+            if (window._gcalEvents.length === 0) {
                 listEl.innerHTML = '<div style="font-size:12px; color:var(--muted); text-align:center; padding:10px;">No hay eventos esta semana</div>';
                 return;
             }
 
             var html = '';
-            res.events.forEach(function(ev) {
+            window._gcalEvents.forEach(function(ev) {
                 var start = new Date(ev.start);
-                var timeStr = ev.isAllDay ? "TODO EL DÍA" : start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
+                var timeStr = ev.isAllDay ? 'TODO EL DÍA' : start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 html += '<div class="gcal-item">' +
                             '<div class="gcal-time">' + timeStr + '</div>' +
                             '<div class="gcal-title">' + ev.title + '</div>' +
@@ -2690,7 +2707,77 @@
             });
             listEl.innerHTML = html;
         }, function(err) {
-            listEl.innerHTML = '<div style="font-size:10px; color:var(--red); text-align:center;">Error: Google Calendar no responde</div>';
+            window._gcalEvents = [];
+            var listEl = document.getElementById('dash-gcal-list');
+            if (listEl) listEl.innerHTML = '<div style="font-size:10px; color:var(--red); text-align:center;">Error: Google Calendar no responde</div>';
+        });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MÓDULO RESERVAS — GOOGLE CALENDAR
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    function openReservationModal() {
+        var overlay = document.getElementById('reservation-overlay');
+        if (!overlay) return;
+        // Set today as default date
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var dd = String(today.getDate()).padStart(2, '0');
+        var dateInput = document.getElementById('res-date');
+        if (dateInput) dateInput.value = yyyy + '-' + mm + '-' + dd;
+        var timeInput = document.getElementById('res-time');
+        if (timeInput) timeInput.value = '20:00';
+        var titleInput = document.getElementById('res-title');
+        if (titleInput) { titleInput.value = ''; titleInput.focus(); }
+        var notesInput = document.getElementById('res-notes');
+        if (notesInput) notesInput.value = '';
+        var allDay = document.getElementById('res-allday');
+        if (allDay) allDay.checked = false;
+        var timeGroup = document.getElementById('res-time-group');
+        if (timeGroup) timeGroup.style.display = '';
+        overlay.classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeReservationModal(e) {
+        if (e && e.target !== document.getElementById('reservation-overlay')) return;
+        document.getElementById('reservation-overlay').classList.add('hidden');
+    }
+
+    function toggleReservationAllDay() {
+        var allDay = document.getElementById('res-allday');
+        var timeGroup = document.getElementById('res-time-group');
+        if (timeGroup) timeGroup.style.display = allDay && allDay.checked ? 'none' : '';
+    }
+
+    function submitReservation() {
+        var title = (document.getElementById('res-title').value || '').trim();
+        var date  = document.getElementById('res-date').value;
+        var time  = document.getElementById('res-time').value;
+        var notes = (document.getElementById('res-notes').value || '').trim();
+        var allDay = document.getElementById('res-allday').checked;
+
+        if (!title) { toast('Ingresa un título para la reserva'); return; }
+        if (!date)  { toast('Selecciona una fecha'); return; }
+
+        var btn = document.getElementById('res-submit-btn');
+        if (btn) btn.disabled = true;
+
+        FeDe_API.call('saveReservation', { title: title, date: date, time: time, isAllDay: allDay, notes: notes }, function(res) {
+            if (btn) btn.disabled = false;
+            if (res && res.success) {
+                toast('Reserva guardada en Calendar ✓');
+                document.getElementById('reservation-overlay').classList.add('hidden');
+                window._gcalEvents = null;
+                refreshGCalendar();
+            } else {
+                toast('Error al guardar: ' + (res && res.message ? res.message : 'Error desconocido'));
+            }
+        }, function(err) {
+            if (btn) btn.disabled = false;
+            toast('Error de conexión con Calendar');
         });
     }
 
@@ -2921,12 +3008,12 @@
                         chipColor = '#6b7280'; chipBg = 'rgba(107,114,128,0.1)'; chipBorder = 'rgba(107,114,128,0.25)';
                     }
                     var stockUnitStr = item.lastStockUnit || item.unit || '';
-                    stockChip = '<div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; border-radius:6px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; color:' + chipColor + '; font-size:10px; font-weight:800;">' +
-                        '📦 Stock: ' + item.lastStock + ' ' + stockUnitStr +
+                    stockChip = '<div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; border-radius:0; background:' + chipBg + '; border:2px solid ' + chipBorder + '; color:' + chipColor + '; font-size:10px; font-weight:800; font-family:var(--mcf-font-display);">' +
+                        'Stock: ' + item.lastStock + ' ' + stockUnitStr +
                         ' <span style="opacity:0.7; font-weight:600;">(hace ' + stockDaysAgo + 'd)</span>' +
                         '</div>';
                 } else {
-                    stockChip = '<div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; border-radius:6px; background:rgba(220,38,38,0.07); border:1px solid rgba(220,38,38,0.2); color:#9ca3af; font-size:10px; font-weight:700;">📦 Sin stock registrado</div>';
+                    stockChip = '<div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; padding:3px 8px; border-radius:0; background:transparent; border:2px solid var(--mcf-ink); color:var(--mcf-ink-ghost); font-size:10px; font-weight:800; opacity:0.5;">Sin stock registrado</div>';
                 }
 
                 var subText = item.unit;
@@ -3062,7 +3149,7 @@
             html += '<div class="anchor-config-row">';
             html += '<div style="flex:1; font-size:13px; font-weight:700; color:var(--text);">' + p + '</div>';
             html += '<div style="font-size:11px; color:#ca8a04; font-weight:800; margin-right:8px;">' + a.qty + ' ' + (a.unit || '') + '</div>';
-            html += '<button onclick="removeAnchor(\'' + encodeURIComponent(p) + '\')" style="background:rgba(220,38,38,0.1); border:1px solid rgba(220,38,38,0.3); color:var(--red); width:28px; height:28px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center;">';
+            html += '<button onclick="removeAnchor(\'' + encodeURIComponent(p) + '\')" style="background:transparent; border:2px solid var(--mcf-rose); color:var(--mcf-rose); width:28px; height:28px; border-radius:0; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:2px 2px 0px var(--mcf-rose);">';
             html += '<i data-lucide="x" style="width:12px;"></i></button>';
             html += '</div>';
         }

@@ -8,50 +8,68 @@
     /* 📱 MOBILE ALIGNMENT & SAFE AREAS */
     /* 🏗️ INDUSTRIAL TOKENS - UNIFIED MCFETRIDGE SYSTEM */
     :root {
-        /* Palette */
-        --mcf-paper: #FDFBF7;
-        --mcf-bg: #F4F0E5;
-        --mcf-surface: #E8E3D6;
-        --mcf-ink: #1A1816;
-        --mcf-ink-muted: #6E6A62;
-        --mcf-ink-ghost: #9E9A92;
-        --mcf-rose: #D4937A;
-        --mcf-rose-lt: #EDD9CF;
-        --mcf-sage: #8BA87A;
-        --mcf-sage-lt: #CEDFCA;
-        --mcf-slate: #4E637A;
-        --mcf-slate-lt: #C8D1DC;
-        --mcf-mauve: #A884A6;
-        --mcf-mauve-lt: #DDD0DC;
-        --mcf-amber: #C89A42;
-        --mcf-amber-lt: #F0DAAA;
-        --mcf-sky: #7AB8D4;
-        --mcf-sky-lt: #CFE6ED;
+        /* 🎨 Color Tokens (Phase 03) */
+        --mcf-rose:       #D4937A;
+        --mcf-rose-lt:    #EDD9CF;
+        --mcf-sage:       #8BA87A;
+        --mcf-sage-lt:    #CEDFCA;
+        --mcf-slate:      #4E637A;
+        --mcf-slate-lt:   #C8D1DC;
+        --mcf-mauve:      #A884A6;
+        --mcf-mauve-lt:   #DDD0DC;
+        --mcf-amber:      #C89A42;
+        --mcf-amber-lt:   #F0DAAA;
+        
+        --mcf-ink:        #1A1816;
+        --mcf-muted:      #6E6A62;
+        --mcf-ghost:      #9E9A92;
+        --mcf-border:     #C8C4BB;
+        --mcf-surface:    #E8E3D6;
+        --mcf-bg:         #F4F0E5;
 
-        /* Typography */
-        --mcf-font-display: 'Outfit', sans-serif;
-        --mcf-font-body: 'DM Sans', sans-serif;
+        /* 🖋️ Typography (Phase 03) */
+        --font-family:    'Helvetica Neue', Arial, sans-serif;
+        --font-size-display: 60px;
+        --font-size-title:    34px;
+        --font-size-h:        20px;
+        --font-size-body:     15px;
+        --font-size-small:    13px;
+        --font-size-label:    11px;
+        
+        --font-weight-regular: 400;
+        --font-weight-bold:    700;
+        --font-weight-xbold:   800;
 
-        /* Layout & Spacing */
-        --mcf-tab-height: 70px;
-        --mcf-header-height: 64px;
-        --mcf-view-pt: 10px;  /* Default Top Padding */
-        --mcf-view-pb: 80px;  /* Default Bottom Padding (Command Deck Safe Area) */
-        --mcf-border: 4px solid var(--mcf-ink);
-        --mcf-shadow: 6px 6px 0px var(--mcf-ink);
-        --mcf-shadow-lg: 10px 10px 0px var(--mcf-ink);
-        --mcf-gap: 16px;
-        --mcf-snap: cubic-bezier(0.4, 0, 0.2, 1);
-        --mcf-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+        /* 📏 Spacing (Phase 03) */
+        --s-xs:   4px;
+        --s-sm:   8px;
+        --s-md:   12px;
+        --s-lg:   16px;
+        --s-xl:   24px;
+        --s-2xl:  32px;
+        --s-3xl:  48px;
 
+        /* 🧱 Borders (The Absolute Rule) */
+        --border-main:    1.5px solid var(--mcf-ink);
+        --border-light:   1px solid var(--mcf-border);
+        
         /* Bridge to Legacy */
-        --text: var(--mcf-ink);
-        --text2: var(--mcf-ink-muted);
-        --primary: var(--mcf-amber);
         --bg: var(--mcf-bg);
-        --bd: var(--mcf-ink);
-        --r: 0px !important;
-        --r2: 0px !important;
+        --text: var(--mcf-ink);
+
+        /* 🔧 TOKENS FALTANTES (completados) */
+        --mcf-paper:       #F8F5EE;
+        --mcf-font-display: 'Helvetica Neue', Arial, sans-serif;
+        --mcf-ink-ghost:   var(--mcf-ghost);
+        --mcf-ink-muted:   var(--mcf-muted);
+        --mcf-shadow:      4px 4px 0px var(--mcf-ink);
+        --mcf-shadow-lg:   8px 8px 0px var(--mcf-ink);
+        --mcf-sky:         #7AB8D4;
+        --mcf-sky-lt:      #C8E0EC;
+        --mcf-fluid:       cubic-bezier(0.4, 0, 0.2, 1);
+        --mcf-tab-height:  70px;
+        --mcf-view-pt:     0px;
+        --mcf-font-body:   'Helvetica Neue', Arial, sans-serif;
     }
 
     html.theme-mcf {
@@ -65,7 +83,7 @@
         background: var(--mcf-bg) !important;
         background-image: none !important;
         color: var(--mcf-ink) !important;
-        font-family: var(--mcf-font-body) !important;
+        font-family: var(--font-family) !important;
         margin: 0;
         width: 100%;
         min-height: 100vh;
@@ -78,6 +96,7 @@
         box-sizing: border-box !important;
         border-radius: 0 !important;
         -webkit-tap-highlight-color: transparent;
+        box-shadow: none !important; /* Technical Drawing: Shadow-less */
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -89,9 +108,320 @@
         }
     }
 
-    body.theme-mcf :focus-visible:not(#hdr-search-input):not(#hist-search) {
-        outline: 4px solid var(--mcf-amber) !important;
-        outline-offset: 4px !important;
+    /* ——————————————————————————————————————————————————————————————————————————
+       PHASE 05: ILLUSTRATION SYSTEM (McFetridge Motifs)
+       —————————————————————————————————————————————————————————————————————————— */
+    .mcf-ill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+        background: var(--mcf-surface);
+        border: var(--border-main);
+    }
+
+    /* Scales */
+    .mcf-ill-sm { width: 120px; height: 120px; }
+    .mcf-ill-md { width: 180px; height: 180px; }
+    .mcf-ill-lg { width: 280px; height: 280px; }
+
+    /* Motif 01: Flat Figure */
+    .motif-figure {
+        background-image: url("data:image/svg+xml,%3Csvg width='160' height='200' viewBox='0 0 160 200' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='80' cy='50' r='30' fill='%23D4937A' stroke='%231A1816' stroke-width='1.5'/%3E%3Crect x='55' y='85' width='50' height='80' fill='%23D4937A' stroke='%231A1816' stroke-width='1.5'/%3E%3Crect x='20' y='95' width='35' height='12' fill='%23D4937A' stroke='%231A1816' stroke-width='1.5'/%3E%3Crect x='105' y='95' width='35' height='12' fill='%23D4937A' stroke='%231A1816' stroke-width='1.5'/%3E%3Crect x='50' y='168' width='20' height='25' fill='%23D4937A' stroke='%231A1816' stroke-width='1.5'/%3E%3Crect x='90' y='168' width='20' height='25' fill='%23D4937A' stroke='%231A1816' stroke-width='1.5'/%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    /* Motif 02: Puzzle Grid */
+    .motif-puzzle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+    .motif-puzzle div { border: 0.75px solid var(--mcf-ink); }
+    .motif-puzzle .p1 { background: var(--mcf-rose); }
+    .motif-puzzle .p2 { background: var(--mcf-sage); }
+    .motif-puzzle .p3 { background: var(--mcf-slate); }
+    .motif-puzzle .p4 { background: var(--mcf-mauve); }
+
+    /* Motif 03: Repetition Field */
+    .motif-repetition {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 16px;
+    }
+    .motif-repetition div {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 1.5px solid var(--mcf-ink);
+        background: var(--mcf-slate-lt);
+    }
+    .motif-repetition div.accent { background: var(--mcf-amber); }
+
+    /* Motif 04: Split Space */
+    .motif-split {
+        display: flex;
+        border: 1.5px solid var(--mcf-ink);
+    }
+    .motif-split .left, .motif-split .right {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .motif-split .left { background: var(--mcf-paper); border-right: 1.5px solid var(--mcf-ink); }
+    .motif-split .right { background: var(--mcf-ink); }
+
+    /* Motif 05: Outline Emphasis */
+    .motif-outline {
+        border: 1.5px solid var(--mcf-ink);
+        position: relative;
+    }
+    .motif-outline::before, .motif-outline::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 2px;
+        background: var(--mcf-rose);
+    }
+    .motif-outline::before { top: 10px; left: 10px; }
+    .motif-outline::after { bottom: 10px; right: 10px; background: var(--mcf-sage); }
+
+    /* Motif 06: Layered Composition */
+    .motif-layered {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .motif-layered .layer {
+        border: 1.5px solid var(--mcf-ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .motif-layered .l1 { width: 90%; height: 90%; background: var(--mcf-slate-lt); }
+    .motif-layered .l2 { width: 70%; height: 70%; background: var(--mcf-mauve-lt); }
+    .motif-layered .l3 { width: 40%; height: 40%; background: var(--mcf-rose-lt); }
+
+
+    /* 🧱 PHASE 04: COMPONENT LIBRARY (Normalized Modules) */
+    /* 🎛️ PHASE 04: COMPONENT LIBRARY (High-Precision Controls) */
+    .btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        border: 4px solid var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        color: var(--mcf-ink) !important;
+        padding: 10px 20px !important;
+        font-size: 13px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.2px !important;
+        cursor: pointer !important;
+        transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        user-select: none !important;
+        white-space: nowrap !important;
+        border-radius: 0 !important;
+        font-family: var(--mcf-font-display) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        aspect-ratio: unset !important;
+        width: auto !important;
+        flex-direction: row !important;
+    }
+
+    .btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        background: var(--mcf-paper) !important;
+    }
+    .btn:hover { background: var(--mcf-paper) !important; }
+
+    /* Button Sizes */
+    .btn-sm {
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+        gap: 4px !important;
+        border-width: 2px !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+    }
+    .btn-sm:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+    .btn-md { padding: 10px 20px; font-size: 13px; }
+    .btn-lg { padding: 14px 28px; font-size: 14px; }
+
+    /* Button Variants */
+    /* rose/sage/mauve usan --mcf-ink (ratio ≥4.5:1) en lugar de --mcf-bg (ratio ~2.3:1) */
+    .btn-rose  { background: var(--mcf-rose); color: var(--mcf-ink); border-color: var(--mcf-ink); }
+    .btn-sage  { background: var(--mcf-sage); color: var(--mcf-ink); border-color: var(--mcf-ink); }
+    .btn-slate { background: var(--mcf-slate); color: var(--mcf-bg); border-color: var(--mcf-ink); }
+    .btn-mauve { background: var(--mcf-mauve); color: var(--mcf-ink); border-color: var(--mcf-ink); }
+    .btn-amber { background: var(--mcf-amber); color: var(--mcf-ink); border-color: var(--mcf-ink); }
+    .btn-ink   { background: var(--mcf-ink); color: var(--mcf-bg); border-color: var(--mcf-ink); }
+    .btn-ghost { background: transparent !important; border-color: var(--mcf-ink) !important; color: var(--mcf-ink) !important; box-shadow: 4px 4px 0px rgba(26, 24, 22, 0.35) !important; }
+    .btn-ghost:hover { background: rgba(26, 24, 22, 0.05) !important; }
+
+    /* Context-Specific Styling */
+    .btn-whatsapp { background: var(--mcf-sage); color: var(--mcf-bg); border-width: 2px; }
+    .btn-delete   { background: transparent !important; color: var(--mcf-rose) !important; border-color: var(--mcf-rose) !important; box-shadow: 4px 4px 0px var(--mcf-rose) !important; }
+    .btn-confirm  { background: var(--mcf-ink) !important; color: var(--mcf-bg) !important; }
+
+    /* ── REALIZAR PEDIDO — CTA de alta jerarquía ──
+       Barra de comando de ancho completo, diseño "Terminal de Despacho"
+       Sin clases btn-amber/btn-confirm para evitar conflictos */
+    #btn-realizar-pedido {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 16px 20px !important;
+        margin-bottom: 8px !important;   /* Garantía anti-clipping */
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-amber) !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        box-sizing: border-box !important;
+        min-height: 72px !important;
+        transition: transform 0.12s var(--mcf-snap), box-shadow 0.12s var(--mcf-snap) !important;
+        font-family: var(--mcf-font-display) !important;
+        outline: none !important;
+    }
+    #btn-realizar-pedido:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-amber) !important;
+    }
+    /* El estado .hidden lo gestiona JS — no sobreescribir display cuando está oculto */
+    #btn-realizar-pedido.hidden {
+        display: none !important;
+    }
+
+
+
+    /* Utility Buttons */
+    .mcf-mini-btn { width: 40px; height: 40px; padding: 0 !important; flex-shrink: 0; }
+    .mcf-mini-btn i { width: 16px; height: 16px; }
+
+
+    .badge {
+        display: inline-block !important;
+        padding: var(--s-xs) var(--s-md) !important;
+        font-size: var(--font-size-label) !important;
+        font-weight: var(--font-weight-xbold) !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        border: var(--border-main) !important;
+        border-radius: 0 !important;
+    }
+
+    /* rose/sage/mauve/amber usan --mcf-ink para texto (WCAG AA) */
+    .badge-rose  { background: var(--mcf-rose) !important; color: var(--mcf-ink) !important; border-color: var(--mcf-rose) !important; }
+    .badge-sage  { background: var(--mcf-sage) !important; color: var(--mcf-ink) !important; border-color: var(--mcf-sage) !important; }
+    .badge-slate { background: var(--mcf-slate) !important; color: var(--mcf-bg) !important; border-color: var(--mcf-slate) !important; }
+    .badge-mauve { background: var(--mcf-mauve) !important; color: var(--mcf-ink) !important; border-color: var(--mcf-mauve) !important; }
+    .badge-amber { background: var(--mcf-amber) !important; color: var(--mcf-ink) !important; border-color: var(--mcf-amber) !important; }
+    .badge-ink   { background: var(--mcf-ink) !important; color: var(--mcf-bg) !important; border-color: var(--mcf-ink) !important; }
+
+    /* Surgical Stepper */
+    .stepper { 
+        display: flex; 
+        align-items: center; 
+        border: var(--border-main); 
+        background: var(--mcf-bg); 
+        height: 52px;
+        overflow: hidden;
+    }
+    .stepper-btn { 
+        width: 48px; 
+        height: 100%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        background: transparent; 
+        border: none; 
+        cursor: pointer; 
+        color: var(--mcf-ink); 
+        font-size: 20px; 
+        font-weight: 950;
+        transition: background 0.1s;
+    }
+    .stepper-btn:active { background: rgba(26,24,22,0.1); }
+    .stepper-val { 
+        flex: 1;
+        min-width: 60px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-left: var(--border-main);
+        border-right: var(--border-main);
+        cursor: pointer;
+        user-select: none;
+    }
+    .stepper-qty { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 950; color: var(--mcf-ink); line-height: 1; }
+    .stepper-unit { font-size: 9px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; color: var(--mcf-muted); margin-top: 2px; }
+
+
+    .card {
+        border: var(--border-main) !important;
+        overflow: hidden !important;
+        background: var(--mcf-bg) !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .card-head { height: 10px !important; background: var(--mcf-rose) !important; flex-shrink: 0 !important; }
+    .card-head.sage  { background: var(--mcf-sage) !important; }
+    .card-head.slate { background: var(--mcf-slate) !important; }
+    .card-head.mauve { background: var(--mcf-mauve) !important; }
+    .card-head.amber { background: var(--mcf-amber) !important; }
+
+    .card-body  { padding: var(--s-lg) !important; }
+    .card-label { font-size: var(--font-size-label) !important; font-weight: var(--font-weight-bold) !important; text-transform: uppercase !important; color: var(--mcf-muted) !important; margin-bottom: var(--s-xs) !important; }
+    .card-title { font-size: var(--font-size-h) !important; font-weight: var(--font-weight-xbold) !important; color: var(--mcf-ink) !important; margin-bottom: var(--s-sm) !important; line-height: 1.2 !important; }
+    .card-desc  { font-size: var(--font-size-small) !important; color: var(--mcf-muted) !important; line-height: 1.5 !important; }
+
+    .form-group { margin-bottom: var(--s-lg) !important; display: flex !important; flex-direction: column !important; }
+    .form-label { font-size: var(--font-size-label) !important; font-weight: var(--font-weight-bold) !important; text-transform: uppercase !important; color: var(--mcf-muted) !important; margin-bottom: var(--s-sm) !important; }
+    
+    .form-input {
+        border: var(--border-main) !important;
+        padding: var(--s-sm) var(--s-md) !important;
+        font-size: var(--font-size-body) !important;
+        font-family: inherit !important;
+        color: var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        border-radius: 0 !important;
+    }
+
+    .form-input:focus { outline: none !important; border-color: var(--mcf-rose) !important; }
+
+    /* 🧱 UTILITIES (Phase 04) */
+    .mcf-p-xs { padding: var(--s-xs) !important; }
+    .mcf-p-sm { padding: var(--s-sm) !important; }
+    .mcf-p-md { padding: var(--s-md) !important; }
+    .mcf-p-lg { padding: var(--s-lg) !important; }
+    .mcf-p-xl { padding: var(--s-xl) !important; }
+
+    .mcf-gap-xs { gap: var(--s-xs) !important; }
+    .mcf-gap-sm { gap: var(--s-sm) !important; }
+    .mcf-gap-md { gap: var(--s-md) !important; }
+    .mcf-gap-lg { gap: var(--s-lg) !important; }
+    .mcf-gap-xl { gap: var(--s-xl) !important; }
+
+    body.theme-mcf :focus-visible {
+        outline: 2px solid var(--mcf-ink) !important;
+        outline-offset: 2px !important;
         z-index: 999999 !important;
     }
 
@@ -131,14 +461,14 @@
         z-index: 20000 !important;
         display: none !important; 
         bottom: 16px !important; 
-        height: 72px !important; /* Fixed height for stability */
-        background: var(--mcf-paper) !important;
-        border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 10px 10px 0px var(--mcf-ink) !important; /* Static State: Shadow ON */
-        transform: translate(0, 0); /* Static State: Position Normal */
+        height: 64px !important; /* Technical precision */
+        background: var(--mcf-bg) !important;
+        border: var(--border-main) !important;
+        box-shadow: none !important; 
+        transform: translate(0, 0); 
         box-sizing: border-box;
         pointer-events: auto !important;
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.3s var(--mcf-snap), box-shadow 0.2s ease !important;
+        transition: transform 0.2s var(--mcf-snap), bottom 0.3s var(--mcf-snap) !important;
     }
 
     body.view-relevamiento .mcf-command-deck {
@@ -178,7 +508,7 @@
     .mcf-deck-icon {
         width: 32px !important;
         height: 32px !important;
-        stroke-width: 3px !important;
+        stroke-width: 1.2px !important;
         color: var(--mcf-ink) !important;
         margin-right: 18px !important;
         flex-shrink: 0;
@@ -188,14 +518,14 @@
         border: none !important;
         background: transparent !important;
         color: var(--mcf-ink) !important;
-        font-family: var(--mcf-font-display) !important;
-        font-weight: 950 !important;
-        font-size: 1.15rem !important;
+        font-family: var(--font-family) !important;
+        font-weight: var(--font-weight-xbold) !important;
+        font-size: var(--font-size-body) !important;
         flex: 1;
-        outline: none !important; 
+        outline: none !important;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: none !important; /* Force shadow removal */
+        box-shadow: none !important;
     }
 
     .mcf-deck-wrap input::placeholder {
@@ -210,24 +540,28 @@
     }
 
     .mcf-command-deck,
-    .mcf-command-deck *,
     .mcf-command-deck:focus,
-    .mcf-command-deck:focus-within,
-    .mcf-command-deck *:focus,
-    .mcf-command-deck *:focus-visible {
+    .mcf-command-deck:focus-within {
         outline: none !important;
         -webkit-appearance: none !important;
+        appearance: none !important;
+    }
+
+    /* El input de búsqueda usa box-shadow como indicador de foco en lugar de outline */
+    .mcf-deck-wrap input:focus-visible {
+        outline: none !important;
+        box-shadow: inset 0 -2px 0 var(--mcf-ink) !important;
     }
 
 
 
     .mcf-search-results-overlay {
         position: absolute !important;
-        bottom: calc(100% + 4px) !important;
-        left: -4px !important;
-        right: -4px !important;
-        background: var(--mcf-paper) !important;
-        border: 4px solid var(--mcf-ink) !important;
+        bottom: calc(100% + var(--s-xs)) !important;
+        left: -1.5px !important;
+        right: -1.5px !important;
+        background: var(--mcf-bg) !important;
+        border: var(--border-main) !important;
         border-bottom: none !important;
         box-shadow: none !important;
         max-height: 50vh;
@@ -236,33 +570,7 @@
         display: none;
     }
 
-    /* Results visibility logic tied to content, as JS handles the display toggle */
-    .mcf-command-deck .mcf-search-results-overlay:not(:empty) {
-        /* JS handles display style directly, but we ensure it's allowed */
-    }
-
-    /* 📋 SEARCH RESULT ITEM (McFetridge Pro) */
-    .mcf-res-item {
-        padding: 14px 18px !important;
-        border-bottom: 2px solid var(--mcf-surface) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 2px !important;
-        cursor: pointer !important;
-        pointer-events: auto !important;
-        background: var(--mcf-paper) !important;
-        transition: background 0.15s ease !important;
-    }
-
-    .mcf-res-item:last-child {
-        border-bottom: none !important;
-    }
-
-    .mcf-res-item:active,
-    .mcf-res-item:hover {
-        background: var(--mcf-amber) !important;
-        transform: scale(0.98);
-    }
+    /* Results visibility logic tied to content — display toggled via JS */
 
     /* 🧱 TECTONIC PULSE (Success Search Indicator) */
     @keyframes mcf-found-pulse {
@@ -287,21 +595,6 @@
         animation: mcf-found-pulse 1s var(--mcf-industrial) !important;
         position: relative;
         z-index: 5;
-    }
-
-    .mcf-res-name {
-        font-size: 14px !important;
-        font-weight: 850 !important;
-        color: var(--mcf-ink) !important;
-        text-transform: uppercase !important;
-    }
-
-    .mcf-res-cat {
-        font-size: 10px !important;
-        font-weight: 900 !important;
-        color: var(--mcf-ink-muted) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
     }
 
     /* Force hide redundant systems */
@@ -354,13 +647,13 @@
 
     .mcf-res-item:active {
         background: var(--mcf-amber) !important;
-        transform: scale(0.98) !important;
+        transform: translate(2px, 2px) !important;
     }
 
     .mcf-res-name {
-        font-weight: 900 !important;
+        font-weight: var(--font-weight-xbold) !important;
         text-transform: uppercase !important;
-        font-size: 14px !important;
+        font-size: var(--font-size-small) !important;
         color: var(--mcf-ink) !important;
     }
 
@@ -380,8 +673,8 @@
     }
 
     @keyframes mcf-flash {
-        0% { border-color: var(--mcf-amber); box-shadow: 0 0 40px var(--mcf-amber); transform: scale(1.02); }
-        100% { border-color: var(--mcf-ink); box-shadow: 8px 8px 0px var(--mcf-ink); transform: scale(1); }
+        0% { border-color: var(--mcf-amber); transform: scale(1.02); }
+        100% { border-color: var(--mcf-ink); transform: scale(1); }
     }
 
     @keyframes mcfFadeIn {
@@ -438,10 +731,10 @@
 
     body.theme-mcf .dash-card,
     body.theme-mcf .mcf-search-box {
-        background: var(--mcf-paper) !important;
-        border: 4px solid var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        border: var(--border-main) !important;
         margin: 0 6px 20px 0 !important;
-        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
         display: flex !important;
         flex-direction: column !important;
         width: calc(100% - 10px) !important;
@@ -461,33 +754,38 @@
         right: 0 !important;
         width: 100% !important;
         height: auto !important;
-        min-height: var(--mcf-tab-height, 70px) !important;
-        background: var(--mcf-paper) !important;
-        border-top: 5px solid var(--mcf-ink) !important;
+        min-height: 70px !important;
+        background: var(--mcf-bg) !important;
+        border-top: var(--border-main) !important;
         display: flex !important;
         align-items: center !important;
         padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
         gap: 12px !important;
         z-index: 70000 !important;
         box-sizing: border-box !important;
-        box-shadow: 0 -12px 0px rgba(26, 26, 26, 0.08) !important;
+        box-shadow: none !important;
         transform: none !important;
         margin: 0 !important;
     }
 
     .ctx-btn {
         height: 52px !important;
-        /* Reduced height to fit better */
         border: 4px solid var(--mcf-ink) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-weight: 950 !important;
+        font-weight: var(--font-weight-xbold) !important;
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
-        font-family: inherit !important;
+        font-family: var(--mcf-font-display) !important;
         cursor: pointer;
-        transition: background 0.15s var(--mcf-snap), transform 0.1s var(--mcf-snap);
+        transition: background 0.15s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap);
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    .ctx-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
     }
 
     .ctx-exit {
@@ -499,13 +797,13 @@
     .ctx-send {
         flex: 2 !important;
         background: var(--mode-color, var(--mcf-amber)) !important;
-        color: var(--mcf-paper) !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        color: var(--mcf-bg) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
     .ctx-send:active {
-        transform: translate(2px, 2px);
-        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
     }
 
     .ctx-count {
@@ -550,42 +848,154 @@
 
     .order-item-row {
         background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
         margin-bottom: 16px !important;
         padding: 16px !important;
     }
 
     /* ═══════════════════════════════════════════════════════════════════
-       FULLSCREEN MODE (MOP Adaptation)
+       QUICK STEPPER FULLSCREEN — Tectonic Industrialism
        ═══════════════════════════════════════════════════════════════════ */
+
+    /* Full-screen container: paper background for body legibility */
+    body.theme-mcf .prod-fullscreen {
+        background: var(--mcf-paper) !important;
+        font-family: var(--mcf-font-display) !important;
+    }
+
+    /* Header bar: ink background, high-contrast text */
     .prod-fs-header {
         background: var(--mcf-ink) !important;
         color: var(--mcf-paper) !important;
-        padding: 20px 16px !important;
-        border-bottom: 5px solid var(--mcf-ink) !important;
+        padding: 18px 20px !important;
+        border-bottom: 4px solid var(--mcf-ink) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
     }
 
-    .prod-fs-name {
+    /* Category label: amber on ink = 7:1 contrast */
+    body.theme-mcf #prod-fs-cat {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-amber) !important;
+        letter-spacing: 2.5px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 3px !important;
+    }
+
+    /* Small product name in header: paper on ink = 18:1 contrast */
+    body.theme-mcf #prod-fs-name-sm {
         font-family: var(--mcf-font-display) !important;
+        font-size: 15px !important;
         font-weight: 950 !important;
-        font-size: 38px !important;
-        line-height: 1 !important;
-        letter-spacing: -1.5px !important;
-        margin-bottom: 20px !important;
+        color: var(--mcf-paper) !important;
+        text-transform: uppercase !important;
+        letter-spacing: -0.5px !important;
+        line-height: 1.15 !important;
     }
 
-    .prod-fs-stepper {
+    /* Close button: bordered, sticker shadow, paper on ink */
+    body.theme-mcf .prod-fs-close {
+        background: transparent !important;
+        border: 2px solid var(--mcf-paper) !important;
+        color: var(--mcf-paper) !important;
+        width: 44px !important;
+        height: 44px !important;
         border-radius: 0 !important;
-        border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        box-shadow: 3px 3px 0px var(--mcf-paper) !important;
+        transition: background 0.08s var(--mcf-snap), transform 0.08s var(--mcf-snap), box-shadow 0.08s var(--mcf-snap) !important;
+        flex-shrink: 0 !important;
+        margin-left: 16px !important;
     }
 
-    .prod-fs-step-btn {
+    body.theme-mcf .prod-fs-close:active {
         background: var(--mcf-paper) !important;
         color: var(--mcf-ink) !important;
-        font-weight: 900 !important;
-        font-size: 32px !important;
+        transform: translate(2px, 2px) !important;
+        box-shadow: 1px 1px 0px var(--mcf-paper) !important;
+    }
+
+    /* Body: paper background, centered column layout */
+    body.theme-mcf .prod-fs-body {
+        background: var(--mcf-paper) !important;
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: space-evenly !important;
+        padding: 24px 24px 28px !important;
+        gap: 18px !important;
+        overflow-y: auto !important;
+        max-width: 600px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+    }
+
+    /* Large product name: ink on paper = 18:1 contrast */
+    .prod-fs-name {
+        font-family: var(--mcf-font-display) !important;
+        font-size: clamp(28px, 7vw, 56px) !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink) !important;
+        text-transform: uppercase !important;
+        letter-spacing: -2px !important;
+        line-height: 1 !important;
+        text-align: center !important;
+        max-width: 100% !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        margin: 0 !important;
+    }
+
+    /* Stepper: ink container as divider, paper buttons, ink text */
+    .prod-fs-stepper {
+        display: flex !important;
+        align-items: stretch !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        background: var(--mcf-ink) !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        max-width: 480px !important;
+        height: 110px !important;
+        border-radius: 0 !important;
+        gap: 3px !important;
+    }
+
+    /* Stepper +/- buttons: paper on paper container, ink text = 18:1 */
+    .prod-fs-step-btn {
+        width: 100px !important;
+        min-width: 100px !important;
+        height: 100% !important;
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 48px !important;
+        font-weight: 950 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: background 0.08s var(--mcf-snap) !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    /* Full inversion on press */
+    .prod-fs-step-btn:active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
     }
 
     /* Precision Overrides */
@@ -601,8 +1011,8 @@
         background: var(--mcf-amber) !important;
         color: var(--mcf-ink) !important;
         border-color: var(--mcf-ink) !important;
+        transform: translate(4px, 4px) !important;
         box-shadow: 2px 2px 0px var(--mcf-ink) !important;
-        transform: translate(-2px, -2px) scale(1.05);
     }
 
     .cchip.active i,
@@ -638,11 +1048,11 @@
         background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='rgba(255,255,255,0.05)' stroke-width='1.5' fill='none'%3E%3Cpath d='M0,0 Q100,200 200,0 M0,200 Q100,0 200,200 M100,0 L100,200 M0,100 L200,100' /%3E%3Ccircle cx='100' cy='100' r='50' /%3E%3Ccircle cx='100' cy='100' r='80' stroke-dasharray='6 6' /%3E%3Ccircle cx='100' cy='100' r='20' /%3E%3Cpolygon points='100,10 190,100 100,190 10,100' stroke-dasharray='2 4' /%3E%3C/g%3E%3C/svg%3E");
         background-size: 140px 140px;
         color: var(--mcf-bg);
-        border: 4px solid var(--mcf-ink);
+        border: var(--border-main);
         padding: 34px 28px;
         margin-bottom: 40px;
         position: relative;
-        box-shadow: 8px 8px 0px var(--mcf-ink), 16px 16px 0px var(--mcf-amber);
+        box-shadow: none !important;
         overflow: hidden;
     }
 
@@ -679,25 +1089,25 @@
         z-index: 100 !important;
     }
 
-    /* Command Buttons (Header) */
+    /* Command Buttons (Header) — legacy block, canonical definition below */
     .mcf-mini-btn {
         width: 48px !important;
         height: 48px !important;
-        background: var(--mcf-ink) !important;
-        color: var(--mcf-paper) !important;
-        border: none !important;
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         cursor: pointer !important;
-        transition: transform 0.1s !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
         touch-action: manipulation !important;
     }
 
     .mcf-mini-btn:active {
-        transform: translate(2px, 2px) !important;
-        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        transform: translate(4px, 4px) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
     }
 
     .mcf-mini-btn i {
@@ -708,8 +1118,8 @@
     /* STATUS PANEL (BRUTALIST EVENT CONTAINER) */
     .mcf-status-panel {
         background: var(--mcf-paper) !important;
-        border: var(--mcf-border) !important;
-        box-shadow: var(--mcf-shadow) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
         margin-bottom: 30px;
         width: 100%;
         max-width: 500px;
@@ -734,86 +1144,216 @@
         z-index: 1;
     }
 
-    /* 🏗️ ACTION GRID (Consolidated Industrial System) */
-    .mcf-grid-v2 {
+    /* ══════════════════════════════════════════════════════════════════════════
+       ACTION GRID — McFetridge Zen-Tech v3  (conforme a DESIGN.md §4)
+       Layout: High-density 2-column surgical | Stroke: 1.2px secondary actions
+       Tectonic Depth: translate + Ink shadow | Kinetics: mcf-snap
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    /* CONTENEDOR UNIFICADO — 2 columnas quirúrgicas, 6 celdas */
+    .ag-grid {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 16px !important;
-        margin-bottom: 24px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
         width: 100% !important;
-        box-sizing: border-box !important;
+        margin-bottom: 24px !important;
     }
 
-    .mcf-action-btn {
+    /* ─────────────────────────────────────────────
+       BOTÓN BASE — Tectonic Industrialism
+       Sin clase .btn para aislar del override global
+    ───────────────────────────────────────────── */
+    .ag-btn {
+        position: relative !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 24px 16px !important;
+        align-items: flex-start !important;
+        justify-content: flex-end !important;
+        padding: 14px 14px 12px !important;
         background: var(--mcf-paper) !important;
-        border: var(--mcf-border) !important;
-        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
-        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap), background 0.15s var(--mcf-snap) !important;
-        min-height: 140px !important;
+        border: 1.5px solid var(--mcf-ink) !important;
         cursor: pointer !important;
         touch-action: manipulation !important;
-        animation: mcfFadeIn 0.4s var(--mcf-snap) both !important;
-    }
-
-    /* Staggered entrance for buttons */
-    .mcf-grid-v2 div:nth-child(1) { animation-delay: 0.1s !important; }
-    .mcf-grid-v2 div:nth-child(2) { animation-delay: 0.15s !important; }
-    .mcf-grid-v2 div:nth-child(3) { animation-delay: 0.2s !important; }
-    .mcf-grid-v2 div:nth-child(4) { animation-delay: 0.25s !important; }
-
-    .mcf-action-btn:active {
-        transform: translate(4px, 4px) !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
         box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        /* Mechanical Interaction — mcf-snap */
+        transition: transform 0.12s var(--mcf-snap), box-shadow 0.12s var(--mcf-snap) !important;
+        min-height: 120px !important;
+        overflow: hidden !important;
+        gap: 8px !important;
     }
 
-    /* Specific Button Colors */
-    .mcf-btn-roi { background: var(--mcf-slate-lt) !important; }
-    .mcf-btn-hist { background: var(--mcf-paper) !important; }
-    .mcf-btn-pedido { background: var(--mcf-rose) !important; }
-    .mcf-btn-stock { background: var(--mcf-sky) !important; }
-    .mcf-btn-recepc { background: var(--mcf-sage) !important; }
-    .mcf-btn-merma { background: var(--mcf-mauve) !important; }
+    /* Tectonic Depth — punzón físico */
+    .ag-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
+    }
 
-    .mcf-action-btn i {
-        width: 48px !important;
-        height: 48px !important;
-        margin-bottom: 12px !important;
-        stroke-width: 3px !important;
+    /* ─────────────────────────────────────────────
+       FRANJA DE COLOR LATERAL — Motif "Split Space"
+       Vertical strip conforme a DESIGN.md §4 (Alert Cards)
+    ───────────────────────────────────────────── */
+    .ag-accent {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 5px !important;
+    }
+
+    /* Tokens del Industrial Spectrum */
+    .ag-accent-rose  { background: var(--mcf-rose) !important; }
+    .ag-accent-sage  { background: var(--mcf-sage) !important; }
+    .ag-accent-slate { background: var(--mcf-slate) !important; }
+    .ag-accent-amber { background: var(--mcf-amber) !important; }
+    .ag-accent-mauve { background: var(--mcf-mauve) !important; }
+    .ag-accent-ink   { background: var(--mcf-ink) !important; }
+
+    /* ─────────────────────────────────────────────
+       ÍCONO — 1.2px stroke para secondary actions
+       (DESIGN.md §4: "Icons at 1.2px stroke")
+    ───────────────────────────────────────────── */
+    .ag-icon-wrap {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        border: 1.5px solid var(--mcf-ink) !important;
+        margin-left: 8px !important;   /* offset por la franja lateral */
+        flex-shrink: 0 !important;
+        background: transparent !important;
+        margin-bottom: 4px !important;
+    }
+
+    .ag-icon-wrap i[data-lucide] {
+        width: 24px !important;
+        height: 24px !important;
         color: var(--mcf-ink) !important;
+        stroke-width: 1.2px !important;  /* DESIGN.md §4 secondary actions */
     }
 
-    .mcf-action-btn span {
+    /* ─────────────────────────────────────────────
+       ETIQUETAS — Uppercase everything (DESIGN.md §5)
+    ───────────────────────────────────────────── */
+    .ag-label-wrap {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1px !important;
+        margin-left: 8px !important;
+        padding-bottom: 2px !important;
+    }
+
+    .ag-label {
         font-family: var(--mcf-font-display) !important;
+        font-size: 11px !important;
         font-weight: 950 !important;
-        font-size: 13px !important;
+        text-transform: uppercase !important;     /* DESIGN.md §5: Uppercase Everything */
+        letter-spacing: 1px !important;           /* DESIGN.md §5: 1px-2px for small labels */
+        color: var(--mcf-ink) !important;
+        line-height: 1.1 !important;
+    }
+
+    .ag-sublabel {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 8px !important;
+        font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 1.5px !important;
-        color: var(--mcf-ink) !important;
-        text-align: center !important;
+        color: var(--mcf-muted) !important;
+        line-height: 1 !important;
     }
+
+    /* ─────────────────────────────────────────────
+       COLORES POR MÓDULO — Industrial Spectrum
+       Fondo teñido sutil + franja semántica
+    ───────────────────────────────────────────── */
+
+    /* Dashboard ROI — Slate (Info/History) */
+    .ag-roi {
+        background: var(--mcf-slate-lt) !important;
+        box-shadow: 4px 4px 0px var(--mcf-slate) !important;
+        border-color: var(--mcf-slate) !important;
+    }
+    .ag-roi:active { box-shadow: 0px 0px 0px var(--mcf-slate) !important; }
+    .ag-roi .ag-icon-wrap { border-color: var(--mcf-slate) !important; }
+    .ag-roi .ag-icon-wrap i { color: var(--mcf-slate) !important; }
+    .ag-roi .ag-sublabel { color: var(--mcf-slate) !important; }
+
+    /* Historial — Ink (neutro, autoridad) */
+    .ag-hist {
+        background: var(--mcf-paper) !important;
+    }
+    .ag-hist .ag-sublabel { color: var(--mcf-muted) !important; }
+
+    /* Pedido — Rose (Critical/Urgency) */
+    .ag-pedido {
+        background: color-mix(in srgb, var(--mcf-rose) 12%, var(--mcf-paper)) !important;
+        box-shadow: 4px 4px 0px var(--mcf-rose) !important;
+    }
+    .ag-pedido:active { box-shadow: 0px 0px 0px var(--mcf-rose) !important; }
+    .ag-pedido .ag-icon-wrap { border-color: var(--mcf-rose) !important; background: var(--mcf-rose) !important; }
+    .ag-pedido .ag-icon-wrap i { color: var(--mcf-paper) !important; stroke-width: 1.5px !important; }
+    .ag-pedido .ag-sublabel { color: var(--mcf-rose) !important; }
+
+    /* Stock — Slate (Info/Stock) */
+    .ag-stock {
+        background: color-mix(in srgb, var(--mcf-slate) 10%, var(--mcf-paper)) !important;
+    }
+    .ag-stock .ag-icon-wrap { border-color: var(--mcf-slate) !important; }
+    .ag-stock .ag-icon-wrap i { color: var(--mcf-slate) !important; }
+    .ag-stock .ag-sublabel { color: var(--mcf-slate) !important; }
+
+    /* Recepción — Sage (Success/Stock-In) */
+    .ag-recepc {
+        background: color-mix(in srgb, var(--mcf-sage) 12%, var(--mcf-paper)) !important;
+        box-shadow: 4px 4px 0px var(--mcf-sage) !important;
+    }
+    .ag-recepc:active { box-shadow: 0px 0px 0px var(--mcf-sage) !important; }
+    .ag-recepc .ag-icon-wrap { border-color: var(--mcf-sage) !important; }
+    .ag-recepc .ag-icon-wrap i { color: var(--mcf-sage) !important; }
+    .ag-recepc .ag-sublabel { color: var(--mcf-sage) !important; }
+
+    /* Merma — Mauve (pérdida/descarte) */
+    .ag-merma {
+        background: color-mix(in srgb, var(--mcf-mauve) 10%, var(--mcf-paper)) !important;
+    }
+    .ag-merma .ag-icon-wrap { border-color: var(--mcf-mauve) !important; }
+    .ag-merma .ag-icon-wrap i { color: var(--mcf-mauve) !important; }
+    .ag-merma .ag-sublabel { color: var(--mcf-mauve) !important; }
+
+    /* ─────────────────────────────────────────────
+       CINEMATIC REVEAL — Stagger mcfFadeIn (DESIGN.md §3B)
+    ───────────────────────────────────────────── */
+    .ag-grid .ag-btn:nth-child(1) { animation: mcfFadeIn 0.4s var(--mcf-snap) 0.10s both !important; }
+    .ag-grid .ag-btn:nth-child(2) { animation: mcfFadeIn 0.4s var(--mcf-snap) 0.17s both !important; }
+    .ag-grid .ag-btn:nth-child(3) { animation: mcfFadeIn 0.4s var(--mcf-snap) 0.24s both !important; }
+    .ag-grid .ag-btn:nth-child(4) { animation: mcfFadeIn 0.4s var(--mcf-snap) 0.31s both !important; }
+    .ag-grid .ag-btn:nth-child(5) { animation: mcfFadeIn 0.4s var(--mcf-snap) 0.38s both !important; }
+    .ag-grid .ag-btn:nth-child(6) { animation: mcfFadeIn 0.4s var(--mcf-snap) 0.45s both !important; }
+
+
+
 
     /* GLOBAL INDUSTRIAL INK SYSTEM (McFetridge Standard) */
     body.theme-mcf i,
     body.theme-mcf svg,
     body.theme-mcf [data-lucide] {
-        stroke-width: 3px !important;
+        stroke-width: 1.8px !important;
     }
 
-    /* Legibility overrides for micro-icons */
+    /* Legibility overrides for micro-icons (small size warrants slight boost) */
     body.theme-mcf .uchip i,
     body.theme-mcf .tree-icon,
     body.theme-mcf .mini-status-icon {
-        stroke-width: 3px !important;
+        stroke-width: 1.5px !important;
     }
 
-    /* Home Specific weight (redundant but safe) */
+    /* Home icons — 1.2px surgical per DESIGN.md §4 */
     #home [data-lucide] {
-        stroke-width: 3px !important;
+        stroke-width: 1.2px !important;
     }
 
     /* LARGE ACTION BAR */
@@ -822,7 +1362,7 @@
         max-width: 500px;
         background: var(--mcf-ink) !important;
         color: var(--mcf-paper) !important;
-        border: var(--mcf-border);
+        border: 4px solid var(--mcf-ink);
         padding: 24px;
         font-family: var(--mcf-font-display) !important;
         font-size: 18px;
@@ -845,20 +1385,134 @@
 
     .home-alert-ok {
         background: var(--mcf-sage-lt) !important;
-        border: var(--mcf-border) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-sage) !important;
         color: var(--mcf-ink) !important;
     }
 
-    /* Buttons - Global MCF Style (excluding specific triggers) */
-    button:not(.mcf-fav-trigger),
-    .btn,
+    /* ══════════════════════════════════════════════════════════════════════════
+       STATUS PANEL — McFetridge Industrial Style (v4 — inline-first)
+       El contenido visual va 100% inline en JS para evitar conflictos de cascada
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    #home-alerts-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 24px 0 !important;
+        padding: 0 !important;
+        border: var(--border-main) !important;
+        border-left: 6px solid var(--mcf-amber) !important;
+        background: var(--mcf-paper) !important;
+        /* Override .card's overflow:hidden que bloqueaba el contenido */
+        overflow: visible !important;
+        /* Override .card's display:flex que causaba conflictos de layout */
+        display: block !important;
+        height: auto !important;
+    }
+
+    /* ─────────────────────────────────────────────
+       DRAFT BANNER — Zen-Tech Recovery Module
+       ───────────────────────────────────────────── */
+    .mcf-draft-banner {
+        position: relative !important;
+        width: 100% !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        padding: 24px !important;
+        display: grid !important;
+        grid-template-columns: auto 1fr !important;
+        gap: 20px !important;
+        align-items: center !important;
+        margin-bottom: 32px !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    /* Technical Label Header */
+    .mcf-draft-banner::after {
+        content: "RECOVERY_SYSTEM_V11" !important;
+        position: absolute !important;
+        top: -10px !important;
+        right: 15px !important;
+        background: var(--mcf-paper) !important;
+        border: 1.5px solid var(--mcf-ink) !important;
+        padding: 2px 8px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 8px !important;
+        font-weight: 900 !important;
+        letter-spacing: 1.5px !important;
+        color: var(--mcf-ink) !important;
+        z-index: 5 !important;
+    }
+
+    .mcf-draft-title {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 14px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        color: var(--mcf-ink) !important;
+        line-height: 1 !important;
+        margin: 0 0 12px 0 !important;
+    }
+
+    .mcf-draft-subtitle {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 9px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        color: var(--mcf-muted) !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* Tactile Banner Buttons (Refined) */
+    .mcf-banner-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 48px !important;
+        padding: 0 24px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 11px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        border-radius: 0 !important;
+        border: 4px solid var(--mcf-ink) !important;
+        cursor: pointer !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        user-select: none !important;
+        flex: 1 !important;
+    }
+
+    .mcf-banner-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-banner-btn-rose {
+        background: var(--mcf-rose) !important;
+        color: var(--mcf-paper) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-banner-btn-ghost {
+        background: var(--mcf-bg) !important;
+        color: var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    /* Buttons - Global MCF Style (excluding specific triggers and .btn class) */
+    button:not(.mcf-fav-trigger):not(.btn):not(.ctx-btn):not(.ctx-send):not(.cchip):not(.mcf-banner-btn):not(.mcf-mini-btn):not(.mcf-edit-mode-btn):not(.mcf-set-action-btn),
     .as-btn,
     .wa-btn,
     .mode-btn-glass,
     .mode-btn-square {
         background: var(--mcf-surface) !important;
-        border: var(--mcf-border) !important;
-        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        border: var(--border-main) !important;
+        box-shadow: none !important;
         color: var(--mcf-ink) !important;
         font-weight: 800 !important;
         text-transform: uppercase !important;
@@ -866,8 +1520,7 @@
         padding: 10px 16px !important;
     }
 
-    button:not(.mcf-fav-trigger):active,
-    .btn:active,
+    button:not(.mcf-fav-trigger):not(.btn):not(.ctx-btn):not(.ctx-send):not(.cchip):not(.mcf-banner-btn):not(.mcf-mini-btn):not(.mcf-edit-mode-btn):not(.mcf-set-action-btn):active,
     .mode-btn-glass:active {
         background: var(--mcf-ink) !important;
         color: var(--mcf-bg) !important;
@@ -875,9 +1528,9 @@
         transform: translate(2px, 2px) !important;
     }
 
-    /* Icons */
+    /* Icons — DESIGN.md §4: surgical 1.2px stroke */
     i[data-lucide] {
-        stroke-width: 3px !important;
+        stroke-width: 1.2px !important;
     }
 
     /* ——————————————————————————————————————————————————————————————————————————
@@ -1028,7 +1681,7 @@
     .mcf-status-title svg {
         width: 22px !important;
         height: 22px !important;
-        stroke-width: 3px !important;
+        stroke-width: 1.2px !important;
         color: var(--mcf-paper) !important;
     }
 
@@ -1098,14 +1751,14 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        border: var(--border-main) !important;
         padding: 12px 18px;
         margin: 20px auto !important;
         width: 100%;
         max-width: 500px;
         box-sizing: border-box;
-        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
     }
 
     .mcf-search-box input {
@@ -1171,16 +1824,12 @@
         padding: 0 !important;
     }
 
-    .mcf-fav-trigger i {
-        /* Inherits global 3px weight */
-    }
-
     /* Stepper adjustments */
     .stepper {
         border-radius: 0 !important;
-        border: 2px solid var(--mcf-ink) !important;
-        background: var(--mcf-paper) !important;
-        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        border: var(--border-main) !important;
+        background: var(--mcf-bg) !important;
+        box-shadow: none !important;
         max-width: 100% !important;
     }
 
@@ -1202,7 +1851,7 @@
     .step-btn:active {
         background: var(--mcf-ink) !important;
         color: var(--mcf-paper) !important;
-        transform: scale(0.98) !important;
+        transform: translate(2px, 2px) !important;
     }
 
     .step-btn:focus-visible {
@@ -1223,13 +1872,20 @@
         padding: 8px 12px !important;
         font-weight: 800 !important;
         text-transform: uppercase !important;
-        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        box-shadow: 3px 3px 0px var(--mcf-ink) !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        cursor: pointer !important;
+    }
+
+    .uchip:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 1px 1px 0px var(--mcf-ink) !important;
     }
 
     .uchip.active {
         background: var(--mcf-ink) !important;
         color: var(--mcf-bg) !important;
-        box-shadow: none !important;
+        box-shadow: 1px 1px 0px var(--mcf-ink) !important;
         transform: translate(2px, 2px) !important;
     }
 
@@ -1246,19 +1902,31 @@
         text-transform: uppercase !important;
     }
 
-    /* Inputs and Search Bar */
+    /* Inputs and Search Bar — High Contrast Fix */
     input,
     textarea,
-    select {
-        background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
+    select,
+    .tree-add-inp,
+    .form-input,
+    .mcf-set-input {
+        background: var(--mcf-paper) !important; /* Force light background */
+        color: var(--mcf-ink) !important;      /* Force dark text */
+        border: var(--border-main) !important;
         padding: 16px 20px !important;
         font-family: inherit !important;
         font-weight: 800 !important;
         text-transform: uppercase !important;
         border-radius: 0 !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
         width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    input:focus,
+    .tree-add-inp:focus {
+        background: var(--mcf-bg) !important;
+        border-color: var(--mcf-rose) !important;
+        outline: none !important;
     }
 
     /* Fixed header search container for McFetridge */
@@ -1294,14 +1962,14 @@
     .mcf-local-search-wrap {
         width: 100%;
         background: var(--mcf-paper) !important;
-        border: var(--mcf-border) !important;
-        box-shadow: var(--mcf-shadow) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
         display: flex !important;
         align-items: center !important;
         padding: 0 18px !important;
         height: 64px !important;
         position: relative !important;
-        transition: all 0.2s var(--mcf-snap) !important;
+        transition: transform 0.2s var(--mcf-snap), border-color 0.2s var(--mcf-snap) !important;
         margin-bottom: 24px;
     }
 
@@ -1366,17 +2034,11 @@
     .mcf-hist-search-box i {
         color: var(--mcf-ink) !important;
         width: 20px !important;
-        stroke-width: 3px !important;
+        stroke-width: 1.2px !important;
     }
 
     .mcf-hist-search-box input:focus::placeholder {
         color: transparent !important;
-    }
-        flex: 1 !important;
-        outline: none !important;
-        color: var(--mcf-ink) !important;
-        height: 100% !important;
-        text-transform: uppercase !important;
     }
 
     .mcf-search-box i,
@@ -1384,7 +2046,7 @@
         color: var(--mcf-ink) !important;
         width: 28px !important;
         height: 28px !important;
-        stroke-width: 3px !important;
+        stroke-width: 1.2px !important;
     }
 
     /* SEARCH SYSTEM - TOTAL STANDARDIZATION */
@@ -1482,12 +2144,27 @@
         letter-spacing: 1px !important;
     }
 
+    /* 🎭 ANIMATIONS: STAGGERED REVEAL (Cinematic Entrance) */
+    @keyframes mcfReveal {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mcf-reveal { 
+        animation: mcfReveal 0.6s var(--mcf-snap) both; 
+    }
+    .mcf-delay-1 { animation-delay: 0.1s; }
+    .mcf-delay-2 { animation-delay: 0.2s; }
+    .mcf-delay-3 { animation-delay: 0.3s; }
+    .mcf-delay-4 { animation-delay: 0.4s; }
+
     /* HISTORY FILTERS & SEARCH (Industrial Standardization) */
 
     body.theme-mcf #hist-date-from,
     body.theme-mcf #hist-date-to {
         border-radius: 0 !important;
         border: 3px solid var(--mcf-ink) !important;
+
         box-shadow: 4px 4px 0px var(--mcf-ink) !important;
         background: var(--mcf-paper) !important;
         color: var(--mcf-ink) !important;
@@ -1498,23 +2175,124 @@
     }
 
     /* Loader Focaccia -> McFetridge */
+    /* 🚀 PHASE 08: ZEN-TECH LOADER (Technical Blueprint) */
     #loader {
+        position: fixed;
+        inset: 0;
         background: var(--mcf-bg) !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-image: 
+            linear-gradient(rgba(26,24,22,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(26,24,22,0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        z-index: 9999999; 
+        transition: opacity 0.6s var(--mcf-snap), visibility 0.6s var(--mcf-snap);
+        opacity: 1;
+        visibility: visible;
     }
 
-    .loader-circle {
-        background: var(--mcf-ink) !important;
-        filter: none !important;
+    #loader.loader-hidden {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+
+
+    .loader-wrapper {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 40px;
+    }
+
+    /* Geometric Core (Puzzle Motif) */
+    .loader-core {
+        width: 140px;
+        height: 140px;
+        border: 1.5px solid var(--mcf-ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        position: relative;
+        overflow: hidden;
+        animation: mcfPulse 2s infinite ease-out;
+    }
+    .loader-core div { border: 0.5px solid rgba(26,24,22,0.1); transition: background 0.3s; }
+    .loader-core .c1 { background: var(--mcf-rose); }
+    .loader-core .c2 { background: var(--mcf-sage); }
+    .loader-core .c3 { background: var(--mcf-slate); }
+    .loader-core .c4 { background: var(--mcf-mauve); }
+
+    /* Scanning Line */
+    .loader-scanner {
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: var(--mcf-ink);
+        top: 0;
+        left: 0;
+        z-index: 10;
+        box-shadow: 0 0 15px var(--mcf-ink);
+        animation: mcfScan 2.5s infinite linear;
     }
 
     .loader-perc {
+        position: absolute;
+        font-family: 'Outfit', sans-serif;
+        font-size: 32px;
+        font-weight: 950;
         color: var(--mcf-ink) !important;
-        text-shadow: none !important;
+        background: var(--mcf-bg);
+        padding: 4px 12px;
+        border: 1.5px solid var(--mcf-ink);
+        z-index: 20;
+        letter-spacing: -1px;
     }
 
     .loader-status {
-        color: var(--mcf-ink-muted) !important;
+        font-size: 11px;
+        font-weight: 900;
+        color: var(--mcf-ink) !important;
+        text-transform: uppercase;
+        letter-spacing: 2.5px;
+        opacity: 0.7;
+        position: relative;
     }
+
+    .loader-status::after {
+        content: '';
+        position: absolute;
+        right: -15px;
+        width: 8px;
+        height: 1.5px;
+        background: var(--mcf-ink);
+        bottom: 4px;
+        animation: mcfBlink 0.8s infinite;
+    }
+
+    @keyframes mcfScan {
+        0% { top: 0; }
+        50% { top: 100%; }
+        100% { top: 0; }
+    }
+
+    @keyframes mcfPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); border-width: 2px; }
+    }
+
+    @keyframes mcfBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+
 
     /* Bottom Spacer */
     .bottom-spacer {
@@ -1546,7 +2324,7 @@
         left: 0 !important;
         right: 0 !important;
         z-index: 60000 !important;
-        transition: all 0.3s var(--mcf-snap) !important;
+        transition: background 0.3s var(--mcf-snap), transform 0.3s var(--mcf-snap), opacity 0.3s var(--mcf-snap) !important;
     }
 
     /* 🔼 RELEVAMIENTO: TABS TO TOP (Direct Anchor, No Header) */
@@ -1562,10 +2340,21 @@
     /* 🚫 HEADER EXCLUSIONS (No Header in Relevamiento/Home/Loader) */
     body.view-home #main-hdr,
     body.view-relevamiento #main-hdr,
-    body.view-loader #main-hdr,
-    body.view-home .tabs,
-    body.view-loader .tabs {
+    body.view-loader #main-hdr {
         display: none !important;
+    }
+
+    /* 🚫 TABS EXCLUSION EN HOME — Main Tabs ocultas en pantalla de inicio */
+    body.view-home .tabs,
+    body.view-home #main-tabs,
+    body.theme-mcf.view-home .tabs,
+    body.theme-mcf.view-home #main-tabs,
+    body.view-loader .tabs,
+    body.view-loader #main-tabs {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
     }
 
     body.theme-mcf.view-relevamiento #view-relevamiento {
@@ -1682,9 +2471,9 @@
         gap: 20px !important;
         background: var(--mode-color) !important;
         border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
         cursor: pointer !important;
-        transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+        transition: background 0.15s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
         box-sizing: border-box !important;
     }
 
@@ -1716,7 +2505,8 @@
     .cchip:active,
     .cchip.active {
         transform: translate(4px, 4px) !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        background: var(--mcf-ink) !important;
     }
 
     .cchip.active i, .cchip.active span {
@@ -1724,7 +2514,7 @@
     }
 
     #prod-list {
-        padding: 16px !important; /* Uniform padding, no bottom stacking */
+        padding: 16px !important;
         width: 100% !important;
         max-width: 600px !important;
         margin: 0 auto !important;
@@ -1733,15 +2523,19 @@
         gap: 20px !important;
     }
 
+    /* ═══════════════════════════════════════════════════════════════════
+       PRODUCT CARD — Tectonic Industrialism
+       ═══════════════════════════════════════════════════════════════════ */
+
     .prow {
-        background: var(--mcf-paper) !important;
+        background: var(--mcf-bg) !important;
         border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 8px 8px 0px var(--mode-color, var(--mcf-ink)) !important; /* Mode-colored tectonic shadow */
-        padding: 24px !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        padding: 20px 20px 16px !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 20px !important;
-        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        gap: 14px !important;
+        transition: background 0.15s var(--mcf-snap), border-color 0.15s var(--mcf-snap), box-shadow 0.15s var(--mcf-snap) !important;
         position: relative !important;
         width: 100% !important;
         max-width: 500px !important;
@@ -1749,34 +2543,150 @@
     }
 
     .prow.has-qty {
-        border-color: var(--mode-color, var(--mcf-amber)) !important;
         background: var(--mode-bg, var(--mcf-paper)) !important;
+        border-color: var(--mode-color, var(--mcf-amber)) !important;
+        box-shadow: 8px 8px 0px var(--mode-color, var(--mcf-amber)) !important;
     }
 
+    .prow.is-86 {
+        background: var(--mcf-paper) !important;
+        border-color: var(--mcf-rose) !important;
+        box-shadow: 8px 8px 0px var(--mcf-rose) !important;
+    }
+
+    /* Product name — ink on bg = 18:1 contrast */
     .prow .pname {
         font-family: var(--mcf-font-display) !important;
-        font-size: 1.5rem !important;
+        font-size: 1.1rem !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
         color: var(--mcf-ink) !important;
+        letter-spacing: -0.3px !important;
+        line-height: 1.2 !important;
+        padding-bottom: 10px !important;
         border-bottom: 3px solid var(--mcf-ink) !important;
-        padding-bottom: 0.75rem !important;
-        letter-spacing: -0.5px !important;
-        text-align: center !important;
+        text-align: left !important;
     }
 
-    /* 🔢 BRUTALIST STEPPERS (Quantity Controls) */
-    .stepper {
+    .prow.is-86 .pname {
+        color: var(--mcf-rose) !important;
+        border-bottom-color: var(--mcf-rose) !important;
+    }
+
+    /* Stepper container — ink bg acts as 3px divider between paper sections */
+    .prow .stepper {
         display: flex !important;
-        align-items: center !important;
-        gap: 0 !important;
+        align-items: stretch !important;
         border: 4px solid var(--mcf-ink) !important;
-        width: fit-content !important;
-        margin: 0 auto !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
         background: var(--mcf-ink) !important;
         overflow: hidden !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        height: 72px !important;
+        gap: 3px !important;
+        border-radius: 0 !important;
     }
 
+    .prow.has-qty .stepper {
+        border-color: var(--mode-color, var(--mcf-amber)) !important;
+        box-shadow: 6px 6px 0px var(--mode-color, var(--mcf-amber)) !important;
+        background: var(--mode-color, var(--mcf-amber)) !important;
+    }
+
+    .prow.is-86 .stepper {
+        border-color: var(--mcf-rose) !important;
+        box-shadow: 6px 6px 0px var(--mcf-rose) !important;
+        background: var(--mcf-rose) !important;
+    }
+
+    /* +/- buttons — paper bg, ink text = 18:1 contrast */
+    .prow .stepper .stepper-btn {
+        width: 60px !important;
+        min-width: 60px !important;
+        height: 100% !important;
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 26px !important;
+        font-weight: 950 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: background 0.08s var(--mcf-snap) !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    /* Full inversion on press — paper on ink = 18:1 contrast */
+    .prow .stepper .stepper-btn:active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+    }
+
+    /* Quantity value box — bg, ink text = 18:1 contrast */
+    .prow .stepper .stepper-val {
+        flex: 1 !important;
+        height: 100% !important;
+        background: var(--mcf-bg) !important;
+        border: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        gap: 2px !important;
+        padding: 0 !important;
+    }
+
+    .prow.has-qty .stepper .stepper-val {
+        background: var(--mcf-paper) !important;
+    }
+
+    /* Quantity number — large display */
+    .prow .stepper .stepper-qty {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 28px !important;
+        font-weight: 950 !important;
+        color: var(--mcf-ink) !important;
+        line-height: 1 !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    /* Unit label — muted on bg = 5.5:1 contrast */
+    .prow .stepper .stepper-unit {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        color: var(--mcf-muted) !important;
+        line-height: 1 !important;
+    }
+
+    /* Unit chip row */
+    .prow .unit-row {
+        display: flex !important;
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .prow .unit-row::-webkit-scrollbar { display: none !important; }
+
+    /* Legacy selectors — kept for backward compat with other contexts */
     .step-btn {
         width: 70px !important;
         height: 70px !important;
@@ -1789,19 +2699,16 @@
         font-size: 32px !important;
         font-weight: 950 !important;
         border: none !important;
-        transition: background 0.1s !important;
+        transition: background 0.1s var(--mcf-snap) !important;
     }
 
     .step-btn:active {
-        background: var(--mcf-amber) !important;
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
     }
 
     .pqty-box {
-        width: 100px !important;
-        height: 70px !important;
         background: var(--mcf-bg) !important;
-        border-left: 4px solid var(--mcf-ink) !important;
-        border-right: 4px solid var(--mcf-ink) !important;
         color: var(--mcf-ink) !important;
         display: flex !important;
         flex-direction: column !important;
@@ -1852,11 +2759,11 @@
         width: 100% !important;
         max-width: 550px !important;
         margin: 0 auto 32px !important;
-        background: #1e1c1a !important; /* Light Ink Chassis */
-        color: var(--mcf-paper) !important;
+        background: var(--mcf-ink) !important; 
+        color: var(--mcf-bg) !important;
         padding: 80px 24px 40px !important;
-        border: 4px solid var(--mcf-ink) !important;
-        box-shadow: 10px 10px 0px var(--mcf-ink) !important;
+        border: var(--border-main) !important;
+        box-shadow: none !important;
         position: relative !important;
         box-sizing: border-box !important;
         display: flex !important;
@@ -1909,6 +2816,7 @@
     .mcf-mini-btn:active {
         transform: translate(4px, 4px) !important;
         box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        background: var(--mcf-surface) !important;
     }
 
     .mcf-mini-btn i {
@@ -2024,16 +2932,16 @@
     }
 
     body.theme-mcf .mcf-mini-btn:active {
-        transform: translate(3px, 3px) !important;
+        transform: translate(4px, 4px) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
         background: var(--mcf-amber-lt) !important;
     }
 
     /* 🛠️ MECHANICAL UI (Buttons & Interactive) - CONSOLIDATED */
+    /* .btn excluded — handled by the .btn base class above */
     body.theme-mcf .mcf-action-btn,
-    body.theme-mcf .btn,
     body.theme-mcf .wa-btn {
-        background: var(--mcf-paper);
-        /* Base background, no !important to allow categories to win */
+        background: var(--mcf-bg);
         border: 4px solid var(--mcf-ink) !important;
         box-shadow: 8px 8px 0px var(--mcf-ink) !important;
         padding: 24px 16px;
@@ -2043,12 +2951,9 @@
         justify-content: center;
         gap: 12px;
         aspect-ratio: 1 / 1 !important;
-        /* Perfectly square */
         --icon-size: 72px !important;
-        --icon-size-large: 72px !important;
-        --icon-size-medium: 72px !important;
         cursor: pointer;
-        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap), background 0.1s;
+        transition: transform 0.15s var(--mcf-snap), background 0.15s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap);
         position: relative;
         overflow: hidden;
         width: 100%;
@@ -2084,9 +2989,10 @@
     }
 
     body.theme-mcf .mcf-action-btn:active,
-    body.theme-mcf .btn:active {
+    body.theme-mcf .wa-btn:active {
         transform: translate(4px, 4px) !important;
-        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        background: var(--mcf-surface) !important;
     }
 
     /* 🎨 INDUSTRIAL CATEGORY COLORS - BRUTALIST BLOCK SYSTEM (v5) */
@@ -2101,8 +3007,8 @@
     /* ⚠️ DRAFT BANNER (Pending Work) */
     .mcf-draft-banner {
         background: var(--mcf-amber-lt) !important;
-        border: var(--mcf-border) !important;
-        box-shadow: var(--mcf-shadow) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-amber) !important;
         padding: 20px !important;
         margin: 24px 0 !important;
         width: 100% !important;
@@ -2168,15 +3074,19 @@
 
 
     .mcf-mini-btn {
-        width: 48px;
-        height: 48px;
-        background: var(--mcf-ink) !important;
-        color: var(--mcf-paper) !important;
-        border: none !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+        width: 54px !important;
+        height: 54px !important;
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        cursor: pointer !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
     }
 
     /* Scroll Resilience */
@@ -2274,33 +3184,60 @@
         /* Safety for ctx-bar */
     }
 
-    /* 🧱 TECTONIC CASCADE (Skill: Algorithmic Art -> Sequence) */
+    /* 🧱 TECTONIC CASCADE (Surgical Records) */
     body.theme-mcf .home-alert-item {
-        animation: mcf-list-item-entry 0.3s var(--mcf-snap) backwards;
-        border-radius: 0 !important;
-        margin-bottom: 12px !important;
-        border: 2px solid var(--mcf-ink) !important;
-        transition: transform 0.1s var(--mcf-snap), background 0.1s var(--mcf-snap) !important;
-        padding: 20px 18px !important;
         display: flex !important;
         align-items: center !important;
-        gap: 16px !important;
-        min-height: 85px !important;
-        box-sizing: border-box !important;
+        gap: 20px !important;
+        padding: 16px 20px !important;
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        margin-bottom: 12px !important;
+        transition: background 0.2s var(--mcf-snap), transform 0.2s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        min-height: 80px !important;
     }
 
     body.theme-mcf .home-alert-item:active {
-        transform: translate(3px, 3px) !important;
-        background: var(--mcf-surface) !important;
-        box-shadow: none !important;
+        transform: translate(2px, 2px) !important;
+        background: var(--mcf-bg) !important;
     }
 
     body.theme-mcf .home-alert-item.urgent {
-        border: 4px solid var(--mcf-ink) !important;
-        background: var(--mcf-amber-lt) !important;
-        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
-        position: relative !important;
-        cursor: pointer !important;
+        border-left: 6px solid var(--mcf-rose) !important;
+        background: rgba(230, 93, 86, 0.03) !important;
+    }
+
+    body.theme-mcf .home-alert-icon {
+        width: 48px !important;
+        height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: 2px solid var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        flex-shrink: 0 !important;
+    }
+
+    body.theme-mcf .home-alert-title {
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 950 !important;
+        text-transform: uppercase !important;
+        letter-spacing: -0.5px !important;
+        color: var(--mcf-ink) !important;
+        line-height: 1.1 !important;
+    }
+
+    body.theme-mcf .home-alert-desc {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        color: var(--mcf-ink-muted) !important;
+        margin-top: 4px !important;
     }
 
     body.theme-mcf .mcf-urgent-indicator {
@@ -2399,18 +3336,16 @@
         transform: none !important;
         height: var(--mcf-tab-height) !important;
         background: var(--mcf-ink) !important;
-        border-top: 4px solid var(--mcf-amber) !important;
+        border-top: var(--border-main) !important;
         display: flex !important;
         padding: 0 !important;
         z-index: 10000 !important;
-        /* Fixed: Above content (z=10), below modals (z=100000) */
         padding-bottom: env(safe-area-inset-bottom) !important;
         box-sizing: content-box !important;
         border-radius: 0 !important;
-        box-shadow: 0 -10px 0px rgba(26, 26, 26, 0.1) !important;
+        box-shadow: none !important;
         backdrop-filter: none !important;
         touch-action: manipulation !important;
-        /* Remove 300ms delay */
     }
 
     body.theme-mcf .tab {
@@ -2428,7 +3363,7 @@
         border: none !important;
         padding: 12px 0 !important;
         cursor: pointer !important;
-        transition: all 0.2s var(--mcf-snap) !important;
+        transition: color 0.2s var(--mcf-snap), background 0.2s var(--mcf-snap) !important;
         touch-action: manipulation !important;
         -webkit-tap-highlight-color: transparent !important;
     }
@@ -2481,7 +3416,7 @@
 
     body.theme-mcf #main-hdr {
         background: var(--mcf-paper) !important;
-        border-bottom: 4px solid var(--mcf-ink) !important;
+        border-bottom: var(--border-main) !important;
         height: 70px !important;
         display: flex !important;
         align-items: center !important;
@@ -2521,12 +3456,13 @@
     .sh {
         width: 100%;
         background: var(--mcf-paper) !important;
-        border-top: 6px solid var(--mcf-ink) !important;
+        border-top: var(--border-main) !important;
         padding: 40px 24px calc(env(safe-area-inset-bottom, 0px) + 32px) !important;
         transform: translateY(100%);
         transition: transform 0.4s var(--mcf-fluid);
         max-height: 90vh;
         overflow-y: auto;
+        box-shadow: none !important;
     }
 
     .shov.open .sh {
@@ -2539,6 +3475,31 @@
         background: var(--mcf-ink);
         margin: -24px auto 24px;
         opacity: 0.2;
+    }
+
+    body.theme-mcf .confirm-overlay,
+    body.theme-mcf .sync-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        background: rgba(26, 24, 22, 0.85) !important;
+        z-index: 1000000 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: opacity 0.3s var(--mcf-snap), visibility 0.3s var(--mcf-snap) !important;
+    }
+
+    body.theme-mcf .confirm-overlay.open,
+    body.theme-mcf .sync-overlay.open {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
     }
 
     #sh-title {
@@ -2565,9 +3526,9 @@
         align-items: center;
         padding: 12px 16px;
         background: var(--mcf-paper);
-        border: 2px solid var(--mcf-ink);
+        border: var(--border-main);
         margin-bottom: 8px;
-        box-shadow: 4px 4px 0px var(--mcf-ink);
+        box-shadow: none !important;
     }
 
     .mcf-manifest-name {
@@ -2592,7 +3553,7 @@
     /* Merma Reason Chips */
     .motivo-btn {
         background: var(--mcf-paper);
-        border: 2px solid var(--mcf-ink);
+        border: 4px solid var(--mcf-ink);
         padding: 8px 16px;
         font-family: var(--mcf-font-display);
         font-weight: 800;
@@ -2600,20 +3561,27 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         cursor: pointer;
-        transition: all 0.15s;
+        transition: background 0.15s, transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        box-shadow: 4px 4px 0px var(--mcf-ink);
+    }
+
+    .motivo-btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0px var(--mcf-ink);
     }
 
     .motivo-btn.active {
         background: var(--mcf-amber);
-        box-shadow: 4px 4px 0px var(--mcf-ink);
-        transform: translate(-2px, -2px);
+        border-color: var(--mcf-ink) !important;
+        transform: translate(4px, 4px);
+        box-shadow: 0px 0px 0px var(--mcf-ink);
     }
 
     /* Sheet Action Buttons */
     .mcf-sheet-btn {
         width: 100%;
         padding: 20px;
-        border: 4px solid var(--mcf-ink);
+        border: 4px solid var(--mcf-ink) !important;
         font-family: var(--mcf-font-display);
         font-weight: 950;
         font-size: 14px;
@@ -2624,34 +3592,37 @@
         justify-content: center;
         gap: 12px;
         cursor: pointer;
-        transition: transform 0.1s, box-shadow 0.1s;
+        transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
-    .mcf-btn-wa { background: #25D366; color: white; box-shadow: 6px 6px 0px var(--mcf-ink); }
-    .mcf-btn-cloud { background: var(--mcf-amber); color: var(--mcf-ink); box-shadow: 6px 6px 0px var(--mcf-ink); }
+    .mcf-sheet-btn:active {
+        transform: translate(4px, 4px);
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-btn-wa { background: #25D366; color: white; }
+    .mcf-btn-cloud { background: var(--mcf-amber); color: var(--mcf-ink); }
     .mcf-btn-danger-alt { background: var(--mcf-rose-lt); color: var(--mcf-ink); border-style: dashed; }
     .mcf-btn-cancel-alt { background: transparent; border: none; color: var(--mcf-ink-muted); font-size: 12px; }
 
-    .mcf-sheet-btn:active {
-        transform: translate(3px, 3px);
-        box-shadow: none !important;
+
+
+
+    body.theme-mcf .sync-spinner { display: none !important; }
+    body.theme-mcf .sync-text { 
+        color: var(--mcf-bg) !important; 
+        font-size: 12px !important;
+        opacity: 0.9;
     }
 
-    body.theme-mcf .confirm-overlay,
-    body.theme-mcf .sync-overlay,
-    body.theme-mcf .action-sheet-overlay {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        background: rgba(26, 24, 22, 0.9) !important;
-        z-index: 1000000 !important;
-    }
 
     body.theme-mcf .confirm-modal,
     body.theme-mcf .action-sheet {
         background: var(--mcf-paper) !important;
-        border: 5px solid var(--mcf-ink) !important;
+        border: var(--border-main) !important;
         border-radius: 0 !important;
-        box-shadow: 12px 12px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
         padding: 40px 24px !important;
     }
 
@@ -2668,11 +3639,176 @@
     body.theme-mcf .confirm-btn-cancel,
     body.theme-mcf .prod-fs-btn {
         border-radius: 0 !important;
-        border: 3px solid var(--mcf-ink) !important;
-        font-family: inherit !important;
-        font-weight: 900 !important;
+        border: 4px solid var(--mcf-ink) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 950 !important;
         text-transform: uppercase !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        transition: transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+    }
+
+    body.theme-mcf .confirm-btn-danger:active,
+    body.theme-mcf .confirm-btn-cancel:active,
+    body.theme-mcf .prod-fs-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+    }
+
+    /* Action button variants */
+    body.theme-mcf .prod-fs-btn-next {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border-color: var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-amber) !important;
+    }
+
+    body.theme-mcf .prod-fs-btn-next:active {
+        box-shadow: 2px 2px 0px var(--mcf-amber) !important;
+    }
+
+    body.theme-mcf .prod-fs-btn-86 {
+        background: var(--mcf-paper) !important;
+        color: var(--mcf-rose) !important;
+        border-color: var(--mcf-rose) !important;
+        box-shadow: 6px 6px 0px var(--mcf-rose) !important;
+    }
+
+    body.theme-mcf .prod-fs-btn-86:active {
+        background: var(--mcf-rose) !important;
+        color: var(--mcf-paper) !important;
+        box-shadow: 2px 2px 0px var(--mcf-rose) !important;
+    }
+
+    /* Quantity value display — ink on bg = 18:1 contrast */
+    body.theme-mcf .prod-fs-step-val {
+        flex: 1 !important;
+        background: var(--mcf-bg) !important;
+        color: var(--mcf-ink) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-size: 68px !important;
+        font-weight: 950 !important;
+        text-align: center !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        line-height: 1 !important;
+        border: none !important;
+        letter-spacing: -2px !important;
+    }
+
+    body.theme-mcf .prod-fs-step-val.is-86 {
+        color: var(--mcf-rose) !important;
+        font-size: 36px !important;
+        letter-spacing: 4px !important;
+    }
+
+    body.theme-mcf .prod-fs-step-val.zero {
+        color: var(--mcf-ink) !important;
+        opacity: 0.25 !important;
+    }
+
+    /* Unit chips inside fullscreen — MCF brutalist style */
+    body.theme-mcf .prod-fs-unit-row {
+        display: flex !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        width: 100% !important;
+        max-width: 480px !important;
+    }
+
+    body.theme-mcf .prod-fs-uchip {
+        padding: 10px 20px !important;
+        background: var(--mcf-bg) !important;
+        border: 2px solid var(--mcf-ink) !important;
+        border-radius: 0 !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        font-family: var(--mcf-font-display) !important;
+        color: var(--mcf-ink) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        cursor: pointer !important;
+        box-shadow: 3px 3px 0px var(--mcf-ink) !important;
+        transition: transform 0.08s var(--mcf-snap), box-shadow 0.08s var(--mcf-snap) !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+    }
+
+    body.theme-mcf .prod-fs-uchip:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 1px 1px 0px var(--mcf-ink) !important;
+    }
+
+    /* Active unit chip: ink bg, paper text = 18:1 contrast */
+    body.theme-mcf .prod-fs-uchip.active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        box-shadow: 1px 1px 0px var(--mcf-ink) !important;
+        transform: translate(2px, 2px) !important;
+    }
+
+    body.theme-mcf .prod-fs-uchip.is-preferred {
+        border-color: var(--mcf-amber) !important;
+        box-shadow: 3px 3px 0px var(--mcf-amber) !important;
+    }
+
+    body.theme-mcf .prod-fs-uchip.is-preferred.active {
+        background: var(--mcf-ink) !important;
+        color: var(--mcf-paper) !important;
+        border-color: var(--mcf-amber) !important;
+        box-shadow: 1px 1px 0px var(--mcf-amber) !important;
+    }
+
+    /* Navigation row */
+    body.theme-mcf .prod-fs-action-row {
+        display: flex !important;
+        gap: 12px !important;
+        width: 100% !important;
+        max-width: 480px !important;
+    }
+
+    body.theme-mcf .prod-fs-nav {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        max-width: 480px !important;
+        padding: 0 4px !important;
+    }
+
+    body.theme-mcf .prod-fs-nav button {
+        background: none !important;
+        border: none !important;
+        color: var(--mcf-ink) !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 900 !important;
+        font-size: 12px !important;
+        letter-spacing: 1.5px !important;
+        text-transform: uppercase !important;
+        padding: 12px 8px !important;
+        cursor: pointer !important;
+        opacity: 0.5 !important;
+        box-shadow: none !important;
+        transition: opacity 0.1s !important;
+    }
+
+    body.theme-mcf .prod-fs-nav button:active {
+        opacity: 1 !important;
+        background: none !important;
+    }
+
+    body.theme-mcf .prod-fs-counter {
+        font-family: var(--mcf-font-display) !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        color: var(--mcf-ink) !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+        opacity: 0.5 !important;
     }
 
     body.theme-mcf .confirm-btn-danger {
@@ -2784,12 +3920,12 @@
     /* 🗓️ CALENDAR LIST (Industrial Feed) */
     .cal-event-card {
         background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
         padding: 16px !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 8px !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
     .cal-event-time {
@@ -2839,7 +3975,7 @@
 
     /* 📜 HISTORY & LOGS (Industrial Record) */
     .mcf-hist-card {
-        background: var(--mcf-paper) !important;
+        background: var(--mcf-bg) !important;
         border: 4px solid var(--mcf-ink) !important;
         padding: 20px !important;
         margin-bottom: 16px !important;
@@ -2848,7 +3984,7 @@
         gap: 12px !important;
         box-shadow: 6px 6px 0px var(--mcf-ink) !important;
         position: relative !important;
-        transition: transform 0.2s var(--mcf-snap) !important;
+        transition: transform 0.2s var(--mcf-snap), box-shadow 0.2s var(--mcf-snap) !important;
     }
 
     .mcf-hist-card:active {
@@ -2941,12 +4077,10 @@
         width: 100% !important;
         max-width: 600px !important;
         background: var(--mcf-bg) !important;
-        border-top: 4px solid var(--mcf-ink) !important;
-        border-left: 4px solid var(--mcf-ink) !important;
-        border-right: 4px solid var(--mcf-ink) !important;
+        border: var(--border-main) !important;
         padding: 24px !important;
         padding-bottom: env(safe-area-inset-bottom, 24px) !important;
-        box-shadow: 0px -10px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
         animation: mcf-modal-slide-up 0.3s var(--mcf-snap) !important;
     }
 
@@ -2978,15 +4112,16 @@
         flex: 1 !important;
         padding: 14px 8px !important;
         background: var(--mcf-paper) !important;
-        border: 2px solid var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
         font-size: 11px !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
         cursor: pointer !important;
-        transition: all 0.1s var(--mcf-snap) !important;
+        transition: background 0.1s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
-    .mcf-edit-mode-btn.active { color: var(--mcf-paper) !important; box-shadow: 4px 4px 0px var(--mcf-ink) !important; transform: translate(-2px, -2px) !important; }
+    .mcf-edit-mode-btn.active { color: var(--mcf-paper) !important; box-shadow: 2px 2px 0px var(--mcf-ink) !important; transform: translate(4px, 4px) !important; }
     .mcf-edit-mode-btn.mcf-btn-pedido.active { background: var(--mcf-rose) !important; }
     .mcf-edit-mode-btn.mcf-btn-stock.active { background: var(--mcf-slate) !important; }
     .mcf-edit-mode-btn.mcf-btn-recepc.active { background: var(--mcf-sage) !important; }
@@ -3020,10 +4155,10 @@
         top: 100% !important;
         z-index: 200 !important;
         background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
+        border: var(--border-main) !important;
         max-height: 200px !important;
         overflow-y: auto !important;
-        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
     }
 
     /* Edit Rows & Steppers */
@@ -3062,7 +4197,7 @@
         cursor: pointer !important;
     }
 
-    .mcf-edit-step-btn:active { background: var(--mcf-surface) !important; }
+    .mcf-edit-step-btn:active { background: var(--mcf-surface) !important; transform: translate(1px, 1px) !important; }
     .mcf-edit-step-btn i { width: 14px !important; stroke-width: 3px !important; }
     /* 🎛️ HISTORY FILTERS (Mechanical Toggles) */
     .mcf-hist-filter-row {
@@ -3078,24 +4213,31 @@
         flex: 1 !important; /* Each button takes equal space */
         min-width: 0 !important;
         background: var(--mcf-surface) !important;
-        border: none !important;
+        border: 2px solid var(--mcf-ink) !important;
         padding: 8px 2px !important;
         font-size: 9px !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
-        color: var(--mcf-ink-muted) !important;
-        border-radius: 4px !important;
-        transition: all 0.2s ease !important;
+        color: var(--mcf-ink) !important;
+        border-radius: 0 !important;
+        transition: background 0.15s var(--mcf-snap), color 0.15s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
         text-align: center !important;
         white-space: nowrap !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
+        cursor: pointer !important;
+    }
+
+    .mcf-hist-filter-btn:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
     }
 
     .mcf-hist-filter-btn.active {
         background: var(--mcf-ink) !important;
         color: var(--mcf-paper) !important;
-        transform: none !important;
-        box-shadow: none !important;
+        transform: translate(2px, 2px) !important;
+        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
     }
 
     .mcf-hist-filter-btn.mcf-btn-pedido { background: var(--mcf-rose-lt) !important; color: var(--mcf-ink) !important; }
@@ -3113,12 +4255,12 @@
         display: flex !important;
         align-items: center !important;
         background: var(--mcf-paper) !important;
-        border: 4px solid var(--mcf-ink) !important;
+        border: var(--border-main) !important;
         margin: 0 6px 24px 0 !important;
         width: calc(100% - 8px) !important;
         box-sizing: border-box !important;
         height: 54px !important;
-        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        box-shadow: none !important;
         overflow: hidden !important;
     }
 
@@ -3190,7 +4332,7 @@
         margin-top: 10px !important;
     }
 
-    .mcf-edit-btn-save, .mcf-edit-btn-wa, .mcf-edit-btn-cancel {
+    .mcf-edit-btn-save, .mcf-edit-btn-wa {
         width: 100% !important;
         padding: 16px !important;
         font-family: var(--mcf-font-display) !important;
@@ -3200,13 +4342,13 @@
         letter-spacing: 1.5px !important;
         border: 4px solid var(--mcf-ink) !important;
         cursor: pointer !important;
-        transition: all 0.1s var(--mcf-snap) !important;
+        transition: background 0.1s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
     .mcf-edit-btn-save {
         background: var(--mcf-amber) !important;
         color: var(--mcf-ink) !important;
-        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
     .mcf-edit-btn-wa {
@@ -3216,20 +4358,21 @@
         align-items: center !important;
         justify-content: center !important;
         gap: 10px !important;
-        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
     }
 
     .mcf-edit-btn-cancel {
+        width: 100% !important;
         background: none !important;
         border: none !important;
         color: var(--mcf-ink-ghost) !important;
         font-size: 12px !important;
         padding: 8px !important;
+        cursor: pointer !important;
     }
 
     .mcf-edit-btn-save:active, .mcf-edit-btn-wa:active {
         transform: translate(4px, 4px) !important;
-        box-shadow: none !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
     }
 
     @keyframes mcf-modal-slide-up {
@@ -3280,7 +4423,7 @@
         gap: 12px !important;
         margin-bottom: 20px !important;
         padding-bottom: 12px !important;
-        border-bottom: 3px solid var(--mcf-ink) !important;
+        border-bottom: var(--border-light) !important;
     }
 
     .mcf-set-label {
@@ -3295,8 +4438,8 @@
 
     .mcf-set-input {
         width: 100% !important;
-        background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        border: var(--border-main) !important;
         padding: 14px !important;
         font-family: var(--mcf-font-display) !important;
         font-size: 14px !important;
@@ -3321,19 +4464,25 @@
     /* 🔌 THEME TOGGLES */
     .mcf-set-theme-btn {
         background: var(--mcf-paper) !important;
-        border: 3px solid var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
         padding: 16px !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 12px !important;
         cursor: pointer !important;
-        transition: all 0.2s var(--mcf-snap) !important;
+        transition: background 0.2s var(--mcf-snap), border-color 0.2s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
         position: relative !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-set-theme-btn:active {
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
     }
 
     .mcf-set-theme-btn.active {
         background: var(--mcf-surface) !important;
-        box-shadow: inset 4px 4px 0px var(--mcf-ink) !important;
+        border-color: var(--mcf-amber) !important;
     }
 
     .mcf-set-theme-btn.active::after {
@@ -3356,7 +4505,7 @@
 
     .mcf-set-action-btn {
         width: 100% !important;
-        background: var(--mcf-paper) !important;
+        background: var(--mcf-bg) !important;
         border: 4px solid var(--mcf-ink) !important;
         padding: 16px !important;
         font-family: var(--mcf-font-display) !important;
@@ -3366,8 +4515,8 @@
         letter-spacing: 1px !important;
         color: var(--mcf-ink) !important;
         cursor: pointer !important;
-        box-shadow: 4px 4px 0px var(--mcf-ink) !important;
-        transition: all 0.1s var(--mcf-snap) !important;
+        box-shadow: 6px 6px 0px var(--mcf-ink) !important;
+        transition: background 0.1s var(--mcf-snap), transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -3375,8 +4524,8 @@
     }
 
     .mcf-set-action-btn:active {
-        transform: translate(2px, 2px) !important;
-        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
+        transform: translate(4px, 4px) !important;
+        box-shadow: 2px 2px 0px var(--mcf-ink) !important;
     }
 
     .mcf-set-action-btn.urgent {
@@ -3386,17 +4535,25 @@
     /* 🏷️ LOGISTICS CHIPS (Settings) */
     .mcf-set-day-chip {
         padding: 8px 12px !important;
-        border: 2px solid var(--mcf-ink) !important;
+        border: 4px solid var(--mcf-ink) !important;
         font-size: 10px !important;
         font-weight: 950 !important;
         text-transform: uppercase !important;
         cursor: pointer !important;
-        transition: all 0.15s ease !important;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.1s var(--mcf-snap), box-shadow 0.1s var(--mcf-snap) !important;
+        box-shadow: 3px 3px 0px var(--mcf-ink) !important;
+    }
+
+    .mcf-set-day-chip:active {
+        transform: translate(2px, 2px) !important;
+        box-shadow: 1px 1px 0px var(--mcf-ink) !important;
     }
 
     .mcf-set-day-chip.active {
         background: var(--mcf-amber) !important;
         color: var(--mcf-ink) !important;
+        transform: translate(3px, 3px) !important;
+        box-shadow: 0px 0px 0px var(--mcf-ink) !important;
     }
 
     /* 📡 DIAGNOSTIC TERMINAL */
@@ -3415,8 +4572,77 @@
     .mcf-set-footer {
         margin-top: 48px !important;
         padding: 32px 20px !important;
-        border-top: 4px solid var(--mcf-ink) !important;
+        border-top: var(--border-main) !important;
         background: var(--mcf-surface) !important;
         text-align: center !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       MODAL NUEVA RESERVA
+       ═══════════════════════════════════════════════════════════════════ */
+
+    .reservation-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(26, 24, 22, 0.7) !important;
+        z-index: 90000 !important;
+        display: flex !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+    }
+
+    .reservation-overlay.hidden {
+        display: none !important;
+    }
+
+    .reservation-modal {
+        background: var(--mcf-paper) !important;
+        border: 4px solid var(--mcf-ink) !important;
+        box-shadow: 8px 8px 0px var(--mcf-ink) !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        border-bottom: none !important;
+        max-height: 90vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    .reservation-modal-header {
+        background: var(--mcf-ink) !important;
+        padding: 18px 20px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .reservation-modal-body {
+        padding: 24px 20px !important;
+        overflow-y: auto !important;
+        flex: 1 !important;
+    }
+
+    .reservation-modal-body .form-group {
+        margin-bottom: 16px !important;
+    }
+
+    .reservation-modal-body .form-input {
+        border: 2px solid var(--mcf-ink) !important;
+        padding: 10px 14px !important;
+        font-size: 14px !important;
+        font-family: var(--mcf-font-display) !important;
+        font-weight: 700 !important;
+        color: var(--mcf-ink) !important;
+        background: var(--mcf-bg) !important;
+        border-radius: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .reservation-modal-body .form-input:focus {
+        outline: none !important;
+        border-color: var(--mcf-amber) !important;
+        box-shadow: 3px 3px 0px var(--mcf-amber) !important;
     }
 </style>
