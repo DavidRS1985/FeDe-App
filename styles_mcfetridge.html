@@ -5212,4 +5212,387 @@
         border-color: var(--mcf-amber) !important;
         box-shadow: 3px 3px 0px var(--mcf-amber) !important;
     }
-</style>
+
+
+    /* ╔══════════════════════════════════════════════════════════════════════════╗
+       ║  FEDE DESIGN SYSTEM v2 — OVERRIDE FINAL                               ║
+       ║  Bloque al final del archivo para garantizar cascada correcta.          ║
+       ║  Estos estilos GANAN sobre las reglas McFetridge de arriba.             ║
+       ╚══════════════════════════════════════════════════════════════════════════╝ */
+
+    /* ── LOADER / SYNC SCREEN ───────────────────────────────────────────────── */
+    #loader {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 99999 !important;
+        background: var(--fede-bg) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        padding: 0 24px !important;
+    }
+    /* Eliminar la geometría orbital antigua que sigue en memoria */
+    #loader .loader-wrapper,
+    #loader .loader-core,
+    #loader .c1, #loader .c2, #loader .c3, #loader .c4,
+    #loader .loader-scanner {
+        display: none !important;
+    }
+    #loader-perc {
+        font: var(--fede-caption) !important;
+        font-variant-numeric: tabular-nums !important;
+        color: var(--fede-on-surface-3) !important;
+        background: transparent !important;
+        padding: 0 !important;
+        border: none !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+    }
+    #loader-status {
+        font: var(--fede-body) !important;
+        font-weight: 600 !important;
+        color: var(--fede-on-surface) !important;
+        background: transparent !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        text-align: left !important;
+        padding: 0 !important;
+    }
+
+    /* ── HOME SCREEN ────────────────────────────────────────────────────────── */
+    #home,
+    #home-content {
+        background: var(--fede-bg) !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    /* Evitar que clases heredadas de McFetridge pisen el nuevo home */
+    #home-content.view.active {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+    }
+    /* SyncPill en el home */
+    #home-sync-pill {
+        font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    /* fede-action-card: mayor especificidad para ganar sobre card legacy */
+    #home-content .fede-action-card {
+        background: var(--fede-surface) !important;
+        border: 1px solid var(--fede-border) !important;
+        border-radius: var(--fede-r-lg) !important;
+        box-shadow: none !important;
+    }
+
+    /* ── MODO OPERATIVO — APP BAR ───────────────────────────────────────────── */
+    #view-relevamiento.view {
+        background: var(--fede-bg) !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .fede-app-bar {
+        background: var(--fede-surface) !important;
+        border-bottom: 1px solid var(--fede-border) !important;
+        border-radius: 0 !important;
+        padding: 10px 14px !important;
+        box-shadow: none !important;
+    }
+
+    /* ── CATEGORY GRID ──────────────────────────────────────────────────────── */
+    #view-relevamiento #cat-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        padding: 16px !important;
+        background: var(--fede-bg) !important;
+    }
+    /* Botones de categoría generados por JS */
+    #view-relevamiento #cat-grid .cat-btn,
+    #view-relevamiento #cat-grid > * {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        padding: 16px !important;
+        background: var(--fede-surface) !important;
+        border: 1px solid var(--fede-border) !important;
+        border-radius: var(--fede-r-lg) !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        text-align: left !important;
+        transition: transform 0.12s ease !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        position: relative !important;
+        overflow: hidden !important;
+        /* Eliminar estilos McFetridge */
+        box-shadow: none !important;
+        border-left: none !important;
+        border-top: none !important;
+        color: var(--fede-on-surface) !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        aspect-ratio: auto !important;
+    }
+    #view-relevamiento #cat-grid .cat-btn::before,
+    #view-relevamiento #cat-grid > *::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important; left: 0 !important; right: 0 !important;
+        height: 3px !important;
+        background: var(--fede-accent, var(--fede-accent-pedido)) !important;
+        opacity: 0.9 !important;
+        border-radius: 0 !important;
+        width: 100% !important;
+    }
+    #view-relevamiento #cat-grid .cat-btn:active { transform: scale(0.97) !important; }
+
+    /* ── PRODUCT LIST ROWS ──────────────────────────────────────────────────── */
+    #prod-list {
+        border-radius: var(--fede-r-md) !important;
+        overflow: hidden !important;
+        border: 1px solid var(--fede-border) !important;
+        background: var(--fede-surface) !important;
+        margin: 12px 16px !important;
+    }
+    #prod-list .prod-row,
+    #prod-list > * {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 12px 14px !important;
+        border-bottom: 1px solid var(--fede-divider) !important;
+        background: var(--fede-surface) !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        border-left: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        min-height: 0 !important;
+    }
+    #prod-list .prod-row:last-child,
+    #prod-list > *:last-child { border-bottom: none !important; }
+
+    /* Nombre del producto */
+    #prod-list .prod-name {
+        font: var(--fede-body) !important;
+        font-weight: 500 !important;
+        color: var(--fede-on-surface) !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        font-size: 15px !important;
+    }
+
+    /* ── STEPPER INLINE ─────────────────────────────────────────────────────── */
+    #prod-list .stepper {
+        display: flex !important;
+        align-items: stretch !important;
+        border: 1.5px solid var(--fede-border) !important;
+        border-radius: var(--fede-r-md) !important;
+        overflow: hidden !important;
+        height: 44px !important;
+        background: var(--fede-surface) !important;
+        flex-shrink: 0 !important;
+        box-shadow: none !important;
+    }
+    #prod-list .stepper .step-btn,
+    #prod-list .stepper button {
+        width: 40px !important; min-width: 40px !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--fede-surface-sunken) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: var(--fede-on-surface) !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    #prod-list .stepper .step-btn:active,
+    #prod-list .stepper button:active {
+        background: var(--fede-border) !important;
+    }
+    #prod-list .stepper .step-val,
+    #prod-list .stepper .qty-display {
+        min-width: 44px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-left: 1.5px solid var(--fede-border) !important;
+        border-right: 1.5px solid var(--fede-border) !important;
+        border-top: none !important;
+        border-bottom: none !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: var(--fede-on-surface) !important;
+        font-variant-numeric: tabular-nums !important;
+        cursor: pointer !important;
+        padding: 0 6px !important;
+        background: var(--fede-surface) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* ── CTX-BAR ────────────────────────────────────────────────────────────── */
+    #ctx-bar.ctx-bar {
+        position: fixed !important;
+        bottom: 0 !important; left: 0 !important; right: 0 !important;
+        z-index: 200 !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        background: var(--fede-surface) !important;
+        border-top: 1px solid var(--fede-border) !important;
+        gap: 10px !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+    #ctx-bar.ctx-bar.hidden { display: none !important; }
+
+    #ctx-bar .ctx-exit {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 10px 14px !important;
+        border: 1px solid var(--fede-border) !important;
+        border-radius: var(--fede-r-md) !important;
+        background: transparent !important;
+        color: var(--fede-on-surface-2) !important;
+        font: var(--fede-label) !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        box-shadow: none !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+    }
+    #ctx-bar .ctx-send,
+    #ctx-listo-btn {
+        flex: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 12px 16px !important;
+        border: none !important;
+        border-radius: var(--fede-r-md) !important;
+        background: var(--fede-accent, var(--fede-accent-pedido)) !important;
+        color: #fff !important;
+        font: var(--fede-label) !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        box-shadow: none !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+    }
+    #ctx-bar .ctx-count,
+    #ctx-count {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        padding: 0 6px !important;
+        border-radius: var(--fede-r-pill) !important;
+        background: rgba(255,255,255,0.22) !important;
+        font: var(--fede-caption) !important;
+        font-weight: 700 !important;
+        color: #fff !important;
+    }
+
+    /* ── SYNC OVERLAY ───────────────────────────────────────────────────────── */
+    #sync-overlay.sync-overlay {
+        background: rgba(15,18,23,0.75) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+    }
+    #sync-overlay .sync-spinner {
+        width: 40px !important; height: 40px !important;
+        border: 3px solid rgba(255,255,255,0.15) !important;
+        border-top-color: #fff !important;
+        border-radius: 50% !important;
+        animation: spin 0.8s linear infinite !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    #sync-overlay #sync-text,
+    #sync-overlay .sync-text {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: rgba(255,255,255,0.85) !important;
+        letter-spacing: 0.3px !important;
+        text-transform: none !important;
+    }
+
+    /* ── COMMAND DECK (BOTTOM SEARCH) ───────────────────────────────────────── */
+    #mcf-bottom-search-bar {
+        background: var(--fede-surface) !important;
+        border-top: 1px solid var(--fede-border) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    #mcf-bottom-search-bar .mcf-deck-wrap {
+        background: var(--fede-surface-sunken) !important;
+        border-radius: var(--fede-r-md) !important;
+        height: 44px !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 14px !important;
+    }
+    #mcf-bottom-search-bar .mcf-deck-wrap input {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-size: 15px !important;
+        color: var(--fede-on-surface) !important;
+        background: transparent !important;
+    }
+    #mcf-bottom-search-bar .mcf-deck-wrap input::placeholder {
+        color: var(--fede-on-surface-3) !important;
+    }
+
+    /* ── TABS NAVEGACIÓN PRINCIPAL ──────────────────────────────────────────── */
+    #main-tabs.tabs {
+        background: var(--fede-surface) !important;
+        border-top: 1px solid var(--fede-border) !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    #main-tabs .tab {
+        font: var(--fede-caption) !important;
+        font-weight: 600 !important;
+        color: var(--fede-on-surface-3) !important;
+        background: transparent !important;
+        border: none !important;
+        border-top: 2px solid transparent !important;
+        border-radius: 0 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: none !important;
+        transition: color 0.15s, border-color 0.15s !important;
+    }
+    #main-tabs .tab.active {
+        color: var(--fede-on-surface) !important;
+        border-top-color: var(--fede-on-surface) !important;
+        background: transparent !important;
+    }
+
+    /* ╔══════════════════════════════════════════════════════════════════════════╗
+       ║  FIN FEDE DESIGN SYSTEM v2 OVERRIDE FINAL                              ║
+       ╚══════════════════════════════════════════════════════════════════════════╝ */
+</style>
