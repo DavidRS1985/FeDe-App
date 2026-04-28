@@ -1,4 +1,4 @@
-﻿<? var st = (typeof theme !== 'undefined') ? theme : 'mcf'; ?>
+<? var st = (typeof theme !== 'undefined') ? theme : 'mcf'; ?>
 <!DOCTYPE html>
 <html lang="es" data-icon-size="medium" class="theme-<?= st ?>">
 
@@ -80,21 +80,117 @@
 
 <body class="theme-<?= st ?> view-loader">
 
-    <!-- PANTALLA DE CARGA (Zen-Tech Blueprint) -->
-    <div id="loader" role="status" aria-live="polite" aria-label="Cargando sistema industrial">
-        <div class="loader-wrapper">
-            <div class="loader-core">
-                <div class="c1"></div><div class="c2"></div>
-                <div class="c3"></div><div class="c4"></div>
-                <div class="loader-scanner"></div>
+    <!-- PANTALLA DE CARGA — FEDE DESIGN SYSTEM v2 -->
+    <div id="loader" role="status" aria-live="polite" aria-label="Sincronizando sistema" style="
+        position: fixed; inset: 0; z-index: 99999;
+        background: var(--fede-bg);
+        display: flex; flex-direction: column;
+        font-family: 'Inter', system-ui, sans-serif;
+        padding: 0 24px;
+    ">
+        <!-- Top bar vacío (simula safe-area) -->
+        <div style="height: max(env(safe-area-inset-top, 0px), 20px);"></div>
+
+        <!-- Contenido centrado verticalmente -->
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding-bottom:48px;">
+
+            <!-- Eyebrow label -->
+            <div style="font:var(--fede-caption);color:var(--fede-on-surface-3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px;">
+                FeDe Gastro Pro
             </div>
-            <div id="loader-perc" class="loader-perc">00%</div>
-        </div>
-        <div id="loader-status" class="loader-status">Sincronizando Trazabilidad...</div>
+
+            <!-- Título -->
+            <div style="font:var(--fede-display);color:var(--fede-on-surface);margin-bottom:6px;">
+                Preparando tu turno
+            </div>
+            <div style="font:var(--fede-body);color:var(--fede-on-surface-2);margin-bottom:32px;">
+                Esto toma unos segundos. No cierres la app.
+            </div>
+
+            <!-- Steps decorativos (estáticos, context visual) -->
+            <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:32px;">
+
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:22px;height:22px;border-radius:11px;background:var(--fede-success);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font:var(--fede-body);color:var(--fede-on-surface);font-weight:500;">Conectando con Google Sheets</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:22px;height:22px;border-radius:11px;background:var(--fede-success);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font:var(--fede-body);color:var(--fede-on-surface);font-weight:500;">Sincronizando productos</div>
+                        <div style="font:var(--fede-caption);color:var(--fede-on-surface-3);margin-top:1px;" id="loader-items-count"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:12px;" id="loader-step-active">
+                    <div style="width:22px;height:22px;border-radius:11px;background:var(--fede-surface-sunken);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <div style="width:8px;height:8px;border-radius:4px;background:var(--fede-on-surface);animation:fede-pulse 1s infinite;"></div>
+                    </div>
+                    <div style="flex:1;">
+                        <!-- #loader-status: JS actualiza este texto -->
+                        <div id="loader-status" style="font:var(--fede-body);color:var(--fede-on-surface);font-weight:600;">Sincronizando…</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:22px;height:22px;border-radius:11px;background:var(--fede-surface-sunken);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <div style="width:8px;height:8px;border-radius:4px;background:var(--fede-border);"></div>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font:var(--fede-body);color:var(--fede-on-surface-3);font-weight:400;">Preparando borradores locales</div>
+                    </div>
+                </div>
+
+            </div><!-- /steps -->
+
+            <!-- Barra de progreso — el ancho lo controla #loader-perc via JS -->
+            <div style="height:4px;background:var(--fede-surface-sunken);border-radius:2px;overflow:hidden;margin-bottom:8px;">
+                <div id="loader-bar" style="height:100%;background:var(--fede-on-surface);border-radius:2px;width:10%;transition:width 0.4s ease;"></div>
+            </div>
+
+            <!-- Porcentaje — JS actualiza este texto -->
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div id="loader-perc" style="font:var(--fede-caption);color:var(--fede-on-surface-3);font-variant-numeric:tabular-nums;">0%</div>
+                <div id="loader-eta" style="font:var(--fede-caption);color:var(--fede-on-surface-3);">Calculando tiempo…</div>
+            </div>
+
+        </div><!-- /centered content -->
     </div>
+
+    <script>
+    // FeDe Loader Bridge — sincroniza la barra visual con el texto de #loader-perc
+    // que actualiza app.html, sin modificar app.html
+    (function() {
+        function syncLoaderBar() {
+            var percEl = document.getElementById('loader-perc');
+            var barEl  = document.getElementById('loader-bar');
+            if (!percEl || !barEl) return;
+            var text = percEl.textContent || percEl.innerText || '';
+            var num  = parseInt(text.replace(/[^0-9]/g, ''), 10);
+            if (!isNaN(num)) {
+                barEl.style.width = Math.min(num, 100) + '%';
+            }
+        }
+        // Observar cambios en el texto de #loader-perc
+        document.addEventListener('DOMContentLoaded', function() {
+            var percEl = document.getElementById('loader-perc');
+            if (percEl && window.MutationObserver) {
+                new MutationObserver(syncLoaderBar).observe(percEl, { childList: true, subtree: true, characterData: true });
+            }
+        });
+    })();
+    </script>
 
     <!-- PANTALLA HOME - FEDE DESIGN SYSTEM v2 -->
     <div id="home" style="position:relative; min-height:100vh; overflow-x: hidden;">
+
 
         <main id="home-content" class="view active" style="
             display: flex;
