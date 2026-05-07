@@ -1,5 +1,55 @@
 # Registro de Actualizaciones (Changelog) - FeDe App
 
+## [v12.0.1] - Hotfix ABC ReferenceError - 2026-05-07
+### 🐛 Correcciones
+- **Fix crítico loader 15%:** `abcOverrides is not defined` en `computeABC_v3` al iniciar con snapshot local. Faltaba declarar `var abcOverrides = (CONFIG && CONFIG.abc_overrides) ? CONFIG.abc_overrides : {};` antes del loop principal.
+
+---
+
+## [v12.0.0] - CIABATTA v3 — Smart Replenishment + ABC Híbrido - 2026-05-06
+
+### 🧠 Smart Replenishment v3 — ABC Híbrido con Anclaje Suave
+- **`computeABC_v3()`**: clasificación automática A/B/C basada en frecuencia de stock (`freq = nStock/(nStock+nMerma)`) y tasa de merma (`mermaRate = sumMerma/sumStock`). Umbrales configurables en `SR_CONFIG`.
+- **Anclaje suave (hybrid anchoring)**: `clase_algo` (resultado del algoritmo) + `clase_manual` (override del usuario) + `clase` (final) + `drift` (divergencia). El usuario puede fijar una clase sin perder la señal algorítmica.
+- **`setAbcOverride(prod, clase)`**: persiste overrides en `CONFIG.abc_overrides` via `saveConfig`. Resuelve overrides in-place con `_applyOverridesToExisting()` — O(P) sin recomputar historial.
+- **`openAbcSelector()`** / **`_abcPickClase()`**: bottom-sheet con chips A/B/C/Auto para selección táctil por producto.
+- **`openDriftReview()`**: modal que lista productos donde el algoritmo cambió de opinión respecto al override manual. Permite "Actualizar" o "Mantener" por producto, o resolver todo de una vez.
+- **Badges en árbol de productos**: icono colorizado por clase. Amber = drift, Primary = override manual, Muted = auto.
+- **Alerta drift en Home**: `renderHomeSummary()` emite alerta amber cuando hay productos con drift.
+
+### ⚡ Optimizaciones Algorítmicas ABC
+- **O(2P) → O(P)**: resolución de overrides fusionada en el loop principal de `computeABC_v3` (eliminado segundo loop post-proceso).
+- **`_applyOverridesToExisting()`**: mutación in-place de `ABC_DATA` al cambiar un override — evita O(P×H) recompute completo.
+- **Early return en `computeABC()`**: retorna `ABC_DATA` si ya existe en caché.
+- **`_getDriftProds()`**: helper centralizado para obtener productos con drift; elimina 3 loops duplicados.
+
+### 🎨 Pack Factors — Rediseño Completo
+- **`showAddPackRuleForm()`**: nueva UI con chips de unidad filtrados por dimensión (`UNIT_REGISTRY.getDimension`), búsqueda de producto con autocomplete y preview en tiempo real.
+- **`.pf-chip` / `.pf-chip.active`**: clase CSS unificada para chips de unidad, motivo merma y selector ABC.
+- **`renderPackFactorsConfig()`**: tipografía unificada con tokens `--fede-*`, `lucide.createIcons({ nodes: [el] })` scoped.
+- **`shouldShowPackHint(suggestion, currentUnit, currentQty)`**: suprime hint tautológico cuando la sugerencia coincide con el estado actual.
+
+### 🖥️ Modal de Entrada Manual — Rediseño FeDe v2
+- `#modal-manual-entry`: reescrito con tokens FeDe v2. Input con `font:var(--fede-display)`, fondo `--fede-surface-sunken`, botones `btn-confirm`/`btn-ghost`.
+
+### 🛒 Resumen de Pedido — Fix Dark Mode
+- **`btn-confirm` invisible en dark mode**: era `var(--fede-on-surface)` (#f0f2f7 en dark) → corregido a `var(--primary)`.
+- Chips de motivo unificados a `.pf-chip motivo-btn`.
+
+### 🐛 Correcciones
+- `lucide.createIcons({ el: list })` → `{ nodes: [list] }` en 3 lugares (la clave `el` es inválida, escaneaba todo el documento).
+- Pack hint desaparecía cuando la unidad activa era una packUnit → lógica de fallback corregida.
+- Fondo gris en modo dark en cards `.prow` → `background: var(--fede-bg)` + override `--fede-surface` para light.
+- `renderTree()` crashes con `ABC_DATA null` en navegación directa a Ajustes → guard `if (!ABC_DATA) ABC_DATA = computeABC()`.
+
+### 🎨 CSS — FeDe v2 Tokens
+- Tipografía unificada: todos los valores px hardcodeados reemplazados por `font:var(--fede-display/title/h2/body-lg/body/label/caption)`.
+- `.pack-hint`: rediseñado como pill con `color-mix(primary 10%)` + chevron SVG.
+- `#abc-selector-sheet`: nuevo bottom-sheet para selector de clase ABC.
+- `.sh .btn` variants: padding, fuente y colores unificados con tokens.
+
+---
+
 ## [v10.0.0] - FOCACCIA Edition - 2026-04-18
 
 ### 🏠 Rediseño del Home — Centro de Control Operativo

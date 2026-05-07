@@ -98,7 +98,12 @@ var FeDe_Services = {
       },
       favs: [],
       units: ["unidad/es", "kg", "litro/s", "porción/es", "pack/s"],
-      orderDays: [1, 4]
+      orderDays: [1, 4],
+      pack_factors: {
+        "huevos": { "unidad/es": { "maple/s": 30, "docena/s": 12 } },
+        "papa":   { "kg": { "bolsa/s": 20 } },
+        "harina": { "kg": { "bolsa/s": 25 } }
+      }
     };
     
     sheet.clear();
@@ -214,20 +219,74 @@ function getSheetId(id) {
     return id && id !== 'undefined' && Validator.validateSheetId(id) ? id : MASTER_ID;
 }
 
+function readProductionLog(ss) {
+  var sh = ss.getSheetByName('PRODUCCION');
+  if (!sh) {
+    sh = ss.insertSheet('PRODUCCION');
+    sh.appendRow(['lot_id', 'sku_id', 'recipe_consumed', 'actual_consumed', 'units_produced', 'production_ts', 'station']);
+    return [];
+  }
+  if (sh.getLastRow() < 2) return [];
+  var data = sh.getRange(2, 1, sh.getLastRow() - 1, 7).getValues();
+  return data
+    .filter(function(row) { return row[0] && row[1]; })
+    .map(function(row) {
+      return {
+        lot_id:          String(row[0]),
+        sku_id:          String(row[1]),
+        recipe_consumed: Number(row[2]) || 0,
+        actual_consumed: Number(row[3]) || 0,
+        units_produced:  Number(row[4]) || 0,
+        production_ts:   row[5] ? new Date(row[5]).toISOString() : '',
+        station:         row[6] ? String(row[6]) : ''
+      };
+    });
+}
+
+function saveProductionLot(lotData, targetId) {
+  try {
+    var ss = FeDe_Repo.getSS(targetId);
+    var sh = ss.getSheetByName('PRODUCCION');
+    if (!sh) {
+      sh = ss.insertSheet('PRODUCCION');
+      sh.appendRow(['lot_id', 'sku_id', 'recipe_consumed', 'actual_consumed', 'units_produced', 'production_ts', 'station']);
+    }
+    var lotId = 'lote-' + new Date().getTime().toString(36);
+    var ts = new Date().toISOString();
+    sh.appendRow([
+      lotId,
+      String(lotData.sku_id || ''),
+      Number(lotData.recipe_consumed) || 0,
+      Number(lotData.actual_consumed) || 0,
+      Number(lotData.units_produced) || 0,
+      ts,
+      String(lotData.station || '')
+    ]);
+    try {
+      var cache = CacheService.getScriptCache();
+      cache.remove('app_config_v12_' + (targetId || ''));
+    } catch(ce) {}
+    return { success: true, lot_id: lotId, production_ts: ts };
+  } catch(e) {
+    Logger_FeDe.error('saveProductionLot failed', { error: e.message });
+    return { success: false, error: e.message };
+  }
+}
+
 function doGet(e) {
-  // ── RELEASE: v11.0.18 ──
+  // ── RELEASE: v12.0.0 ──
   // ── ROUTING PARA PWA / ANDROID ──
   if (e && e.parameter) {
     if (e.parameter.path === 'manifest.json') {
       var manifest = {
         "id": "com.fede.focaccia.v10",
-        "name": "FeDe Gastro Pro - v11.0.18 — CSS RESPONSIVO & ERGONÓMICO",
+        "name": "FeDe Gastro Pro - v12.0.0 — Smart Replenishment",
         "short_name": "FOCACCIA",
         "start_url": "./",
         "display": "standalone",
         "background_color": "#0f1115",
         "theme_color": "#ffffff",
-        "description": "Sistema de gestión operativa - FOCACCIA Edition v11.0.18",
+        "description": "Sistema de gestión operativa - v12.0.0 Smart Replenishment",
         "icons": [
           {
             "src": "https://img.icons8.com/isometric/512/restaurant-membership-card.png",
@@ -291,7 +350,7 @@ function doGet(e) {
   template.theme = style;
   
   return template.evaluate()
-    .setTitle('FeDe Gastro Pro - FOCACCIA v11.0.18')
+    .setTitle('FeDe Gastro Pro - v12.0.0 Smart Replenishment')
     .setFaviconUrl('https://img.icons8.com/isometric/512/restaurant-membership-card.png')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -388,7 +447,7 @@ function saveReservation(params, targetId) {
 function getAppConfig(targetId) {
   var cache = CacheService.getScriptCache();
   var sheetId = getSheetId(targetId);
-  var cacheKey = 'app_config_v11_' + sheetId; // Nueva llave para evitar conflictos
+  var cacheKey = 'app_config_v12_' + sheetId; // Nueva llave para evitar conflictos
   
   try {
     // 1. OBTENER DE CACHÉ
@@ -426,12 +485,21 @@ function getAppConfig(targetId) {
       }
     } catch(e) { Logger_FeDe.warn('Error leyendo historial'); }
 
-    var response = { 
-      success: true, 
-      ssName: ss.getName(), 
-      config: state.config, 
-      history: history, 
-      timestamp: new Date().toISOString() 
+    var prodLog = [];
+    try { prodLog = readProductionLog(ss); } catch(e) { Logger_FeDe.warn('Error leyendo PRODUCCION'); }
+
+    var response = {
+      success: true,
+      ssName: ss.getName(),
+      config: state.config,
+      history: history,
+      prod_log: prodLog,
+      pack_factors: state.config.pack_factors || {
+        "huevos": { "unidad/es": { "maple/s": 30, "docena/s": 12 } },
+        "papa":   { "kg": { "bolsa/s": 20 } },
+        "harina": { "kg": { "bolsa/s": 25 } }
+      },
+      timestamp: new Date().toISOString()
     };
 
     cache.put(cacheKey, JSON.stringify(response), 300);
@@ -460,7 +528,7 @@ function saveConfig(key, value, targetId) {
     
     // Invalidar caché de config
     var sheetId = getSheetId(targetId);
-    CacheService.getScriptCache().remove('app_config_v11_' + sheetId);
+    CacheService.getScriptCache().remove('app_config_v12_' + sheetId);
 
     // Si es el tema, sincronizar también en PropertiesService y caché global
     if (key === 'app_theme' && typeof value === 'string') {
@@ -777,12 +845,31 @@ function updateProduct(catName, oldName, newName, targetId) {
 }
 
 function deleteProduct(catName, productName, targetId) {
-  var config = getAppConfig(targetId).config;
-  if (!config.cats[catName]) return {success: false, error: "No existe"};
-  config.cats[catName].prods = config.cats[catName].prods.filter(function(p) { return p !== productName; });
-  saveConfig('cats', config.cats, targetId);
-  logCatEdit(catName, targetId);
-  return {success: true, data: config.cats};
+  try {
+    // Interfaz dual para FeDe_API
+    if (catName && typeof catName === 'object' && productName === undefined && targetId === undefined) {
+      targetId = catName.targetId || null;
+      productName = catName.productName;
+      catName = catName.catName;
+    } else if (catName && typeof catName === 'object' && productName !== undefined && targetId === undefined) {
+      targetId = productName;
+      productName = catName.productName;
+      catName = catName.catName;
+    }
+
+    var config = getAppConfig(targetId).config;
+    if (!config.cats[catName]) return {success: false, error: "No existe"};
+    
+    // Buscar la primera coincidencia y eliminarla (permite limpiar duplicados uno a uno)
+    var idx = config.cats[catName].prods.indexOf(productName);
+    if (idx !== -1) {
+        config.cats[catName].prods.splice(idx, 1);
+    }
+    
+    saveConfig('cats', config.cats, targetId);
+    logCatEdit(catName, targetId);
+    return {success: true, data: config.cats};
+  } catch(e) { return {success: false, error: e.message}; }
 }
 
 function getDashboardMetrics(targetId) {
