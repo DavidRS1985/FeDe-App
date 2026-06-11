@@ -49,6 +49,7 @@ var FeDe_Repo = {
     for (var i = 0; i < data.length; i++) {
       if (data[i][0] == key) {
         sheet.getRange(i + 1, 2).setValue(valStr);
+        SpreadsheetApp.flush();
         return true;
       }
     }
@@ -74,9 +75,15 @@ var FeDe_Services = {
       }
     });
 
-    // Validar integridad de categorías
+    // Si cats falta o está corrupto, solo inyectar el default sin tocar el resto del config.
+    // initializeDefaultConfig hace sheet.clear() — borraría valores personalizados como app_title.
     if (!config.cats || typeof config.cats !== 'object') {
-      config = this.initializeDefaultConfig(FeDe_Repo.getSheet(ss, 'Config'));
+      var defaultCats = {
+        'Personal': { icon: 'chess-pawn', color: '#64748b' },
+        'Otros':    { icon: 'package',    color: '#94a3b8'  }
+      };
+      config.cats = defaultCats;
+      FeDe_Repo.saveConfigValue(ss, 'cats', defaultCats);
     }
 
     return {
@@ -387,7 +394,8 @@ function getCalendarEvents(targetId) {
           end:         e.getEndTime().toISOString(),
           isAllDay:    e.isAllDayEvent(),
           description: e.getDescription() || '',
-          location:    e.getLocation()    || ''
+          location:    e.getLocation()    || '',
+          eventId:     e.getId()
         };
       })
     };
@@ -441,6 +449,61 @@ function saveReservation(params, targetId) {
 }
 
 /**
+ * Actualiza título, fecha, hora y notas de una reserva existente.
+ */
+function updateReservation(params, targetId) {
+  try {
+    var state = FeDe_Services.getInitialState(targetId);
+    var calId = state.config.calendar_id;
+    var cal = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
+    if (!cal) return { success: false, error: 'Calendario no encontrado' };
+    var event = cal.getEventById(params.eventId);
+    if (!event) return { success: false, error: 'Evento no encontrado' };
+
+    if (params.title) event.setTitle(params.title);
+    if (params.notes !== undefined) event.setDescription(params.notes || '');
+
+    // Actualizar fecha/hora si se proveen
+    if (params.date) {
+      var parts = params.date.split('-');
+      var year = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, day = parseInt(parts[2], 10);
+      if (params.isAllDay) {
+        event.setAllDayDate(new Date(year, month, day));
+      } else {
+        var tp = (params.time || '20:00').split(':');
+        var start = new Date(year, month, day, parseInt(tp[0], 10), parseInt(tp[1], 10));
+        var end   = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+        event.setTime(start, end);
+      }
+    }
+
+    return { success: true };
+  } catch (err) {
+    Logger_FeDe.error('Error al actualizar reserva', { error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Elimina una reserva del Google Calendar por eventId.
+ */
+function deleteReservation(params, targetId) {
+  try {
+    var state = FeDe_Services.getInitialState(targetId);
+    var calId = state.config.calendar_id;
+    var cal = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
+    if (!cal) return { success: false, error: 'Calendario no encontrado' };
+    var event = cal.getEventById(params.eventId);
+    if (!event) return { success: false, error: 'Evento no encontrado en el calendario' };
+    event.deleteEvent();
+    return { success: true };
+  } catch (err) {
+    Logger_FeDe.error('Error al eliminar reserva', { error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Obtiene toda la configuración y el historial de una sola vez
  * Refactorizado para usar Capa de Servicios y Repositorio
  */
@@ -449,21 +512,20 @@ function getAppConfig(targetId) {
   var sheetId = getSheetId(targetId);
   var cacheKey = 'app_config_v12_' + sheetId; // Nueva llave para evitar conflictos
   
-  try {
-    // 1. OBTENER DE CACHÉ
-    var cached = cache.get(cacheKey);
-    if (cached) return JSON.parse(cached);
+  // Limpiar cache corrupta antes de intentar leer
+  try { cache.remove(cacheKey); } catch(e) {}
 
+  try {
     Logger_FeDe.info('Cargando de SHEETS');
     var ss = FeDe_Repo.getSS(targetId);
-    
-    // 2. MIGRACIÓN FLUIDA (Opcional, no bloqueante)
+
+    // MIGRACIÓN FLUIDA (Opcional, no bloqueante)
     try { MigrationService.runCheck(targetId); } catch(e) {}
 
-    // 3. OBTENER ESTADO
+    // OBTENER ESTADO
     var state = FeDe_Services.getInitialState(targetId);
     var history = [];
-    
+
     try {
       var histSheet = ss.getSheetByName('History');
       if (histSheet) {
@@ -502,15 +564,26 @@ function getAppConfig(targetId) {
       timestamp: new Date().toISOString()
     };
 
-    cache.put(cacheKey, JSON.stringify(response), 300);
+    // Intentar cachear solo los campos livianos (sin recetas que pueden ser grandes)
+    try {
+      var configLite = {};
+      var configKeys = Object.keys(state.config);
+      for (var _ci = 0; _ci < configKeys.length; _ci++) {
+        if (configKeys[_ci] !== 'recetas') configLite[configKeys[_ci]] = state.config[configKeys[_ci]];
+      }
+      var cacheable = { success: true, ssName: response.ssName, config: configLite,
+        history: history, prod_log: prodLog, pack_factors: response.pack_factors, timestamp: response.timestamp };
+      cache.put(cacheKey, JSON.stringify(cacheable), 300);
+    } catch(ce) {
+      Logger_FeDe.warn('Cache omitida: ' + ce.message);
+    }
+
     return response;
   } catch(e) {
     Logger_FeDe.error('Fallo crítico en getAppConfig', { error: e.message });
     return { success: false, error: e.message };
   }
 }
-
-function getAppState() { return getAppConfig(); }
 
 function saveConfig(key, value, targetId) {
   try {
@@ -601,6 +674,38 @@ function deleteHistoryEntry(entryId, targetId) {
     }
     return {success: true};
   } catch(e) { return {success: false, error: e.message}; }
+}
+
+function updateHistoryEntry(params, targetId) {
+  try {
+    var entryId = params && params.entryId;
+    var patch   = params && params.patch;
+    if (!entryId) throw new Error('ID requerido');
+    if (!Validator.isObject(patch)) throw new Error('Patch inválido');
+    var ss = FeDe_Repo.getSS(targetId);
+    var sheet = FeDe_Repo.getSheet(ss, 'History');
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] == entryId) {
+        var row = i + 1;
+        var existing = sheet.getRange(row, 2, 1, 5).getValues()[0];
+        var newRow = [
+          patch.fecha  !== undefined ? patch.fecha                      : existing[0],
+          patch.mode   !== undefined ? String(patch.mode).toLowerCase() : existing[1],
+          patch.turno  !== undefined ? patch.turno                      : existing[2],
+          patch.total  !== undefined ? (Number(patch.total) || 0)       : existing[3],
+          patch.items  !== undefined ? JSON.stringify(patch.items)      : existing[4]
+        ];
+        sheet.getRange(row, 2, 1, 5).setValues([newRow]);
+        SpreadsheetApp.flush();
+        return { success: true, entryId: entryId };
+      }
+    }
+    return { success: false, error: 'Registro no encontrado: ' + entryId };
+  } catch(e) {
+    Logger_FeDe.error('Fallo en updateHistoryEntry', { error: e.message });
+    return { success: false, error: e.message };
+  }
 }
 
 /**
@@ -704,41 +809,6 @@ function deleteHistory(type, targetId) {
     Logger_FeDe.error('Fallo en deleteHistory', { error: e.message });
     return { success: false, error: e.message };
   }
-}
-
-function getOrCreateSheet(ss, name) {
-  var sheet = ss.getSheetByName(name);
-  if (!sheet) {
-    sheet = ss.insertSheet(name);
-    if (name === 'History') sheet.appendRow(['ID', 'Fecha', 'Modo', 'Turno', 'Total', 'Data_JSON']);
-  }
-  return sheet;
-}
-
-function initializeDefaultConfig(sheet) {
-  var config = {
-    app_title: "FEDE GASTRO PRO",
-    app_subtitle: "FOCACCIA Edition v10.0.0",
-    units: ['porción/es', 'kg', 'unidad', 'litro', 'botella', 'maple', 'caja', 'frasco', 'lata', 'tupper', 'bandeja', 'atado', 'bolsa', 'paquete'],
-    favs: ["Ojo de bife", "Bondiola", "Peceto", "Pechuga", "Salmón", "Langostinos", "Burrata", "Queso Sardo", "Queso Gouda", "Queso parmesano", "Leche entera", "Manteca"],
-    cats: {
-      "Personal": { icon: "chess-pawn", order: 1, prods: ["Pizza", "Tarta", "Milanesa de pollo", "Guiso de lentejas", "Pastas del personal", "Filet de merluza", "Sopa", "Cerdo"] },
-      "Carnes": { icon: "beef", order: 2, prods: ["Bondiola", "Carne picada", "Chorizo", "Jamón cocido", "Jamón crudo", "Lomo", "Mortadela con pistacho", "Ojo de bife", "Osobuco", "Panceta (bacon)", "Pechuga", "Peceto"] },
-      "Lácteos": { icon: "milk", order: 3, prods: ["Burrata", "Crema de leche", "Leche entera", "Manteca", "Provoleta", "Queso al pesto", "Queso azul", "Queso brie", "Queso crema", "Queso danbo", "Queso Gouda", "Queso Gouda ahumado", "Queso Gruyere", "Queso Holanda amarillo", "Queso mozzarella", "Queso parmesano", "Queso pategrás", "Queso Sardo", "Ricota", "Yogurt"] },
-      "Huevos": { icon: "egg", order: 4, prods: ["Huevos"] },
-      "Verdulería": { icon: "carrot", order: 5, prods: ["Ajo", "Arándanos", "Banana", "Berenjena", "Brócoli", "Brotes", "Calabaza", "Cebolla", "Cebolla de verdeo", "Choclo", "Espinaca", "Frutilla", "Kale", "Lechuga", "Limón", "Manzana verde", "Naranja", "Palta", "Papa", "Pera", "Perejil", "Puerro", "Remolacha", "Repollo", "Rúcula", "Tomate cherry", "Tomate perita", "Uvas verdes", "Zanahoria", "Zucchini"] },
-      "Pescados": { icon: "fish", order: 6, prods: ["Langostinos", "Merluza", "Pescado blanco (pesca del día)", "Salmón"] },
-      "Panadería": { icon: "croissant", order: 7, prods: ["Pan baguetin", "Pan brioche", "Pan de campo", "Pan de hamburguesa", "Pan de miga", "Pan de molde", "Pan de panera", "Pan focaccia", "Prepizza", "Tequeños"] },
-      "Pastas": { icon: "soup", order: 8, prods: ["Calzoncelli", "Ñoquis", "Sorrentinos de salmón", "Spaghetti seco", "Tagliatelle", "Tallarines"] },
-      "Bebidas": { icon: "bottle-wine", order: 9, prods: ["Vino"] },
-      "Condimentos": { icon: "shrub", order: 10, prods: ["Aceite de girasol", "Aceite de oliva", "Aceto balsámico", "Aderezo César", "Ají molido", "Ketchup", "Mayonesa", "Miel", "Mostaza", "Orégano", "Perejil", "Pimienta negra molida", "Sal fina", "Sal gruesa", "Tahini", "Tomillo", "Vinagre de alcohol"] },
-      "Conservas": { icon: "cylinder", order: 11, prods: ["Aceitunas negras", "Aceitunas verdes", "Alcaparras", "Hongos deshidratados", "Mermeladas", "Pasta de tomate", "Tomates deshidratados", "Tomates pelados en lata"] },
-      "Secos": { icon: "wheat", order: 12, prods: ["Almendras", "Arroz risotto", "Azúcar", "Fécula de maíz", "Fécula de mandioca", "Garbanzos", "Harina 000", "Harina 0000", "Harina de mandioca", "Nueces", "Polvo de hornear"] },
-      "Platos carta": { icon: "utensils-crossed", order: 13, prods: ["Affogato", "Berenjenas en escabeche", "Bondiola Braseada", "Borsch", "Brownie c/helado", "Budín de pan", "Burrata fresca c/jamón crudo", "Buñuelos de espinaca", "Caponatta all uso nostro", "Chivito y papas", "Choripán y papas", "Crumble de manzana", "Enrollados FEDE", "Ensalada César con langostinos", "Ensalada Clásica", "Ensalada Kale con praliné de maní", "Girandola", "Hamburguesa y papas", "Humus con vegetales encurtidos", "Lasagna clásica", "Milanesa", "Milanesa gratinada", "Milanesa napolitana", "Mousse de chocolate", "Musaka", "Ojo de bife", "Omelett con queso y jamón", "Osobucco al funghi", "Papas fritas y cheddar", "Pechuga grillada", "Pesca del día", "Pizza FEDE", "Pizza Margherita", "Pizza Mozzarella", "Plato 5 quesos", "Provoleta c/mermelada de morrón", "Risotto de langostinos", "Risotto de pera y queso azul", "Risotto de setas", "Rotolo de espinaca", "Salmon grille", "Sorrentinos calabaza/jamón y queso", "Sorrentinos de salmón", "Suprema de pollo", "Tequeños de queso", "Tiramisú", "Tostado jamón y queso", "Tostón de campo", "Trucha a la manteca", "Vichysoisse", "Vigilante FEDE"] }
-    }
-  };
-  Object.keys(config).forEach(function(k) { sheet.appendRow([k, JSON.stringify(config[k])]); });
-  return config;
 }
 
 function isValidName(name) { return name && typeof name === 'string' && name.trim().length > 0; }
@@ -885,14 +955,14 @@ function getDashboardMetrics(targetId) {
     if (new Date(h.fecha).setHours(0,0,0,0) === today.getTime()) movementsToday++; 
   });
   
-  var recentCats = [];
-  if (config.config.catEditLog) {
-    var edits = config.config.catEditLog;
-    recentCats = Object.keys(edits).map(function(name) {
-        return {name: name, ts: edits[name]};
-    }).sort(function(a,b) { 
-        return new Date(b.ts) - new Date(a.ts); 
-    }).slice(0, 4);
+  var recentOps = [];
+  var sortedHistory = history.slice().sort(function(a,b) { return new Date(b.fecha) - new Date(a.fecha); });
+  for (var i = 0; i < sortedHistory.length && recentOps.length < 4; i++) {
+    var h = sortedHistory[i];
+    recentOps.push({
+      mode: h.mode || 'stock',
+      ts: h.fecha
+    });
   }
   
 
@@ -912,7 +982,7 @@ function getDashboardMetrics(targetId) {
     }
   });
 
-  return { success: true, ssName: config.ssName, data: { totalItems: totalItems, movementsToday: movementsToday, allCategories: Object.keys(cats), recentCats: recentCats, calendar: calendar } };
+  return { success: true, ssName: config.ssName, data: { totalItems: totalItems, movementsToday: movementsToday, allCategories: Object.keys(cats), recentOps: recentOps, calendar: calendar } };
 }
 
 /**
@@ -921,7 +991,7 @@ function getDashboardMetrics(targetId) {
 function deduplicateHistory(targetId) {
   try {
     var ss = SpreadsheetApp.openById(getSheetId(targetId));
-    var sheet = getOrCreateSheet(ss, 'History');
+    var sheet = FeDe_Repo.getSheet(ss, 'History');
     var lastRow = sheet.getLastRow();
     if (lastRow <= 1) return { success: true, removed: 0 };
 
@@ -1145,7 +1215,7 @@ function saveOrderAnchors(anchorsObj, targetId) {
 function getOrderAnchors(targetId) {
   try {
     var ss = SpreadsheetApp.openById(getSheetId(targetId));
-    var sheet = getOrCreateSheet(ss, 'Config');
+    var sheet = FeDe_Repo.getSheet(ss, 'Config');
     var data = sheet.getDataRange().getValues();
     for (var i = 0; i < data.length; i++) {
       if (data[i][0] === 'orderAnchors') {
@@ -1158,4 +1228,529 @@ function getOrderAnchors(targetId) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SEED: Carga inicial de recetas desde el Cuaderno FeDe
+// Ejecutar UNA SOLA VEZ desde el editor de GAS.
+// No sobreescribe recetas existentes con el mismo nombre.
+// ─────────────────────────────────────────────────────────────────────────────
+function seedRecetas() {
+  var recetasNuevas = {
+
+    // ── SALSAS BASE ──────────────────────────────────────────────────────────
+
+    'Salsa Pomodoro': {
+      name: 'Salsa Pomodoro', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Tomate triturado',    qty: 2000, unit: 'g' },
+        { prod: 'Manzana verde',       qty: 1,    unit: 'u' },
+        { prod: 'Zanahoria rallada',   qty: 70,   unit: 'g' },
+        { prod: 'Cebolla',             qty: 400,  unit: 'g' },
+        { prod: 'Ajo',                 qty: 4,    unit: 'u' },
+        { prod: 'Vino blanco/tinto',   qty: 500,  unit: 'ml' },
+        { prod: 'Pimentón',            qty: 0,    unit: 'g' },
+        { prod: 'Ají molido',          qty: 0,    unit: 'g' },
+        { prod: 'Orégano',             qty: 0,    unit: 'g' },
+        { prod: 'Tomillo',             qty: 0,    unit: 'g' }
+      ]
+    },
+
+    'Salsa Bolognesa': {
+      name: 'Salsa Bolognesa', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Salsa Pomodoro',  qty: 1000, unit: 'g' },
+        { prod: 'Carne picada',    qty: 1000, unit: 'g' }
+      ]
+    },
+
+    'Salsa Arrabiata': {
+      name: 'Salsa Arrabiata', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Salsa Pomodoro',        qty: 180, unit: 'g' },
+        { prod: 'Ají picante encurtido', qty: 0,   unit: 'g' }
+      ]
+    },
+
+    'Salsa Carbonara': {
+      name: 'Salsa Carbonara', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Yemas de huevo',    qty: 3, unit: 'u' },
+        { prod: 'Queso sardo',       qty: 0, unit: 'g' },
+        { prod: 'Panceta/guanciale', qty: 0, unit: 'g' }
+      ]
+    },
+
+    'Salsa Caesar': {
+      name: 'Salsa Caesar', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Yemas de huevo',        qty: 3,   unit: 'u' },
+        { prod: 'Ajo',                   qty: 15,  unit: 'g' },
+        { prod: 'Anchoa',                qty: 30,  unit: 'g' },
+        { prod: 'Jugo de limón',         qty: 60,  unit: 'ml' },
+        { prod: 'Salsa Worcestershire',  qty: 0,   unit: 'ml' },
+        { prod: 'Mostaza Dijon',         qty: 10,  unit: 'g' },
+        { prod: 'Aceite de oliva',       qty: 250, unit: 'g' },
+        { prod: 'Agua',                  qty: 30,  unit: 'ml' },
+        { prod: 'Queso sardo rallado',   qty: 50,  unit: 'g' }
+      ]
+    },
+
+    'Ali Oli de Ajos Asados': {
+      name: 'Ali Oli de Ajos Asados', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Ajo',          qty: 2,   unit: 'u' },
+        { prod: 'Aceite de oliva', qty: 0, unit: 'ml' },
+        { prod: 'Romero fresco', qty: 0,  unit: 'g' },
+        { prod: 'Leche',        qty: 100, unit: 'ml' },
+        { prod: 'Aceite neutro', qty: 100, unit: 'ml' },
+        { prod: 'Jugo de limón', qty: 0,  unit: 'ml' }
+      ]
+    },
+
+    'Crema de Coliflor': {
+      name: 'Crema de Coliflor', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Coliflor',      qty: 1000, unit: 'g' },
+        { prod: 'Cebolla',       qty: 250,  unit: 'g' },
+        { prod: 'Ajo',           qty: 20,   unit: 'g' },
+        { prod: 'Crema de leche', qty: 0,   unit: 'ml' }
+      ]
+    },
+
+    'Pasta de Hongos': {
+      name: 'Pasta de Hongos', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Hongos hidratados',        qty: 300, unit: 'g' },
+        { prod: 'Cebolla blanca',           qty: 200, unit: 'g' },
+        { prod: 'Vino blanco',              qty: 80,  unit: 'ml' },
+        { prod: 'Caldo de verduras/hongos', qty: 150, unit: 'ml' },
+        { prod: 'Sal',                      qty: 5,   unit: 'g' },
+        { prod: 'Pimienta',                 qty: 2,   unit: 'g' },
+        { prod: 'Tomillo/Romero',           qty: 3,   unit: 'g' },
+        { prod: 'Aceite de girasol',        qty: 150, unit: 'g' }
+      ]
+    },
+
+    // ── PANADERÍA ────────────────────────────────────────────────────────────
+
+    'Chuño': {
+      name: 'Chuño', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Fécula de maíz', qty: 20,  unit: 'g' },
+        { prod: 'Agua',           qty: 200, unit: 'g' },
+        { prod: 'Azúcar',         qty: 0,   unit: 'g' }
+      ]
+    },
+
+    'Pan Árabe': {
+      name: 'Pan Árabe', yields: 6, yieldUnit: 'unidades', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Harina 000',     qty: 1000, unit: 'g' },
+        { prod: 'Agua tibia',     qty: 600,  unit: 'g' },
+        { prod: 'Aceite de oliva', qty: 60,  unit: 'g' },
+        { prod: 'Levadura fresca', qty: 30,  unit: 'g' },
+        { prod: 'Sal',            qty: 20,   unit: 'g' },
+        { prod: 'Azúcar',         qty: 10,   unit: 'g' }
+      ]
+    },
+
+    'Pan Molde Blanco': {
+      name: 'Pan Molde Blanco', yields: 2, yieldUnit: 'moldes', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Harina 0000', qty: 1000, unit: 'g' },
+        { prod: 'Agua',        qty: 600,  unit: 'g' },
+        { prod: 'Manteca',     qty: 100,  unit: 'g' },
+        { prod: 'Levadura',    qty: 25,   unit: 'g' },
+        { prod: 'Sal',         qty: 20,   unit: 'g' }
+      ]
+    },
+
+    'Pan para Hamburguesas': {
+      name: 'Pan para Hamburguesas', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Harina 0000',      qty: 1000, unit: 'g' },
+        { prod: 'Agua',             qty: 600,  unit: 'g' },
+        { prod: 'Manteca',          qty: 100,  unit: 'g' },
+        { prod: 'Levadura',         qty: 30,   unit: 'g' },
+        { prod: 'Sal',              qty: 20,   unit: 'g' },
+        { prod: 'Azúcar',           qty: 100,  unit: 'g' },
+        { prod: 'Extracto de malta', qty: 10,  unit: 'g' },
+        { prod: 'Semillas de sésamo', qty: 0,  unit: 'g' }
+      ]
+    },
+
+    // ── MASAS Y PASTAS ───────────────────────────────────────────────────────
+
+    'Pizza Sin TACC (Base Papa)': {
+      name: 'Pizza Sin TACC (Base Papa)', yields: 1, yieldUnit: 'pizza', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Papa',           qty: 2,   unit: 'u' },
+        { prod: 'Fécula de maíz', qty: 0,   unit: 'g' },
+        { prod: 'Queso rallado',  qty: 100, unit: 'g' },
+        { prod: 'Aceitunas negras', qty: 0, unit: 'g' }
+      ]
+    },
+
+    'Pizza Keto (Base Pollo)': {
+      name: 'Pizza Keto (Base Pollo)', yields: 1, yieldUnit: 'pizza', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Pechuga de pollo',    qty: 200, unit: 'g' },
+        { prod: 'Huevos',              qty: 3,   unit: 'u' },
+        { prod: 'Fécula de maíz',      qty: 0,   unit: 'g' },
+        { prod: 'Polvo para hornear',  qty: 0,   unit: 'g' }
+      ]
+    },
+
+    'Mbeju': {
+      name: 'Mbeju', yields: 5, yieldUnit: 'porciones', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Fécula de mandioca', qty: 300, unit: 'g' },
+        { prod: 'Harina de mandioca', qty: 50,  unit: 'g' },
+        { prod: 'Huevo',              qty: 1,   unit: 'u' },
+        { prod: 'Manteca pomada',     qty: 70,  unit: 'g' },
+        { prod: 'Queso sardo',        qty: 400, unit: 'g' },
+        { prod: 'Queso dambo',        qty: 50,  unit: 'g' },
+        { prod: 'Leche entera',       qty: 200, unit: 'g' },
+        { prod: 'Sal',                qty: 3,   unit: 'g' }
+      ]
+    },
+
+    // ── ENTRADAS & PICOTEO ───────────────────────────────────────────────────
+
+    'Mini Tortilla Española': {
+      name: 'Mini Tortilla Española', yields: 1, yieldUnit: 'tortilla', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Huevos',               qty: 4,  unit: 'u' },
+        { prod: 'Papa',                 qty: 100, unit: 'g' },
+        { prod: 'Cebolla caramelizada', qty: 80,  unit: 'g' },
+        { prod: 'Aceite de oliva',      qty: 0,   unit: 'ml' }
+      ]
+    },
+
+    'Buñuelos de Espinaca': {
+      name: 'Buñuelos de Espinaca', yields: 6, yieldUnit: 'unidades', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Espinaca (jorela)',     qty: 350, unit: 'g' },
+        { prod: 'Meringo',              qty: 200, unit: 'g' },
+        { prod: 'Sal',                  qty: 3,   unit: 'g' },
+        { prod: 'Pimienta',             qty: 2,   unit: 'g' },
+        { prod: 'Huevos',               qty: 2,   unit: 'u' },
+        { prod: 'Leche',                qty: 150, unit: 'g' },
+        { prod: 'Cebolla caramelizada', qty: 50,  unit: 'g' },
+        { prod: 'Queso D\'Amada',       qty: 100, unit: 'g' }
+      ]
+    },
+
+    'Hummus': {
+      name: 'Hummus', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Garbanzos cocidos',    qty: 500, unit: 'g' },
+        { prod: 'Aceite de oliva',      qty: 110, unit: 'ml' },
+        { prod: 'Jugo de limón',        qty: 100, unit: 'ml' },
+        { prod: 'Ajo',                  qty: 1,   unit: 'u' },
+        { prod: 'Sal',                  qty: 10,  unit: 'g' },
+        { prod: 'Pimienta',             qty: 2,   unit: 'g' },
+        { prod: 'Agua filtrada',        qty: 100, unit: 'ml' },
+        { prod: 'Tahini',               qty: 110, unit: 'g' }
+      ]
+    },
+
+    'Baba Ganoush': {
+      name: 'Baba Ganoush', yields: 1, yieldUnit: 'lote', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Berenjena ahumada', qty: 500, unit: 'g' },
+        { prod: 'Aceite de oliva',   qty: 60,  unit: 'ml' },
+        { prod: 'Jugo de limón',     qty: 90,  unit: 'ml' },
+        { prod: 'Ajo',               qty: 1,   unit: 'u' },
+        { prod: 'Perejil',           qty: 10,  unit: 'g' },
+        { prod: 'Sal',               qty: 10,  unit: 'g' },
+        { prod: 'Pimienta',          qty: 2,   unit: 'g' },
+        { prod: 'Tahini',            qty: 60,  unit: 'g' }
+      ]
+    },
+
+    // ── CONSERVAS & ENCURTIDOS ───────────────────────────────────────────────
+
+    'Encurtidos (Coliflor/Zanahoria)': {
+      name: 'Encurtidos (Coliflor/Zanahoria)', yields: 1, yieldUnit: 'frasco', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Vinagre',    qty: 0, unit: 'ml' },
+        { prod: 'Agua',       qty: 0, unit: 'ml' },
+        { prod: 'Sal',        qty: 0, unit: 'g' },
+        { prod: 'Azúcar',     qty: 0, unit: 'g' },
+        { prod: 'Coliflor',   qty: 0, unit: 'g' },
+        { prod: 'Zanahoria',  qty: 0, unit: 'g' }
+      ]
+    },
+
+    'Berenjenas en Escabeche': {
+      name: 'Berenjenas en Escabeche', yields: 1, yieldUnit: 'frasco', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Berenjena',      qty: 0, unit: 'g' },
+        { prod: 'Sal gruesa',     qty: 0, unit: 'g' },
+        { prod: 'Vinagre',        qty: 0, unit: 'ml' },
+        { prod: 'Aceite de girasol', qty: 0, unit: 'ml' },
+        { prod: 'Ajo',            qty: 0, unit: 'u' }
+      ]
+    },
+
+    'Zanahorias Glaseadas': {
+      name: 'Zanahorias Glaseadas', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Zanahoria',     qty: 500, unit: 'g' },
+        { prod: 'Manteca',       qty: 80,  unit: 'g' },
+        { prod: 'Aceite de oliva', qty: 50, unit: 'ml' },
+        { prod: 'Azúcar',        qty: 0,   unit: 'g' }
+      ]
+    },
+
+    // ── PLATOS PRINCIPALES ───────────────────────────────────────────────────
+
+    'Hamburguesa - Medallón': {
+      name: 'Hamburguesa - Medallón', yields: 4, yieldUnit: 'medallones', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Carne picada',   qty: 1000, unit: 'g' },
+        { prod: 'Cebolla',        qty: 200,  unit: 'g' },
+        { prod: 'Salsa Worcestershire', qty: 0, unit: 'ml' },
+        { prod: 'Romero fresco',  qty: 0,   unit: 'g' },
+        { prod: 'Crema de leche', qty: 60,  unit: 'g' }
+      ]
+    },
+
+    'Milanesas': {
+      name: 'Milanesas', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Nalga',         qty: 0, unit: 'g' },
+        { prod: 'Huevo',         qty: 0, unit: 'u' },
+        { prod: 'Ajo',           qty: 0, unit: 'u' },
+        { prod: 'Mostaza',       qty: 0, unit: 'g' },
+        { prod: 'Pan rallado/panko', qty: 0, unit: 'g' }
+      ]
+    },
+
+    'Omelett Queso y Jamón': {
+      name: 'Omelett Queso y Jamón', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Huevos',      qty: 4, unit: 'u' },
+        { prod: 'Queso',       qty: 3, unit: 'u' },
+        { prod: 'Jamón cocido', qty: 2, unit: 'u' }
+      ]
+    },
+
+    'Avocado Toast': {
+      name: 'Avocado Toast', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Pan de campo',          qty: 1, unit: 'u' },
+        { prod: 'Queso crema',           qty: 0, unit: 'g' },
+        { prod: 'Huevos',                qty: 3, unit: 'u' },
+        { prod: 'Palta',                 qty: 1, unit: 'u' },
+        { prod: 'Tomates cherry',        qty: 2, unit: 'u' },
+        { prod: 'Mix de semillas',       qty: 0, unit: 'g' }
+      ]
+    },
+
+    'Ojo de Bife': {
+      name: 'Ojo de Bife', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Ojo de bife', qty: 300, unit: 'g' }
+      ]
+    },
+
+    'Pechuga Grillada': {
+      name: 'Pechuga Grillada', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Pechuga de pollo', qty: 1, unit: 'u' }
+      ]
+    },
+
+    'Salmón Grillé': {
+      name: 'Salmón Grillé', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Filet de salmón',  qty: 200, unit: 'g' },
+        { prod: 'Aceite de oliva',  qty: 0,   unit: 'ml' }
+      ]
+    },
+
+    'Bowl Proteico': {
+      name: 'Bowl Proteico', yields: 1, yieldUnit: 'porción', active: true,
+      updatedAt: new Date().toISOString(),
+      ingredients: [
+        { prod: 'Arroz',          qty: 0, unit: 'g' },
+        { prod: 'Pechuga de pollo', qty: 0, unit: 'g' },
+        { prod: 'Palta',          qty: 0, unit: 'u' },
+        { prod: 'Tomates cherry', qty: 0, unit: 'u' },
+        { prod: 'Huevo',          qty: 0, unit: 'u' }
+      ]
+    }
+  };
+
+  try {
+    var ss = FeDe_Repo.getSS();
+    var sh = ss.getSheetByName('Config');
+    if (!sh) throw new Error('Hoja Config no encontrada');
+
+    var data = sh.getDataRange().getValues();
+    var recetasActuales = {};
+    var recetasRow = -1;
+
+    for (var i = 0; i < data.length; i++) {
+      if (data[i][0] === 'recetas') {
+        recetasRow = i + 1;
+        try { recetasActuales = JSON.parse(data[i][1] || '{}'); } catch(e) {}
+        break;
+      }
+    }
+
+    var agregadas = 0;
+    var omitidas = 0;
+    var nombres = Object.keys(recetasNuevas);
+    for (var j = 0; j < nombres.length; j++) {
+      var nombre = nombres[j];
+      if (recetasActuales[nombre]) {
+        omitidas++;
+      } else {
+        recetasActuales[nombre] = recetasNuevas[nombre];
+        agregadas++;
+      }
+    }
+
+    var jsonVal = JSON.stringify(recetasActuales);
+    if (recetasRow > 0) {
+      sh.getRange(recetasRow, 2).setValue(jsonVal);
+    } else {
+      sh.appendRow(['recetas', jsonVal]);
+    }
+
+    try {
+      var cache = CacheService.getScriptCache();
+      cache.remove('app_config_v12_');
+      cache.remove('app_config_v12_' + MASTER_ID);
+    } catch(ce) {}
+
+    Logger.log('seedRecetas: ' + agregadas + ' recetas cargadas, ' + omitidas + ' ya existían.');
+    return { success: true, agregadas: agregadas, omitidas: omitidas };
+  } catch(e) {
+    Logger.log('seedRecetas ERROR: ' + e.message);
+    return { success: false, error: e.message };
+  }
+}
+
 // saveConfig duplicado eliminado — la implementación completa está en línea ~396
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RECETA PHOTOS — Google Drive storage
+//
+// Folder structure created automatically:
+//   Mi unidad (root)
+//   └── FeDe Gastro Pro/
+//       └── Recetarios/
+//           ├── Salsa Pomodoro/
+//           │   └── photo_1716123456789.jpg
+//           ├── Pan Árabe/
+//           │   └── photo_1716123456790.jpg
+//           └── Pizza Keto/
+//               └── photo_1716123456791.jpg
+//
+// Returned URL format: https://drive.google.com/uc?id=FILE_ID
+// Files are set to public read so the <img> tag can load them directly.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * getRecetaPhotoFolderId(recetaName)
+ * Creates (or finds) the nested folder FeDe Gastro Pro > Recetarios > recetaName
+ * and returns the leaf folder's Drive ID.
+ */
+function getRecetaPhotoFolderId(recetaName) {
+  // Búsqueda global en Drive (no solo en root) por si FEDE está en subdirectorio
+  var l1iter = DriveApp.getFoldersByName('FEDE');
+  var l1;
+  if (l1iter.hasNext()) {
+    l1 = l1iter.next();
+  } else {
+    // No existe en ningún lado — crear en root
+    l1 = DriveApp.getRootFolder().createFolder('FEDE');
+  }
+
+  // Level 2: Recetas (carpeta existente del usuario)
+  var l2iter = l1.getFoldersByName('Recetas');
+  var l2 = l2iter.hasNext() ? l2iter.next() : l1.createFolder('Recetas');
+
+  // Level 3: nombre de la receta (subcarpeta por receta)
+  var safeName = recetaName.replace(/[\/\\:*?"<>|]/g, '_').trim() || 'Sin_Nombre';
+  var l3iter = l2.getFoldersByName(safeName);
+  var l3 = l3iter.hasNext() ? l3iter.next() : l2.createFolder(safeName);
+
+  return l3.getId();
+}
+
+/**
+ * uploadRecetaPhoto(params, targetId)
+ * params: { base64: string, mimeType: string, recetaName: string }
+ * Saves the image to Drive, makes it public, returns { success, url }.
+ */
+function uploadRecetaPhoto(params, targetId) {
+  try {
+    var base64    = params.base64;
+    var mimeType  = params.mimeType  || 'image/jpeg';
+    var recetaName = params.recetaName || 'receta';
+
+    // Strip the data:image/...;base64, prefix if present
+    var b64data = base64.replace(/^data:[^;]+;base64,/, '');
+
+    // Determine extension from mimeType
+    var extMap = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
+    var ext = extMap[mimeType] || '.jpg';
+    var fileName = 'photo_' + Date.now() + ext;
+
+    // Get or create target folder
+    var folderId = getRecetaPhotoFolderId(recetaName);
+    var folder   = DriveApp.getFolderById(folderId);
+
+    // Create file from base64 blob
+    var blob = Utilities.newBlob(Utilities.base64Decode(b64data), mimeType, fileName);
+    var file = folder.createFile(blob);
+
+    // Make publicly accessible (anyone with link can view)
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // export=view es necesario para que <img src> funcione correctamente en 2025+
+    // El formato /uc?id= sin export fue deprecado por Google
+    var fileId = file.getId();
+    // thumbnail URL: no requiere login, funciona en img tags y WebViews
+    var url = 'https://lh3.googleusercontent.com/d/' + fileId;
+
+    Logger.log('uploadRecetaPhoto OK: ' + fileName + ' → ' + url);
+    return { success: true, url: url, fileId: fileId };
+  } catch(e) {
+    Logger.log('uploadRecetaPhoto ERROR: ' + e.toString());
+    return { success: false, error: e.message || e.toString() };
+  }
+}

@@ -1,3 +1,9 @@
 .clasp.json
 node_modules/
 dist/
+archive/
+*.txt
+scratch.js
+append_css.js
+skills-lock.json
+package-lock.json

@@ -1,5 +1,29 @@
 # Registro de Actualizaciones (Changelog) - FeDe App
 
+## [v13.0.0] - Módulo de Producción — Recetarios + Plan Diario - 2026-05-06
+
+### 🍳 Módulo de Producción (nuevo)
+- **Recetarios**: CRUD completo de recetas. Cada receta define nombre, rinde (ej. "2 panes"), y lista de ingredientes con qty + unidad. Autocomplete de productos del catálogo al cargar ingredientes.
+- **Motor de Viabilidad**: `calcViabilidad(receta, qty)` calcula `maxProducible` por receta usando stock actual. `resolveIngredientStock()` lee HIST, descuenta producciones previas del día y convierte unidades con `UNIT_CONVERTER`.
+- **Plan Diario**: el chef arma el plan al inicio de la jornada. Cada ítem indica qué receta y cuántas unidades. El plan es mutable y no toca el stock — solo es intención.
+- **Ejecución de producción**: `executeProduccion()` confirma quién hizo qué y cuánto. Graba entry `mode: 'produccion'` en History con ingredientes consumidos. Descuenta stock automáticamente.
+- **Separación PLAN / EJECUCIÓN**: el plan vive en `localStorage fede_plan_YYYY-MM-DD` (inmediato, sin cuota GAS). La ejecución es inmutable y se sincroniza con GAS via `addHistoryEntry`.
+- **Gestión de trabajadores**: sección en Ajustes para CRUD de `CONFIG.workers`. Multi-select de workers al confirmar cada ejecución.
+- **Vista Por Persona**: filtra producciones del día por trabajador. Vista Historial de producción independiente.
+- **Alertas de stock en Plan**: banner con ingredientes insuficientes para el plan del día. Alerta en Home si hay ítems del plan sin stock suficiente.
+- **Badge en Home**: `updateAgBadgeProduccion()` muestra "N/M listos" en la tarjeta de acción.
+
+### 🎨 Diseño
+- **Acento teal `#0d9488`** para modo producción — sin colisión con modos existentes.
+- Clases nuevas: `.receta-card`, `.plan-item-card`, `.worker-chip`, `.ing-row`, `.prod-tab`, `.viab-ok/low/none`.
+
+### ⚙️ Infraestructura
+- `CONFIG.recetas`, `CONFIG.workers`, `CONFIG.plan_diario` — nuevas claves persistidas en Google Sheets.
+- Snapshot offline incluye `recetas`, `workers`, `plan_diario` para disponibilidad sin conexión.
+- Versión: v12.0.0 → v13.0.0.
+
+---
+
 ## [v12.0.1] - Hotfix ABC ReferenceError - 2026-05-07
 ### 🐛 Correcciones
 - **Fix crítico loader 15%:** `abcOverrides is not defined` en `computeABC_v3` al iniciar con snapshot local. Faltaba declarar `var abcOverrides = (CONFIG && CONFIG.abc_overrides) ? CONFIG.abc_overrides : {};` antes del loop principal.
